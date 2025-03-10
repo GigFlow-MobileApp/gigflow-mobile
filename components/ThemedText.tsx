@@ -2,7 +2,7 @@ import { Text, TextProps, StyleSheet } from 'react-native';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 
-export type ThemedTextType = 'default' | 'defaultSemiBold' | 'title' | 'subtitle' | 'link';
+export type ThemedTextType = 'default' | 'defaultSemiBold' | 'title' | 'subtitle' | 'section' | 'link';
 
 interface ThemedTextProps extends TextProps {
   type?: ThemedTextType;
@@ -19,6 +19,7 @@ export function ThemedText({ type = 'default', style, ...props }: ThemedTextProp
         type === 'defaultSemiBold' && styles.defaultSemiBold,
         type === 'title' && styles.title,
         type === 'subtitle' && styles.subtitle,
+        type === 'section' && styles.section,
         type === 'link' && styles.link,
         { color: Colors[colorScheme ?? 'light'].text },
         type === 'link' && { color: Colors[colorScheme ?? 'light'].tint },
@@ -47,6 +48,11 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 24,
     fontWeight: '600',
+    fontFamily: 'System',
+  },
+  section: {
+    fontSize: 20,
+    fontWeight: '500',
     fontFamily: 'System',
   },
   link: {
