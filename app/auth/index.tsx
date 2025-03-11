@@ -4,7 +4,6 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Keyboard,
-  Button,
   Platform,
   Dimensions,
   SafeAreaView,
@@ -150,7 +149,7 @@ export default function AuthScreen() {
               style={{ marginTop: topMargin }}
             >
               <Logo2 className={"w-25 h-25"} />
-              <ThemedText className={"py-4"} colorValue="logoText" type="title">
+              <ThemedText style={{fontSize: 32}} colorValue="logoText" type="logo">
                 GIG-Flow
               </ThemedText>
             </View>
@@ -271,7 +270,7 @@ export default function AuthScreen() {
                         </ThemedText>
                       </View>
                     ) : (
-                      <View className="pb-3 h-[31px]"/>
+                      <View className="pb-3" style={{height: Platform.OS === 'ios' ? 31 : 32}}/>
                     )}
                     <Pressable
                       onPress={() => (isLogin ? login() : signup())}
