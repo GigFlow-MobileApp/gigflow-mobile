@@ -3,14 +3,14 @@ import {
   DrawerItemList,
   DrawerItem,
 } from "@react-navigation/drawer";
-import { useState } from 'react';
+import { useState } from "react";
 import { Pressable, View, Text } from "react-native";
 import { Colors } from "@/constants/Colors";
 import { textStyles } from "@/constants/TextStyles";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
-import { AnimatedSyncIcon } from './AnimatedSyncIcon';
+import { AnimatedSyncIcon } from "./AnimatedSyncIcon";
 
 type FunctionalItem = {
   label: string;
@@ -47,15 +47,13 @@ export default function CustomDrawerContent(
         {items.map((item, index) => (
           <Pressable
             key={`${position}-${index}`}
-            onPress={item.iconName === 'sync' ? handleSyncPress : item.onPress}
+            onPress={item.iconName === "sync" ? handleSyncPress : item.onPress}
           >
             {({ pressed }) => {
               const textColor = pressed
                 ? Colors[colorScheme].menuItemText
                 : Colors[colorScheme].menuItemText;
-              const backgroundColor = pressed
-                ? '#f3f4f6'
-                : "transparent";
+              const backgroundColor = pressed ? "#f3f4f6" : "transparent";
 
               return (
                 <View
@@ -68,18 +66,21 @@ export default function CustomDrawerContent(
                     borderRadius: 9999,
                   }}
                 >
-                  {item.iconName === 'sync'?
-                  <AnimatedSyncIcon rotating={syncing} /> : 
-                  <Ionicons
-                    name={item.iconName}
-                    size={24}
-                    color={textColor}
-                    style={{
-                      transform: [{ rotate: item.rotate ? "180deg" : "0deg" }],
-                      marginRight: 13,
-                    }}
-                  />
-                  }
+                  {item.iconName === "sync" ? (
+                    <AnimatedSyncIcon rotating={syncing} />
+                  ) : (
+                    <Ionicons
+                      name={item.iconName}
+                      size={24}
+                      color={textColor}
+                      style={{
+                        transform: [
+                          { rotate: item.rotate ? "180deg" : "0deg" },
+                        ],
+                        marginRight: 13,
+                      }}
+                    />
+                  )}
                   <Text
                     className="text-base"
                     style={{
@@ -99,21 +100,23 @@ export default function CustomDrawerContent(
   };
 
   return (
-    <DrawerContentScrollView {...props}>
-      {logo && (
-        <View
-          className={"items-center justify-start pb-5"}
-          style={{ marginTop: topMargin }}
-        >
-          {logo}
-          <ThemedText colorValue="text" type="subtitle">
-            Gig-Flow
-          </ThemedText>
-        </View>
-      )}
-      {renderItems(topItems, "top")}
-      <DrawerItemList {...props} />
-      {renderItems(bottomItems, "bottom")}
-    </DrawerContentScrollView>
+    <View className="flex-1 justify-between">
+      <DrawerContentScrollView {...props}>
+        {logo && (
+          <View
+            className={"items-center justify-start pb-5"}
+            style={{ marginTop: topMargin }}
+          >
+            {logo}
+            <ThemedText colorValue="text" type="subtitle">
+              Gig-Flow
+            </ThemedText>
+          </View>
+        )}
+        {renderItems(topItems, "top")}
+        <DrawerItemList {...props} />
+      </DrawerContentScrollView>
+      <View className="px-4 pb-6">{renderItems(bottomItems, "bottom")}</View>
+    </View>
   );
 }

@@ -41,6 +41,8 @@ export default function DrawerLayout() {
         drawerStyle: {
           width: menuWidth,
           backgroundColor: Colors[colorScheme].background,
+          borderTopRightRadius: 0,
+          borderBottomRightRadius: 0,
         },
         drawerLabelStyle: {
           ...textStyles.description,
