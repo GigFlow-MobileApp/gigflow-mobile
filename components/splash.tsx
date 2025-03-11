@@ -25,8 +25,8 @@ export default function SplashPage() {
       className="flex-1 items-center justify-center"
       style={{ backgroundColor: Colors[colorScheme].brandColor }}
     >
-      <ThemedText className="font-bold mb-4" type="logo" colorValue="primaryText">
-        GIG-Flow
+      <ThemedText type="logo" colorValue="logoText">
+        Gig-Flow
       </ThemedText>
     </View>
   );

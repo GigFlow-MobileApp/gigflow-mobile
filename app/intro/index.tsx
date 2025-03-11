@@ -1,5 +1,3 @@
-// app/intro/index.tsx
-import { useEffect } from "react";
 import { View, Dimensions, Pressable } from "react-native";
 import Logo from "@/assets/images/logo.svg";
 import { router } from "expo-router";
@@ -13,11 +11,8 @@ const title_description_margin = screenHeight * 12/844;
 const image_title__margin = screenHeight * 32/844;
 
 
-export default function IntroScreen() {
-  const { colorScheme, setColorScheme } = useColorScheme();
-  useEffect(() => {
-    setColorScheme("light"); // Forces light mode
-  }, []);
+export default function IntroScreen() { 
+  const { colorScheme} = useColorScheme();
 
   return (
     <View

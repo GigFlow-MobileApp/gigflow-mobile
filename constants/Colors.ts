@@ -9,6 +9,7 @@ export const Colors = {
 
     // Text
     text: '#000',
+    logoText: "#fff",
     primaryText: '#111827',
     secondaryText: '#364153',
     textTertiary: '#9CA3AF',
@@ -30,6 +31,7 @@ export const Colors = {
 
     // Text
     text: '#fff',
+    logoText: "#000",
     primaryText: '#EDEDED',
     secondaryText: '#B3B3B3',
     textTertiary: '#7D7D7D',
