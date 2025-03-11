@@ -1,7 +1,2 @@
-import { Stack } from 'expo-router';
-
-export default function IntroLayout() {
-  return (
-    <Stack screenOptions={{ headerShown: false }} />
-  );
-}
+import StackLayout from '@/components/StackLayout';
+export default StackLayout;
