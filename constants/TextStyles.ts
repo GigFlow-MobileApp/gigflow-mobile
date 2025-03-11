@@ -18,8 +18,8 @@ export const textStyles: Record<string, TextStyle> = {
   },
   subtitle: {
     fontSize: 24,
-    fontWeight: weight(600),
-    fontFamily: "System",
+    fontWeight: weight(400),
+    fontFamily: "Poppins",
   },
   section: {
     fontSize: 18,

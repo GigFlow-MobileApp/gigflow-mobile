@@ -14,6 +14,7 @@ export const Colors = {
     secondaryText: '#424955',
     textTertiary: '#9095A0',
     btnText: '#fff',
+    menuItemText: '#565E6C',
 
     // background
     background: '#fff',
@@ -36,6 +37,7 @@ export const Colors = {
     secondaryText: '#B3B3B3',
     textTertiary: '#7D7D7D',
     btnText: '#000',
+    menuItemText: '#565E6C',
 
     // background
     background: '#000',

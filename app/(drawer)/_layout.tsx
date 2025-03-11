@@ -2,15 +2,21 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Drawer } from "expo-router/drawer";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { Colors } from "@/constants/Colors";
-import { Image, View, StyleSheet } from "react-native";
+import { Dimensions } from "react-native";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import CustomDrawer from "@/components/CustomDrawerContent";
+import Logo from "@/assets/images/logo.svg";
 import "../../global.css";
+import { textStyles } from "@/constants/TextStyles";
+
+const screenHeight = Dimensions.get("window").height;
+const screenWdith = Dimensions.get("window").width;
+const menuWidth = screenWdith * (216 / 390);
 
 export default function DrawerLayout() {
-  const colorScheme = useColorScheme();
+  const {colorScheme} = useColorScheme();
 
   // const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -24,60 +30,69 @@ export default function DrawerLayout() {
     checkAuth();
   }, []);
 
+  const removeToken = async() => {
+    await AsyncStorage.removeItem('userToken')
+  }
+
   return (
     <Drawer
+      screenOptions={{
+        headerTintColor: Colors[colorScheme].text,
+        drawerStyle: {
+          width: menuWidth,
+          backgroundColor: Colors[colorScheme].background,
+        },
+        drawerActiveTintColor: Colors[colorScheme].tint,
+      }}
       drawerContent={(props) => (
         <CustomDrawer
           {...props}
-          topItems={
-            ([
+          topItems={([
               {
                 label: "Sync Data",
                 iconName: "sync",
-                onPress: {},
-              },
-              {
-                label: "Notification",
-                iconName: "notifications-outline",
-                onPress: {},
-              },
-              {
-                label: "Invite Friend",
-                iconName: "gift-outline",
-                onPress: {},
-              },
-              {
-                label: "Payment",
-                iconName: "card-outline",
-                onPress: {},
-              },
-            ])
-          }
-          bottomItems={
-            ([
-              {
-                label: "Help",
-                iconName: "help",
-                onPress: {},
-              },
+                onPress: () => {console.log('sync data')},
+              }
+          ])}
+          bottomItems={([
               {
                 label: "Sign out",
                 iconName: "log-out-outline",
                 rotate: true,
-                onPress: {},
+                onPress: () => {removeToken(); router.replace("/auth");},
               }
-            ])
-          }
+          ])}
+          logo=<Logo className={"w-25 h-25"} />
         />
       )}
-      screenOptions={{
-        headerTintColor: Colors[colorScheme ?? "light"].text,
-        drawerStyle: {
-          backgroundColor: Colors[colorScheme ?? "light"].background,
-        },
-        drawerActiveTintColor: Colors[colorScheme ?? "light"].tint,
-      }}
     >
+      <Drawer.Screen
+        name="notifications"
+        options={{
+          drawerLabel: "Notification",
+          drawerIcon: ({ color }) => (
+            <IconSymbol size={28} name="notifications" color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="inviteFriends"
+        options={{
+          drawerLabel: "Invite Friend",
+          drawerIcon: ({ color }) => (
+            <IconSymbol size={28} name="gift" color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="payment"
+        options={{
+          drawerLabel: "Payment",
+          drawerIcon: ({ color }) => (
+            <IconSymbol size={28} name="card" color={color} />
+          ),
+        }}
+      />
       <Drawer.Screen
         name="(tabs)"
         options={{
@@ -88,7 +103,7 @@ export default function DrawerLayout() {
         }}
       />
       <Drawer.Screen
-        name="menuItem2"
+        name="index"
         options={{
           drawerLabel: "Menu Item2",
           drawerIcon: ({ color }) => (
@@ -97,11 +112,20 @@ export default function DrawerLayout() {
         }}
       />
       <Drawer.Screen
-        name="menuItem3"
+        name="settings"
         options={{
           title: "Menu Item3",
           drawerIcon: ({ color }) => (
             <IconSymbol size={28} name="tools" color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="help"
+        options={{
+          title: "Help",
+          drawerIcon: ({ color }) => (
+            <IconSymbol size={28} name="help" color={color} />
           ),
         }}
       />
