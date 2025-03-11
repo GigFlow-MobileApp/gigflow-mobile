@@ -2,7 +2,6 @@ import {
   View,
   TextInput,
   TouchableOpacity,
-  Image,
   TouchableWithoutFeedback,
   Keyboard,
   Button,
@@ -13,6 +12,7 @@ import {
 } from "react-native";
 import { useState, useRef, useMemo, useEffect } from "react";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
+import Logo2 from "@/assets/images/logo2.svg";
 import { router } from "expo-router";
 import Checkbox from "expo-checkbox";
 import { ThemedText } from "@/components/ThemedText";
@@ -109,11 +109,7 @@ export default function AuthScreen() {
           <View className="flex-1" style={{backgroundColor: Colors[colorScheme ?? "light"].brandColor}}>
             {/* Top Logo with Blue background */}
             <View className={"items-center justify-start rounded-b-3xl mt-20"}>
-              <Image
-                source={require("@/assets/images/logo2.png")}
-                className={"w-20 h-20 mb-2"}
-                resizeMode="contain"
-              />
+              <Logo2 className={"w-20 h-20 mb-2"}/>
               <ThemedText 
                 className={"text-[32px] pt-3"}
                 colorValue="primaryText"

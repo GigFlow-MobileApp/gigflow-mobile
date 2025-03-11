@@ -1,5 +1,6 @@
 // app/intro/index.tsx
-import { View, Text, Button, Image } from "react-native";
+import { View, Text, Button } from "react-native";
+import Logo from "@/assets/images/logo.svg";
 import { router } from "expo-router";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { ThemedText } from "@/components/ThemedText";
@@ -11,11 +12,7 @@ export default function IntroScreen() {
     <View className="flex-1 justify-center bg-white px-4" style={{backgroundColor: Colors[colorScheme ?? "light"].background}}>
       <View className="items-center justify-center px-2">
         <View className={"items-center justify-start rounded-b-3xl"}>
-          <Image
-            source={require("@/assets/images/logo.png")}
-            className={"w-20 h-20 mb-2"}
-            resizeMode="contain"
-          />
+          <Logo  className={"w-20 h-20 mb-2"} />
           <ThemedText className={"pt-3 mt-8"} type="logo" colorValue="primaryText">
             GIg-Flow
           </ThemedText>
