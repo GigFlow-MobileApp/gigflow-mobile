@@ -1,37 +1,39 @@
-import { TextStyle } from "react-native";
-import { Platform } from "react-native";
+import { TextStyle, Platform } from "react-native";
 
 const ios = Platform.OS === 'ios';
+const platformWeightDiff = 100;
+const weight = (value: number): TextStyle['fontWeight'] => 
+  (ios ? value: value + platformWeightDiff).toString() as TextStyle['fontWeight'];
 
 export const textStyles: Record<string, TextStyle> = {
   logo: {
     fontSize: 40,
-    fontWeight: ios ? "600" : "800",
+    fontWeight: weight(600),
     fontFamily: "Poppins",
   },
   title: {
     fontSize: 24,
-    fontWeight: ios ? "600" : "800",
+    fontWeight: weight(600),
     fontFamily: "Poppins",
   },
   subtitle: {
     fontSize: 24,
-    fontWeight: ios ? "600" : "800",
+    fontWeight: weight(600),
     fontFamily: "System",
   },
   section: {
     fontSize: 18,
-    fontWeight: ios ? "700" : "900",
+    fontWeight: weight(700),
     fontFamily: "Montserrat",
   },
   btnText: {
     fontSize: 18,
-    fontWeight: ios ? "400" : "600",
+    fontWeight: weight(400),
     fontFamily: "Montserrat",
   },
   description: {
     fontSize: 16,
-    fontWeight: ios ? "400" : "600",
+    fontWeight: weight(400),
     fontFamily: "Montserrat",
   },
   link: {
@@ -41,12 +43,12 @@ export const textStyles: Record<string, TextStyle> = {
   },
   default: {
     fontSize: 16,
-    fontWeight: ios ? "400" : "600",
+    fontWeight: weight(400),
     fontFamily: "Montserrat",
   },
   defaultSemiBold: {
     fontSize: 16,
     fontFamily: "Montserrat",
-    fontWeight: ios ? "700" : "900",
+    fontWeight: weight(700),
   },
 };
