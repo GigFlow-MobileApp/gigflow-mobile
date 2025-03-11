@@ -6,7 +6,7 @@ import {
   Keyboard,
   Button,
   Platform,
-  Alert,
+  Dimensions,
   SafeAreaView,
   StatusBar,
 } from "react-native";
@@ -20,15 +20,20 @@ import { useNavigation } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Feather from "react-native-vector-icons/Feather";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { Colors } from "@/constants/Colors";
+
+const screenHeight = Dimensions.get('window').height;
+const bottomMargin = screenHeight * 48/844;
+const title_description_margin = screenHeight * 12/844;
+const image_title__margin = screenHeight * 32/844;
 
 const STATUS_BAR_HEIGHT =
   Platform.OS === "android" ? StatusBar.currentHeight || 30 : 50;
 const BOTTOM_INSET_HEIGHT = 34; // approx height for iPhone home indicator
 
 export default function AuthScreen() {
-  const colorScheme = useColorScheme();
+  const {colorScheme} = useColorScheme();
   const bottomSheetRef = useRef<BottomSheet>(null);
   const navigation = useNavigation();
   const [email, setEmail] = useState("");
@@ -68,7 +73,8 @@ export default function AuthScreen() {
 
   const handleInputFocus = () => {
     inputFocusCount.current += 1;
-    bottomSheetRef.current?.snapToIndex(2);
+    const targetIdx = Platform.OS === 'ios' ? 2 : 1;
+    bottomSheetRef.current?.snapToIndex(targetIdx);
   };
 
   const handleInputBlur = () => {
@@ -76,7 +82,8 @@ export default function AuthScreen() {
 
     setTimeout(() => {
       if (inputFocusCount.current <= 0) {
-        bottomSheetRef.current?.snapToIndex(1);
+        const targetIdx = Platform.OS === 'ios' ? 1 : 0;
+        bottomSheetRef.current?.snapToIndex(targetIdx);
       }
     }, 50); // Give time for another input to focus if applicable
   };
@@ -97,22 +104,22 @@ export default function AuthScreen() {
       {/* TOP SAFE AREA FIX cyan bg color*/}
       <View
         className="absolute left-0 right-0 z-0"
-        style={{ top: 0, height: STATUS_BAR_HEIGHT, backgroundColor: Colors[colorScheme ?? "light"].brandColor }}
+        style={{ top: 0, height: STATUS_BAR_HEIGHT, backgroundColor: Colors[colorScheme].brandColor }}
       />
       {/* BOTTOM SAFE AREA FIX white bg color*/}
       <View
         className="absolute left-0 right-0 z-0"
-        style={{ bottom: 0, height: BOTTOM_INSET_HEIGHT, backgroundColor: Colors[colorScheme ?? "light"].backgroundCard}}
+        style={{ bottom: 0, height: BOTTOM_INSET_HEIGHT, backgroundColor: Colors[colorScheme].backgroundCard}}
       />
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <SafeAreaView style={{ flex: 1 }}>
-          <View className="flex-1" style={{backgroundColor: Colors[colorScheme ?? "light"].brandColor}}>
+          <View className="flex-1" style={{backgroundColor: Colors[colorScheme].brandColor}}>
             {/* Top Logo with Blue background */}
             <View className={"items-center justify-start rounded-b-3xl mt-20"}>
-              <Logo2 className={"w-20 h-20 mb-2"}/>
+              <Logo2 className={"w-25 h-25"}/>
               <ThemedText 
-                className={"text-[32px] pt-3"}
-                colorValue="primaryText"
+                className={"py-4"}
+                colorValue="logoText"
                 type="title"
               >
                 GIG-Flow
@@ -129,10 +136,10 @@ export default function AuthScreen() {
               backgroundStyle={{
                 borderTopLeftRadius: 12,
                 borderTopRightRadius: 12,
-                backgroundColor: Colors[colorScheme ?? "light"].backgroundCard
+                backgroundColor: Colors[colorScheme].backgroundCard
               }}
               handleIndicatorStyle={{
-                backgroundColor: Colors[colorScheme ?? "light"].secondaryText,
+                backgroundColor: Colors[colorScheme].secondaryText,
                 width: 56,
                 height: 4,
                 alignSelf: "center",
@@ -147,11 +154,7 @@ export default function AuthScreen() {
                   {/* Title + Inputs */}
                   <View>
                     <View className="items-center">
-                      <ThemedText
-                        className="text-light"
-                        type="title"
-                        colorValue="primaryText"
-                      >
+                      <ThemedText type="title" colorValue="primaryText">
                         {isLogin ? "Sign In" : "Sign Up"}
                       </ThemedText>
                     </View>
@@ -168,7 +171,10 @@ export default function AuthScreen() {
                         onBlur={handleInputBlur}
                         placeholder="apple@apple.com"
                         className="border rounded-lg px-4 pb-3 pt-2 mb-4 text-lg"
-                        style={{borderColor: Colors[colorScheme ?? "light"].border}}
+                        style={{
+                          borderColor: Colors[colorScheme].border,
+                          color: Colors[colorScheme].primaryText
+                        }}
                         keyboardType="email-address"
                         autoCapitalize="none"
                       />
@@ -179,13 +185,14 @@ export default function AuthScreen() {
                       </ThemedText>
                       <View 
                         className="flex-row border rounded-lg px-4 items-center"
-                        style={{borderColor: Colors[colorScheme ?? "light"].border}}
+                        style={{borderColor: Colors[colorScheme].border}}
                       >
                         <TextInput
                           value={password}
                           onChangeText={setPassword}
                           onFocus={handleInputFocus}
                           onBlur={handleInputBlur}
+                          style={{color: Colors[colorScheme].primaryText}}
                           placeholder="Password"
                           secureTextEntry={secureText}
                           className="flex-1 pb-3 pt-2 text-lg"
@@ -196,8 +203,8 @@ export default function AuthScreen() {
                         >
                           <Feather
                             name={secureText ? "eye-off" : "eye"}
-                            size={20}
-                            color="gray"
+                            size={24}
+                            color={Colors[colorScheme].primaryText}
                           />
                         </TouchableOpacity>
                       </View>
@@ -211,7 +218,7 @@ export default function AuthScreen() {
                         <Checkbox
                           value={agreeTermConditions}
                           onValueChange={setAgreeTermConditions}
-                          color={agreeTermConditions ? Colors[colorScheme ?? "light"].brandColor : undefined}
+                          color={agreeTermConditions ? Colors[colorScheme].brandColor : undefined}
                         />
                         <ThemedText colorValue="textTertiary">
                           {" "}
@@ -219,10 +226,10 @@ export default function AuthScreen() {
                         </ThemedText>
                       </View>
                     )}
-                    <View className="rounded-lg" style={{backgroundColor: Colors[colorScheme ?? "light"].brandColor }}>
+                    <View className="rounded-lg" style={{backgroundColor: Colors[colorScheme].brandColor }}>
                       <Button
                         title={isLogin ? "Log In" : "Sign Up"}
-                        color={Colors[colorScheme ?? "light"].text}
+                        color={Colors[colorScheme].text}
                         onPress={() => (isLogin ? login() : signup())}
                       />
                     </View>
