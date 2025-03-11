@@ -1,15 +1,11 @@
-import { Text, View } from "react-native";
+import SplashPage from '@/components/splash';
+import { useEffect } from "react";
+import { useColorScheme } from "@/components/ColorSchemeProvider";
 
 export default function Index() {
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text>Hello World</Text>
-    </View>
-  );
+  const { setColorScheme } = useColorScheme();
+    useEffect(() => {
+      setColorScheme("light"); // Forces light mode
+    }, []);
+  return <SplashPage />;
 }
