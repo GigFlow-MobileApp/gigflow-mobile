@@ -1,63 +1,16 @@
 import {
   Text,
   TextProps,
-  StyleSheet,
   StyleProp,
   TextStyle,
 } from "react-native";
 import { useMemo } from "react";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { Colors } from "@/constants/Colors";
+import { textStyles } from "@/constants/TextStyles";
 
 const TAILWIND_TEXT_COLOR_REGEX =
   /\btext-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|black|white)(?:-\d{3})?\b/;
-
-const textStyles: Record<string, TextStyle> = {
-  logo: {
-    fontSize: 40,
-    fontWeight: "600",
-    fontFamily: "Poppins",
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    fontFamily: "System",
-  },
-  subtitle: {
-    fontSize: 24,
-    fontWeight: "600",
-    fontFamily: "System",
-  },
-  section: {
-    fontSize: 20,
-    fontWeight: "500",
-    fontFamily: "System",
-  },
-  btnText: {
-    fontSize: 18,
-    fontWeight: "400",
-    fontFamily: "Montserrat",
-  },
-  description: {
-    fontSize: 16,
-    fontWeight: "400",
-    fontFamily: "Montserrat",
-  },
-  link: {
-    fontSize: 16,
-    fontFamily: "System",
-    textDecorationLine: "underline",
-  },
-  default: {
-    fontSize: 16,
-    fontFamily: "System",
-  },
-  defaultSemiBold: {
-    fontSize: 16,
-    fontFamily: "System",
-    fontWeight: "600",
-  },
-};
 
 type ThemedTextType = keyof typeof textStyles;
 type ColorKey = keyof typeof Colors.light;
