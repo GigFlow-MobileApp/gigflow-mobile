@@ -1,6 +1,6 @@
 const tintColorLight = '#2f95dc';
 const tintColorDark = '#fff';
-const brandColorLight = '#00b8db'; //'#29c3e5';
+const brandColorLight = '#29c3e5'; //'#00b8db'; 
 const brandColorDark = '#007595';
 
 export const Colors = {
@@ -12,11 +12,12 @@ export const Colors = {
     primaryText: '#111827',
     secondaryText: '#364153',
     textTertiary: '#9CA3AF',
+    btnText: '#fff',
 
     // background
     background: '#fff',
     backgroundCard: '#fff',
-    buttonBackground: brandColorLight,
+    btnBackground: brandColorLight,
 
     // others
     border: "#E0E0E0",
@@ -32,11 +33,12 @@ export const Colors = {
     primaryText: '#EDEDED',
     secondaryText: '#B3B3B3',
     textTertiary: '#7D7D7D',
+    btnText: '#000',
 
     // background
     background: '#000',
     backgroundCard: '#1C1C1C',
-    buttonBackground: brandColorDark,
+    btnBackground: brandColorDark,
 
     // others
     border: "#333333",

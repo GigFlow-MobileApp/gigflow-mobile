@@ -1,23 +1,47 @@
 // app/intro/index.tsx
-import { View, Text, Button } from "react-native";
+import { useEffect } from "react";
+import { View, Dimensions, Pressable } from "react-native";
 import Logo from "@/assets/images/logo.svg";
 import { router } from "expo-router";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 
+const screenHeight = Dimensions.get('window').height;
+const bottomMargin = screenHeight * 48/844;
+const title_description_margin = screenHeight * 12/844;
+const image_title__margin = screenHeight * 32/844;
+
+
 export default function IntroScreen() {
-  const colorScheme = useColorScheme();
+  const { colorScheme, setColorScheme } = useColorScheme();
+  useEffect(() => {
+    setColorScheme("light"); // Forces light mode
+  }, []);
+
   return (
-    <View className="flex-1 justify-center bg-white px-4" style={{backgroundColor: Colors[colorScheme ?? "light"].background}}>
-      <View className="items-center justify-center px-2">
+    <View
+      className="flex-1 justify-center bg-white px-5"
+      style={{ backgroundColor: Colors[colorScheme].background }}
+    >
+      <View className="items-center justify-center px-6">
         <View className={"items-center justify-start rounded-b-3xl"}>
-          <Logo  className={"w-20 h-20 mb-2"} />
-          <ThemedText className={"pt-3 mt-8"} type="logo" colorValue="primaryText">
+          <Logo style={{height: 100, width: 100}}/>
+          <ThemedText
+            className="py-2"
+            style={{marginTop: image_title__margin}}
+            type="logo"
+            colorValue="primaryText"
+          >
             GIg-Flow
           </ThemedText>
         </View>
-        <ThemedText className="text-center mb-6 pt-5 px-4" type="description" colorValue="secondaryText">
+        <ThemedText
+          className="text-center py-5 px-4"
+          style={{marginTop: title_description_margin}}
+          type="description"
+          colorValue="secondaryText"
+        >
           Manage your finances effortlessly{"\n"} with our intuitive app.
         </ThemedText>
       </View>
@@ -25,13 +49,20 @@ export default function IntroScreen() {
         className="absolute pb-10"
         style={{ bottom: 0, alignSelf: "center", width: "100%" }}
       >
-        <View className="rounded-lg overflow-hidden" style={{ backgroundColor: Colors[colorScheme ?? "light"].buttonBackground}}>
-          <Button
-            title="Get Started"
-            onPress={() => router.replace("/auth")}
-            color={Colors[colorScheme ?? "light"].text}
-          />
-        </View>
+        <Pressable
+          onPress={() => router.replace("/auth")}
+          style={{
+            backgroundColor: Colors[colorScheme].btnBackground,
+            paddingVertical: 12,
+            marginBottom: bottomMargin,
+            borderRadius: 6,
+            alignItems: "center",
+          }}
+        >
+          <ThemedText type="btnText" colorValue="btnText">
+            Get Started
+          </ThemedText>
+        </Pressable>
       </View>
     </View>
   );
