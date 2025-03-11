@@ -2,23 +2,65 @@ import {
   Text,
   TextProps,
   StyleSheet,
+  StyleProp,
+  TextStyle,
 } from "react-native";
+import { useMemo } from "react";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Colors } from "@/constants/Colors";
 
-export type ThemedTextType =
-  | "default"
-  | "defaultSemiBold"
-  | "title"
-  | "subtitle"
-  | "section"
-  | "link";
 const TAILWIND_TEXT_COLOR_REGEX =
   /\btext-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|black|white)(?:-\d{3})?\b/;
+
+const textStyles: Record<string, TextStyle> = {
+  logo: {
+    fontSize: 48,
+    fontWeight: "800",
+    fontFamily: "System",
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
+    fontFamily: "System",
+  },
+  subtitle: {
+    fontSize: 24,
+    fontWeight: "600",
+    fontFamily: "System",
+  },
+  section: {
+    fontSize: 20,
+    fontWeight: "500",
+    fontFamily: "System",
+  },
+  description: {
+    fontSize: 18,
+    fontWeight: "400",
+    fontFamily: "System",
+  },
+  link: {
+    fontSize: 16,
+    fontFamily: "System",
+    textDecorationLine: "underline",
+  },
+  default: {
+    fontSize: 16,
+    fontFamily: "System",
+  },
+  defaultSemiBold: {
+    fontSize: 16,
+    fontFamily: "System",
+    fontWeight: "600",
+  },
+};
+
+type ThemedTextType = keyof typeof textStyles;
+type ColorKey = keyof typeof Colors.light;
 
 interface ThemedTextProps extends TextProps {
   type?: ThemedTextType;
   className?: string;
+  colorValue?: ColorKey;
   children: React.ReactNode;
 }
 
@@ -37,63 +79,27 @@ export function ThemedText({
   type = "default",
   className,
   style,
+  colorValue,
   ...props
 }: ThemedTextProps) {
   const colorScheme = useColorScheme();
 
+  const themedStyle = useMemo<StyleProp<TextStyle>>(() => {
+    const baseStyle: TextStyle[]  = [textStyles[type]];
+
+    if (!classNameHasTextColor(className) && !styleHasColor(style)) {
+      baseStyle.push({ color: type === "link"
+            ? Colors[colorScheme ?? "light"].tint
+            : Colors[colorScheme ?? "light"].text,
+      });
+    }
+
+    if (colorValue) baseStyle.push({ color: Colors[colorScheme ?? "light"][colorValue]});
+
+    return [baseStyle, style];
+  }, [type, className, style, colorScheme]);
+
   return (
-    <Text
-      className={className}
-      style={[
-        styles.default,
-        type === "defaultSemiBold" ? styles.defaultSemiBold : undefined,
-        type === "title" ? styles.title : undefined,
-        type === "subtitle" ? styles.subtitle : undefined,
-        type === "section" ? styles.section : undefined,
-        type === "link" ? styles.link : undefined,
-        // ✅ Only apply fallback color if no text color is set
-        !classNameHasTextColor(className) &&
-          !styleHasColor(style) && {
-            color:
-              type === "link"
-                ? Colors[colorScheme ?? "light"].tint
-                : Colors[colorScheme ?? "light"].text,
-          },
-        style,
-      ]}
-      {...props}
-    />
+    <Text className={className} style={themedStyle} {...props} />
   );
 }
-
-const styles = StyleSheet.create({
-  default: {
-    fontSize: 16,
-    fontFamily: "System",
-  },
-  defaultSemiBold: {
-    fontSize: 16,
-    fontFamily: "System",
-    fontWeight: "600",
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    fontFamily: "System",
-  },
-  subtitle: {
-    fontSize: 24,
-    fontWeight: "600",
-    fontFamily: "System",
-  },
-  section: {
-    fontSize: 20,
-    fontWeight: "500",
-    fontFamily: "System",
-  },
-  link: {
-    fontSize: 16,
-    fontFamily: "System",
-    textDecorationLine: "underline",
-  },
-});
