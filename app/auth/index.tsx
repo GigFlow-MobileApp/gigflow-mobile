@@ -1,6 +1,5 @@
 import {
   View,
-  Text,
   TextInput,
   TouchableOpacity,
   Image,
@@ -21,12 +20,15 @@ import { useNavigation } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Feather from "react-native-vector-icons/Feather";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { Colors } from "@/constants/Colors";
 
 const STATUS_BAR_HEIGHT =
   Platform.OS === "android" ? StatusBar.currentHeight || 30 : 50;
 const BOTTOM_INSET_HEIGHT = 34; // approx height for iPhone home indicator
 
 export default function AuthScreen() {
+  const colorScheme = useColorScheme();
   const bottomSheetRef = useRef<BottomSheet>(null);
   const navigation = useNavigation();
   const [email, setEmail] = useState("");
@@ -94,17 +96,17 @@ export default function AuthScreen() {
       {/* ABSOLUTE BG COLOR FIXERS */}
       {/* TOP SAFE AREA FIX cyan bg color*/}
       <View
-        className="absolute left-0 right-0 bg-cyan-500 z-0"
-        style={{ top: 0, height: STATUS_BAR_HEIGHT }}
+        className="absolute left-0 right-0 z-0"
+        style={{ top: 0, height: STATUS_BAR_HEIGHT, backgroundColor: Colors[colorScheme ?? "light"].brandColor }}
       />
       {/* BOTTOM SAFE AREA FIX white bg color*/}
       <View
-        className="absolute left-0 right-0 bg-white z-0"
-        style={{ bottom: 0, height: BOTTOM_INSET_HEIGHT }}
+        className="absolute left-0 right-0 z-0"
+        style={{ bottom: 0, height: BOTTOM_INSET_HEIGHT, backgroundColor: Colors[colorScheme ?? "light"].backgroundCard}}
       />
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <SafeAreaView style={{ flex: 1 }}>
-          <View className="bg-cyan-500 flex-1">
+          <View className="flex-1" style={{backgroundColor: Colors[colorScheme ?? "light"].brandColor}}>
             {/* Top Logo with Blue background */}
             <View className={"items-center justify-start rounded-b-3xl mt-20"}>
               <Image
@@ -131,10 +133,10 @@ export default function AuthScreen() {
               backgroundStyle={{
                 borderTopLeftRadius: 12,
                 borderTopRightRadius: 12,
-                backgroundColor: "white",
+                backgroundColor: Colors[colorScheme ?? "light"].backgroundCard
               }}
               handleIndicatorStyle={{
-                backgroundColor: "#ccc",
+                backgroundColor: Colors[colorScheme ?? "light"].secondaryText,
                 width: 56,
                 height: 4,
                 alignSelf: "center",
@@ -150,8 +152,9 @@ export default function AuthScreen() {
                   <View>
                     <View className="items-center">
                       <ThemedText
-                        className="text-gray-800 text-light"
+                        className="text-light"
                         type="title"
+                        colorValue="primaryText"
                       >
                         {isLogin ? "Sign In" : "Sign Up"}
                       </ThemedText>
@@ -159,7 +162,7 @@ export default function AuthScreen() {
 
                     {/* Email Input */}
                     <View className="mt-8">
-                      <ThemedText className="text-gray-700 mb-1" type="section">
+                      <ThemedText className="mb-1" type="section" colorValue="secondaryText">
                         Email Address
                       </ThemedText>
                       <TextInput
@@ -168,16 +171,20 @@ export default function AuthScreen() {
                         onFocus={handleInputFocus}
                         onBlur={handleInputBlur}
                         placeholder="apple@apple.com"
-                        className="border border-gray-300 rounded-lg px-4 pb-3 pt-2 mb-4 text-lg"
+                        className="border rounded-lg px-4 pb-3 pt-2 mb-4 text-lg"
+                        style={{borderColor: Colors[colorScheme ?? "light"].border}}
                         keyboardType="email-address"
                         autoCapitalize="none"
                       />
 
                       {/* Password Input */}
-                      <ThemedText className="text-gray-700 mb-1" type="section">
+                      <ThemedText className="mb-1" type="section" colorValue="secondaryText">
                         Password
                       </ThemedText>
-                      <View className="flex-row border border-gray-300 rounded-lg px-4 items-center">
+                      <View 
+                        className="flex-row border rounded-lg px-4 items-center"
+                        style={{borderColor: Colors[colorScheme ?? "light"].border}}
+                      >
                         <TextInput
                           value={password}
                           onChangeText={setPassword}
@@ -208,23 +215,23 @@ export default function AuthScreen() {
                         <Checkbox
                           value={agreeTermConditions}
                           onValueChange={setAgreeTermConditions}
-                          color={agreeTermConditions ? "#00b8db" : undefined}
+                          color={agreeTermConditions ? Colors[colorScheme ?? "light"].brandColor : undefined}
                         />
-                        <ThemedText className="text-gray-500">
+                        <ThemedText colorValue="textTertiary">
                           {" "}
                           I agree with Terms & Conditions{" "}
                         </ThemedText>
                       </View>
                     )}
-                    <View className="rounded-lg bg-cyan-500">
+                    <View className="rounded-lg" style={{backgroundColor: Colors[colorScheme ?? "light"].brandColor }}>
                       <Button
                         title={isLogin ? "Log In" : "Sign Up"}
-                        color="white"
+                        color={Colors[colorScheme ?? "light"].text}
                         onPress={() => (isLogin ? login() : signup())}
                       />
                     </View>
                     <View className="flex flex-row justify-center">
-                      <ThemedText className="text-center text-gray-500 pt-5">
+                      <ThemedText className="text-center pt-5" colorValue="textTertiary">
                         {isLogin
                           ? "Don't have an account? "
                           : "Already have an account? "}
@@ -234,7 +241,7 @@ export default function AuthScreen() {
                         onPress={() => setIsLogin(!isLogin)}
                         hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
                       >
-                        <ThemedText className="text-cyan-500">
+                        <ThemedText colorValue="brandColor">
                           {isLogin ? "Sign up" : "Sign in"}
                         </ThemedText>
                       </TouchableOpacity>
