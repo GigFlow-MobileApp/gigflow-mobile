@@ -32,6 +32,11 @@ const STATUS_BAR_HEIGHT =
   Platform.OS === "android" ? StatusBar.currentHeight || 30 : 50;
 const BOTTOM_INSET_HEIGHT = 34; // approx height for iPhone home indicator
 
+type FormErrors = {
+  email?: string;
+  password?: string;
+};
+
 export default function AuthScreen() {
   const { colorScheme } = useColorScheme();
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -88,7 +93,21 @@ export default function AuthScreen() {
     }, 50); // Give time for another input to focus if applicable
   };
 
+  const validate = () => {
+    const newErrors: FormErrors = {};
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = 'Invalid email format';
+      alert(newErrors.email);
+    }
+    if (password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+      alert(newErrors.password);
+    }
+    return Object.keys(newErrors).length === 0;
+  };
+
   const login = async () => {
+    if (!validate()) return
     await AsyncStorage.setItem("userToken", "temp_id");
     console.log("token_set");
     router.replace("/(drawer)");
