@@ -30,7 +30,7 @@ const field_btn_margin = screenHeight * (42 / 844);
 const STATUS_BAR_HEIGHT =
   Platform.OS === "android" ? StatusBar.currentHeight || 30 : 50;
 const BOTTOM_INSET_HEIGHT = 34; // approx height for iPhone home indicator
-const test = true;
+const test = false;
 
 type FormErrors = {
   email?: string;

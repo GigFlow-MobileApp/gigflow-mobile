@@ -42,7 +42,11 @@ export default function DrawerLayout() {
           width: menuWidth,
           backgroundColor: Colors[colorScheme].background,
         },
-        drawerActiveTintColor: Colors[colorScheme].tint,
+        drawerLabelStyle: {
+          ...textStyles.description,
+        },
+        drawerInactiveTintColor: Colors[colorScheme].menuItemText,
+        drawerActiveTintColor: Colors[colorScheme].onPressText,
       }}
       drawerContent={(props) => (
         <CustomDrawer
@@ -51,7 +55,7 @@ export default function DrawerLayout() {
               {
                 label: "Sync Data",
                 iconName: "sync",
-                onPress: () => {console.log('sync data')},
+                onPress: () => {alert('sync data')},
               }
           ])}
           bottomItems={([
