@@ -7,9 +7,9 @@ export const textStyles: Record<string, TextStyle> = {
     fontFamily: "Poppins",
   },
   title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    fontFamily: "System",
+    fontSize: 24,
+    fontWeight: "600",
+    fontFamily: "Poppins",
   },
   subtitle: {
     fontSize: 24,
@@ -17,9 +17,9 @@ export const textStyles: Record<string, TextStyle> = {
     fontFamily: "System",
   },
   section: {
-    fontSize: 20,
-    fontWeight: "500",
-    fontFamily: "System",
+    fontSize: 18,
+    fontWeight: "700",
+    fontFamily: "Montserrat",
   },
   btnText: {
     fontSize: 18,
@@ -38,11 +38,12 @@ export const textStyles: Record<string, TextStyle> = {
   },
   default: {
     fontSize: 16,
-    fontFamily: "System",
+    fontWeight: "400",
+    fontFamily: "Montserrat",
   },
   defaultSemiBold: {
     fontSize: 16,
-    fontFamily: "System",
-    fontWeight: "600",
+    fontFamily: "Montserrat",
+    fontWeight: "700",
   },
 };

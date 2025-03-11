@@ -10,9 +10,9 @@ export const Colors = {
     // Text
     text: '#000',
     logoText: "#fff",
-    primaryText: '#111827',
-    secondaryText: '#364153',
-    textTertiary: '#9CA3AF',
+    primaryText: '#171A1F',
+    secondaryText: '#424955',
+    textTertiary: '#9095A0',
     btnText: '#fff',
 
     // background
@@ -21,7 +21,7 @@ export const Colors = {
     btnBackground: brandColorLight,
 
     // others
-    border: "#E0E0E0",
+    border: "#BCC1CA",
     tint: tintColorLight,
     tabIconDefault: '#ccc',
     tabIconSelected: tintColorLight,

@@ -32,7 +32,7 @@ export default function IntroScreen() {
           </ThemedText>
         </View>
         <ThemedText
-          className="text-center py-5 px-4"
+          className="text-center px-4"
           style={{marginTop: title_description_margin}}
           type="description"
           colorValue="secondaryText"
