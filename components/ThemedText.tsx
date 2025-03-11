@@ -15,7 +15,7 @@ const TAILWIND_TEXT_COLOR_REGEX =
 const textStyles: Record<string, TextStyle> = {
   logo: {
     fontSize: 40,
-    fontWeight: "800",
+    fontWeight: "600",
     fontFamily: "Poppins",
   },
   title: {
