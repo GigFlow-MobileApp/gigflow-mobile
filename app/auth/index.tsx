@@ -112,9 +112,13 @@ export default function AuthScreen() {
                 className={"w-20 h-20 mb-2"}
                 resizeMode="contain"
               />
-              <Text className={"text-white font-semibold text-[32px] pt-3"}>
+              <ThemedText 
+                className={"text-[32px] pt-3"}
+                colorValue="primaryText"
+                type="title"
+              >
                 GIG-Flow
-              </Text>
+              </ThemedText>
             </View>
             {/* BottomSheet */}
             <BottomSheet
