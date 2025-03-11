@@ -15,11 +15,11 @@ import {
 import { useState, useRef, useMemo, useEffect } from "react";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
-import Checkbox from 'expo-checkbox';
+import Checkbox from "expo-checkbox";
 import { ThemedText } from "@/components/ThemedText";
 import { useNavigation } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Feather from "react-native-vector-icons/Feather";
 
 const STATUS_BAR_HEIGHT =
@@ -80,14 +80,14 @@ export default function AuthScreen() {
   };
 
   const login = async () => {
-    await AsyncStorage.setItem('userToken', 'temp_id');
+    await AsyncStorage.setItem("userToken", "temp_id");
     console.log("token_set");
     router.replace("/(drawer)");
-  }
+  };
 
   const signup = () => {
-    alert("Not Implemented yet!")
-  }
+    alert("Not Implemented yet!");
+  };
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -105,18 +105,17 @@ export default function AuthScreen() {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <SafeAreaView style={{ flex: 1 }}>
           <View className="bg-cyan-500 flex-1">
-            {/* Top Blue Header */}
-            <View className="items-center justify-start rounded-b-3xl mt-20">
+            {/* Top Logo with Blue background */}
+            <View className={"items-center justify-start rounded-b-3xl mt-20"}>
               <Image
-                source={require("@/assets/images/icon.png")}
-                className="w-20 h-20 mb-2"
+                source={require("@/assets/images/logo2.png")}
+                className={"w-20 h-20 mb-2"}
                 resizeMode="contain"
               />
-              <ThemedText type="title" className="text-white font-semibold pt-3" >
+              <Text className={"text-white font-semibold text-[32px] pt-3"}>
                 GIG-Flow
-              </ThemedText>
+              </Text>
             </View>
-
             {/* BottomSheet */}
             <BottomSheet
               ref={bottomSheetRef}
@@ -146,7 +145,10 @@ export default function AuthScreen() {
                   {/* Title + Inputs */}
                   <View>
                     <View className="items-center">
-                      <ThemedText className="text-gray-800 text-light" type="title">
+                      <ThemedText
+                        className="text-gray-800 text-light"
+                        type="title"
+                      >
                         {isLogin ? "Sign In" : "Sign Up"}
                       </ThemedText>
                     </View>
@@ -197,24 +199,26 @@ export default function AuthScreen() {
 
                   {/* Bottom Buttons */}
                   <View className="">
-                    ${!isLogin && (
-                    <View className="flex-row pb-5">
-                      <Checkbox 
-                        value={agreeTermConditions} 
-                        onValueChange={setAgreeTermConditions} 
-                        color={agreeTermConditions ? '#00b8db' : undefined}
-                      />
-                      <ThemedText className="text-gray-500"> I agree with Terms & Conditions </ThemedText>
-                    </View>
+                    {!isLogin && (
+                      <View className="flex-row pb-5">
+                        <Checkbox
+                          value={agreeTermConditions}
+                          onValueChange={setAgreeTermConditions}
+                          color={agreeTermConditions ? "#00b8db" : undefined}
+                        />
+                        <ThemedText className="text-gray-500">
+                          {" "}
+                          I agree with Terms & Conditions{" "}
+                        </ThemedText>
+                      </View>
                     )}
                     <View className="rounded-lg bg-cyan-500">
                       <Button
                         title={isLogin ? "Log In" : "Sign Up"}
                         color="white"
-                        onPress={() => isLogin ? login() : signup()}
+                        onPress={() => (isLogin ? login() : signup())}
                       />
                     </View>
-
                     <View className="flex flex-row justify-center">
                       <ThemedText className="text-center text-gray-500 pt-5">
                         {isLogin
