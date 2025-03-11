@@ -6,7 +6,7 @@ import {
   TextStyle,
 } from "react-native";
 import { useMemo } from "react";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { Colors } from "@/constants/Colors";
 
 const TAILWIND_TEXT_COLOR_REGEX =
@@ -14,9 +14,9 @@ const TAILWIND_TEXT_COLOR_REGEX =
 
 const textStyles: Record<string, TextStyle> = {
   logo: {
-    fontSize: 48,
+    fontSize: 40,
     fontWeight: "800",
-    fontFamily: "System",
+    fontFamily: "Poppins",
   },
   title: {
     fontSize: 32,
@@ -33,10 +33,15 @@ const textStyles: Record<string, TextStyle> = {
     fontWeight: "500",
     fontFamily: "System",
   },
-  description: {
+  btnText: {
     fontSize: 18,
     fontWeight: "400",
-    fontFamily: "System",
+    fontFamily: "Montserrat",
+  },
+  description: {
+    fontSize: 16,
+    fontWeight: "400",
+    fontFamily: "Montserrat",
   },
   link: {
     fontSize: 16,
@@ -82,19 +87,19 @@ export function ThemedText({
   colorValue,
   ...props
 }: ThemedTextProps) {
-  const colorScheme = useColorScheme();
+  const {colorScheme} = useColorScheme();
 
   const themedStyle = useMemo<StyleProp<TextStyle>>(() => {
     const baseStyle: TextStyle[]  = [textStyles[type]];
 
     if (!classNameHasTextColor(className) && !styleHasColor(style)) {
       baseStyle.push({ color: type === "link"
-            ? Colors[colorScheme ?? "light"].tint
-            : Colors[colorScheme ?? "light"].text,
+            ? Colors[colorScheme].tint
+            : Colors[colorScheme].text,
       });
     }
 
-    if (colorValue) baseStyle.push({ color: Colors[colorScheme ?? "light"][colorValue]});
+    if (colorValue) baseStyle.push({ color: Colors[colorScheme][colorValue]});
 
     return [baseStyle, style];
   }, [type, className, style, colorScheme]);
