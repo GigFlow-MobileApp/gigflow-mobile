@@ -14,11 +14,14 @@ export const Colors = {
     secondaryText: '#424955',
     textTertiary: '#9095A0',
     btnText: '#fff',
+    menuItemText: '#565E6C',
+    onPressText: "#007aff80",
 
     // background
     background: '#fff',
     backgroundCard: '#fff',
     btnBackground: brandColorLight,
+    onPressBg: "#007aff1a",
 
     // others
     border: "#BCC1CA",
@@ -36,11 +39,14 @@ export const Colors = {
     secondaryText: '#B3B3B3',
     textTertiary: '#7D7D7D',
     btnText: '#000',
+    menuItemText: '#565E6C',
+    onPressText: "#007affcc",
 
     // background
     background: '#000',
     backgroundCard: '#1C1C1C',
     btnBackground: brandColorDark,
+    onPressBg: "#007aff1a",
 
     // others
     border: "#333333",
