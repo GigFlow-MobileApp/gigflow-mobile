@@ -1,21 +1,32 @@
-import React, { useRef } from 'react';
+import { useState, useEffect, useRef} from "react";
 import { Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export const AnimatedSyncIcon = ({ rotating }: { rotating: boolean }) => {
   const rotateAnim = useRef(new Animated.Value(0)).current;
+  const [syncing, setSyncing] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (rotating) {
-      rotateAnim.setValue(0); // Reset rotation
+      setSyncing(true);
+      const timer = setTimeout(() => setSyncing(false), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [rotating]);
+
+  useEffect(() => {
+    if (syncing) {
+      rotateAnim.setValue(0);
+
       Animated.timing(rotateAnim, {
         toValue: 1,
         duration: 800,
         easing: Easing.linear,
         useNativeDriver: true,
       }).start();
+      setSyncing(false);
     }
-  }, [rotating]);
+  }, [syncing]);
 
   const rotation = rotateAnim.interpolate({
     inputRange: [0, 1],
@@ -23,8 +34,8 @@ export const AnimatedSyncIcon = ({ rotating }: { rotating: boolean }) => {
   });
 
   return (
-    <Animated.View style={{ transform: [{ rotate: rotation }], marginRight: 13}}>
-      <Ionicons name="sync" size={24} />
+    <Animated.View style={{ transform: [{ rotate: rotation }]}}>
+      <Ionicons name="sync" size={28} />
     </Animated.View>
   );
 };
