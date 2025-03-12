@@ -8,7 +8,7 @@ export default function PaymentScreen() {
       justifyContent: "center",
       alignItems: "center",
     }}>
-      <Text>Payments</Text>
+      <Text>History Page</Text>
     </View>
   );
 }
