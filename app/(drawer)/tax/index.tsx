@@ -1,6 +1,6 @@
 import { View, Text } from "react-native";
 
-export default function SettingScreen() {
+export default function TaxScreen() {
   return (
     <View
       style={{
@@ -9,7 +9,7 @@ export default function SettingScreen() {
         alignItems: "center",
       }}
     >
-      <Text>Setting Page</Text>
+      <Text>Fee{'/'}Tax Page</Text>
     </View>
   );
 }
