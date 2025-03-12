@@ -1,25 +1,19 @@
 import { Button, Text, View } from "react-native";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from "expo-router";
+import { useColorScheme } from "@/components/ColorSchemeProvider";
+import { Colors } from "@/constants/Colors";
 
 export default function Index() {
-
-  const removeToken = async() => {
-    await AsyncStorage.removeItem('userToken')
-  }
+  const { colorScheme } = useColorScheme();
   return (
     <View
       style={{
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
+        backgroundColor: Colors[colorScheme].background,
       }}
     >
       <Text>Hello World</Text>
-      <Button title="remove token" onPress={() => {
-        removeToken();
-        router.replace("/auth");
-      }} />
     </View>
   );
 }

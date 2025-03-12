@@ -8,19 +8,40 @@ interface IconSymbolProps {
   style?: StyleProp<ViewStyle>;
 }
 
+const iconPairs: { [key: string]: string } = {
+  house: 'home',
+  creditcard: 'card',
+  clock: 'time',
+  "info.circle": 'information-circle',
+  person: 'person',
+  'person.circle': 'person-circle',
+  gear: 'settings',
+  tools: 'construct',
+  help: 'help',
+  notifications: 'notifications',
+  gift: 'gift',
+  leave: 'log-out',
+  file: "document",
+  grid: 'grid'
+};
+
+function createIconMap(pairs: Record<string, string>): Record<string, string> {
+  const map: Record<string, string> = {};
+
+  for (const prefix in pairs) {
+    const base = pairs[prefix];
+    map[`${prefix}.fill`] = base;
+    map[prefix] = `${base}-outline`;
+  }
+  // console.log(map);
+  return map;
+}
+
+export const iconMap = createIconMap(iconPairs);
+
 export function IconSymbol({ name, size, color, style }: IconSymbolProps) {
   // Map SF Symbol names to Ionicons names
   const getIoniconName = (sfSymbolName: string) => {
-    const iconMap: { [key: string]: string } = {
-      'house.fill': 'home',
-      'creditcard.fill': 'card',
-      'clock.fill': 'time',
-      'info.circle.fill': 'information-circle',
-      'person.fill': 'person',
-      'person.circle.fill': 'person-circle',
-      'gear': 'settings',
-      // Add more mappings as needed
-    };
     return iconMap[sfSymbolName] || sfSymbolName;
   };
 
