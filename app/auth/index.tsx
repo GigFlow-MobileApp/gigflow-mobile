@@ -22,6 +22,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Feather from "react-native-vector-icons/Feather";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { Colors } from "@/constants/Colors";
+import Config from '@/constants/config';
 
 const screenHeight = Dimensions.get("window").height;
 const topMargin = screenHeight * (108 / 844);
@@ -30,7 +31,6 @@ const field_btn_margin = screenHeight * (42 / 844);
 const STATUS_BAR_HEIGHT =
   Platform.OS === "android" ? StatusBar.currentHeight || 30 : 50;
 const BOTTOM_INSET_HEIGHT = 34; // approx height for iPhone home indicator
-const test = false;
 
 type FormErrors = {
   email?: string;
@@ -107,7 +107,7 @@ export default function AuthScreen() {
   };
 
   const login = async () => {
-    if(!test) if (!validate()) return
+    if(!Config.debug) if (!validate()) return
     await AsyncStorage.setItem("userToken", "temp_id");
     console.log("token_set");
     router.replace("/(drawer)");
