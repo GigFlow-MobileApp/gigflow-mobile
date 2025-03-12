@@ -110,7 +110,7 @@ export default function AuthScreen() {
     if(!Config.debug) if (!validate()) return
     await AsyncStorage.setItem("userToken", "temp_id");
     console.log("token_set");
-    router.replace("/(drawer)");
+    router.replace("/main");
   };
 
   const signup = () => {
