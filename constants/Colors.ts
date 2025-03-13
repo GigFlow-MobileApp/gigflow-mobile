@@ -28,6 +28,7 @@ export const Colors = {
     tint: tintColorLight,
     tabIconDefault: '#ccc',
     tabIconSelected: tintColorLight,
+    shadow: "#000"
   },
   dark: {
     brandColor: brandColorDark,
@@ -53,5 +54,6 @@ export const Colors = {
     tint: tintColorDark,
     tabIconDefault: '#ccc',
     tabIconSelected: tintColorDark,
+    shadow: "#000"
   },
 } as const;
