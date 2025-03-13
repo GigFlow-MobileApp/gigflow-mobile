@@ -13,14 +13,14 @@ import {
 import { useState, useRef, useMemo, useEffect } from "react";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import Logo2 from "@/assets/images/logo2.svg";
-import { router } from "expo-router";
+import { useRouter } from "expo-router";
 import Checkbox from "expo-checkbox";
 import { ThemedText } from "@/components/ThemedText";
 import { useNavigation } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Feather from "react-native-vector-icons/Feather";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
+import { loginApi, signupApi } from "@/apis/authAPI";
 import { Colors } from "@/constants/Colors";
 import Config from '@/constants/config';
 
@@ -41,6 +41,7 @@ export default function AuthScreen() {
   const { colorScheme } = useColorScheme();
   const bottomSheetRef = useRef<BottomSheet>(null);
   const navigation = useNavigation();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [secureText, setSecureText] = useState(true);
@@ -94,27 +95,56 @@ export default function AuthScreen() {
   };
 
   const validate = () => {
-    const newErrors: FormErrors = {};
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Invalid email format';
-      alert(newErrors.email);
+      alert('Invalid email format');
+      return false;
     }
     if (password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-      alert(newErrors.password);
+      alert('Password must be at least 8 characters');
+      return false;
     }
-    return Object.keys(newErrors).length === 0;
+    return true;
   };
 
   const login = async () => {
-    if(!Config.debug) if (!validate()) return
-    await AsyncStorage.setItem("userToken", "temp_id");
-    console.log("token_set");
-    router.replace("/main");
+    if(Config.debug) {
+      if( await loginApi(Config.username, Config.password)) {
+        router.replace("/main");
+      } else {
+        alert("login failed");
+      }
+      return;
+    }
+    if (!validate()) return
+    let loginSuccess;
+    try {
+      loginSuccess = await loginApi(email, password);
+    } catch (e) {
+      console.error("Login API failed:", e);
+    }
+    if (loginSuccess) {
+      console.log("routing to main");
+      router.replace("/main");
+    } else {
+      alert("login failed");
+    }
   };
 
-  const signup = () => {
-    alert("Not Implemented yet!");
+  const signup = async () => {
+    if(!Config.debug) router.replace("/main");
+    if(!validate()) return
+    if(!agreeTermConditions) {
+      alert("You have to agree on the Terms & Conditions before continue");
+      return
+    }
+    let signupSuccess;
+    try {
+      signupSuccess = await signupApi(email, password);
+    } catch (e) {
+      console.error("Login API failed:", e);
+    }
+    if (!signupSuccess) alert("signup failed");
+    else login();
   };
 
   return (
@@ -203,10 +233,11 @@ export default function AuthScreen() {
                         onFocus={handleInputFocus}
                         onBlur={handleInputBlur}
                         placeholder="apple@apple.com"
-                        className="border rounded-lg px-4 pb-3 pt-2 mb-4 text-lg"
+                        className="border rounded-lg px-4 pb-1 mb-4 text-lg"
                         style={{
                           borderColor: Colors[colorScheme].border,
                           color: Colors[colorScheme].primaryText,
+                          height: 42
                         }}
                         keyboardType="email-address"
                         autoCapitalize="none"
@@ -229,10 +260,10 @@ export default function AuthScreen() {
                           onChangeText={setPassword}
                           onFocus={handleInputFocus}
                           onBlur={handleInputBlur}
-                          style={{ color: Colors[colorScheme].primaryText }}
+                          style={{ color: Colors[colorScheme].primaryText, height: 42}}
                           placeholder="Password"
                           secureTextEntry={secureText}
-                          className="flex-1 pb-3 pt-2 text-lg"
+                          className="flex-1 pb-1 text-lg"
                           autoCapitalize="none"
                         />
                         <TouchableOpacity
