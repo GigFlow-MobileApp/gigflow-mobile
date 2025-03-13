@@ -1,5 +1,5 @@
 import { Slot, usePathname, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
 import "react-native-gesture-handler";
@@ -10,6 +10,7 @@ import {
   Dimensions,
   Animated,
   SafeAreaView,
+  PanResponder
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { DrawerItemsType, TabItemsType } from "@/constants/customTypes";
@@ -50,6 +51,7 @@ export default function DrawerLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const slideAnim = useState(new Animated.Value(0))[0];
 
+  // check user token exists
   useEffect(() => {
     const checkAuth = async () => {
       const token = await AsyncStorage.getItem("userToken");
@@ -59,6 +61,7 @@ export default function DrawerLayout() {
     checkAuth();
   }, []);
 
+  // check side bar open or not
   useEffect(() => {
     Animated.timing(slideAnim, {
       toValue: isSidebarOpen ? 1 : 0,
@@ -67,6 +70,7 @@ export default function DrawerLayout() {
     }).start();
   }, [isSidebarOpen]);
 
+  // close side bar when change route
   useEffect(() => {
     setIsSidebarOpen(false);
   }, [pathname]);
@@ -74,12 +78,49 @@ export default function DrawerLayout() {
   const translateX = slideAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, menuWidth],
+    extrapolate: 'clamp',
   });
 
   const sidebarTranslateX = slideAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [-menuWidth, 0],
+    extrapolate: 'clamp',
   });
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Activate on horizontal swipe only
+        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dx > 0 && !isSidebarOpen) {
+          // Swiping right to open
+          setIsSidebarOpen(true);
+          Animated.timing(slideAnim, {
+            toValue: 1,
+            duration: 250,
+            useNativeDriver: false,
+          }).start();
+        } else if (gestureState.dx < -50 && isSidebarOpen) {
+          // Swiping left to close
+          setIsSidebarOpen(false);
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration: 250,
+            useNativeDriver: false,
+          }).start();
+        } else {
+          // Snap back to current state
+          Animated.timing(slideAnim, {
+            toValue: isSidebarOpen ? 1 : 0,
+            duration: 200,
+            useNativeDriver: false,
+          }).start();
+        }
+      },
+    })
+  ).current;
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -102,6 +143,7 @@ export default function DrawerLayout() {
               flex: 1,
               transform: [{ translateX }],
             }}
+            {...panResponder.panHandlers}
           >
             {/* Header */}
             <View
