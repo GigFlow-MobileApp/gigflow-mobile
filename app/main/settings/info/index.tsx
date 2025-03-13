@@ -5,7 +5,7 @@ import {
   Dimensions,
   SafeAreaView,
   ScrollView,
-  TouchableOpacity
+  TouchableOpacity,
 } from "react-native";
 import { NativeSyntheticEvent, TextInputFocusEventData } from "react-native";
 import { ThemedText } from "@/components/ThemedText";
@@ -41,7 +41,7 @@ const FieldItem: React.FC<FieldItemProps> = ({
   value,
   onChange,
   onBlur,
-  enableEdit
+  enableEdit,
 }) => {
   const { colorScheme } = useColorScheme();
 
@@ -144,11 +144,11 @@ export default function InfoScreen() {
   }, []);
 
   return (
-    <KeyboardAwareView
-      style={{ backgroundColor: Colors[colorScheme].background }}
-      avoidOffset={Platform.OS === "ios" ? 50 : 30}
-    >
-      <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }}>
+      <KeyboardAwareView
+        style={{ backgroundColor: Colors[colorScheme].background }}
+        avoidOffset={Platform.OS === "ios" ? 50 : 30}
+      >
         <View
           className="flex-1 flex-col justify-between"
           style={{ backgroundColor: Colors[colorScheme].brandColor }}
@@ -268,7 +268,7 @@ export default function InfoScreen() {
             </ScrollView>
           </View>
         </View>
-      </SafeAreaView>
-    </KeyboardAwareView>
+      </KeyboardAwareView>
+    </SafeAreaView>
   );
 }

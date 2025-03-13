@@ -131,7 +131,6 @@ export default function AuthScreen() {
   };
 
   const signup = async () => {
-    if(!Config.debug) router.replace("/main");
     if(!validate()) return
     if(!agreeTermConditions) {
       alert("You have to agree on the Terms & Conditions before continue");

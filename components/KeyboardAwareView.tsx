@@ -1,60 +1,44 @@
 import {
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
-  TouchableWithoutFeedback,
+  ScrollView,
   View,
+  Keyboard,
+  TouchableWithoutFeedback,
+  StyleProp,
+  ViewStyle,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React from "react";
 
-type KeyboardAwareViewProps = {
+type Props = {
   children: React.ReactNode;
-  style?: any;
-  contentContainerStyle?: any;
+  style?: StyleProp<ViewStyle>;
+  contentContainerStyle?: StyleProp<ViewStyle>;
   avoidOffset?: number;
 };
 
-export default function KeyboardAwareView({
+export default function KeyboardAwareScrollView({
   children,
   style,
   contentContainerStyle,
   avoidOffset = 0,
-}: KeyboardAwareViewProps) {
-  const [keyboardVisible, setKeyboardVisible] = useState(false);
-
-  useEffect(() => {
-    const showListener =
-      Platform.OS === "ios"
-        ? Keyboard.addListener("keyboardWillShow", () =>
-            setKeyboardVisible(true)
-          )
-        : Keyboard.addListener("keyboardDidShow", () =>
-            setKeyboardVisible(true)
-          );
-
-    const hideListener =
-      Platform.OS === "ios"
-        ? Keyboard.addListener("keyboardWillHide", () =>
-            setKeyboardVisible(false)
-          )
-        : Keyboard.addListener("keyboardDidHide", () =>
-            setKeyboardVisible(false)
-          );
-
-    return () => {
-      showListener.remove();
-      hideListener.remove();
-    };
-  }, []);
-
+}: Props) {
   return (
     <KeyboardAvoidingView
-      style={[{ flex: 1 }, style]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={avoidOffset}
+      style={[{ flex: 1 }, style]}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={[{ flex: 1 }, contentContainerStyle]}>{children}</View>
+      <TouchableWithoutFeedback
+        onPress={Keyboard.dismiss}
+        accessible={false} // ✅ ensures buttons/inputs stay touchable
+      >
+        <ScrollView
+          contentContainerStyle={[{ flexGrow: 1 }, contentContainerStyle]}
+          keyboardShouldPersistTaps="handled" // ✅ ensures inputs/buttons respond
+        >
+          {children}
+        </ScrollView>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );

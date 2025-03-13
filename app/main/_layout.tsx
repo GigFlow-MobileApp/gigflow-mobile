@@ -183,10 +183,8 @@ export default function DrawerLayout() {
                   left: 10,
                   zIndex: 20,
                   // backgroundColor: Colors[colorScheme].background,
-                  borderRadius: 10,
                   alignItems: "center",
                   padding: 10,
-                  elevation: 5,
                   // opacity: 0.8
                 }}
               >
