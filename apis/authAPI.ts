@@ -1,4 +1,3 @@
-// utils/apiClient.js
 import axios from "axios";
 import Config from "@/constants/config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -54,7 +53,7 @@ export const signupApi = async (email: string, password: string) => {
         },
       }
     );
-    console.log(JSON.stringify(response.data, null, 2))
+    // console.log(JSON.stringify(response.data, null, 2))
     const parsed = SignupResponseSchema.parse(response.data);
     console.log("✅ Signup response is valid:", parsed);
     return parsed
