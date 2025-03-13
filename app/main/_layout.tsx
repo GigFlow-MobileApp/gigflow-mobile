@@ -26,20 +26,20 @@ const drawerItems: DrawerItemsType[] = [
     route: "/sync",
     onPress: () => console.log("Sync Data"),
   },
-  { icon: "notifications", label: "Notifications", route: "/notifications" },
-  { icon: "gift", label: "Invite Friends", route: "/inviteFriends" },
-  { icon: "creditcard", label: "Payments", route: "/payment" },
-  { icon: "tools", label: "Menu Item1", route: "/" },
-  { icon: "tools", label: "Menu Item2", route: "/about" },
-  { icon: "tools", label: "Menu Item3", route: "/history" },
-  { icon: "help", label: "Help", route: "/help" },
+  { icon: "notifications", label: "Notifications", route: "/main/notifications" },
+  { icon: "gift", label: "Invite Friends", route: "/main/inviteFriends" },
+  { icon: "creditcard", label: "Payments", route: "/main/payment" },
+  { icon: "tools", label: "Menu Item1", route: "/main" },
+  { icon: "tools", label: "Menu Item2", route: "/main/about" },
+  { icon: "tools", label: "Menu Item3", route: "/main/history" },
+  { icon: "help", label: "Help", route: "/main/help" },
 ];
 
 const tabItems: TabItemsType[] = [
-  { icon: "house", label: "Home", route: "/home" },
-  { icon: "grid", label: "Accounts", route: "/payment" },
-  { icon: "file", label: "Fee/Tax", route: "/tax" },
-  { icon: "gear", label: "Setting", route: "/settings" },
+  { icon: "house", label: "Home", route: "/main/home" },
+  { icon: "grid", label: "Accounts", route: "/main/payment" },
+  { icon: "file", label: "Fee/Tax", route: "/main/tax" },
+  { icon: "gear", label: "Setting", route: "/main/settings" },
 ];
 
 export default function DrawerLayout() {
