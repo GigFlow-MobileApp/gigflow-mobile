@@ -44,7 +44,7 @@ function createIconMap(pairs: Record<string, string>): Record<string, string> {
   return map;
 }
 
-export const iconMap = {
+export const iconMap: Record<string, string> = {
   ...createIconMap(iconPairs),
   ...FontAwesome5Pairs,
 };
