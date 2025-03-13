@@ -1,5 +1,6 @@
-import { StyleProp, ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { StyleProp, ViewStyle, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 
 interface IconSymbolProps {
   name: string;
@@ -8,21 +9,27 @@ interface IconSymbolProps {
   style?: StyleProp<ViewStyle>;
 }
 
+const FontAwesome5Pairs: { [key: string]: string } = {
+  coins: "coins",
+};
+
 const iconPairs: { [key: string]: string } = {
-  house: 'home',
-  creditcard: 'card',
-  clock: 'time',
-  "info.circle": 'information-circle',
-  person: 'person',
-  'person.circle': 'person-circle',
-  gear: 'settings',
-  tools: 'construct',
-  help: 'help',
-  notifications: 'notifications',
-  gift: 'gift',
-  leave: 'log-out',
+  house: "home",
+  creditcard: "card",
+  clock: "time",
+  "info.circle": "information-circle",
+  person: "person",
+  "person.circle": "person-circle",
+  gear: "settings",
+  tools: "construct",
+  help: "help",
+  notifications: "notifications",
+  gift: "gift",
+  leave: "log-out",
   file: "document",
-  grid: 'grid'
+  grid: "grid",
+  "right-arrow": "chevron-forward",
+  "left-arrow": "chevron-back",
 };
 
 function createIconMap(pairs: Record<string, string>): Record<string, string> {
@@ -37,7 +44,10 @@ function createIconMap(pairs: Record<string, string>): Record<string, string> {
   return map;
 }
 
-export const iconMap = createIconMap(iconPairs);
+export const iconMap = {
+  ...createIconMap(iconPairs),
+  ...FontAwesome5Pairs,
+};
 
 export function IconSymbol({ name, size, color, style }: IconSymbolProps) {
   // Map SF Symbol names to Ionicons names
@@ -46,10 +56,16 @@ export function IconSymbol({ name, size, color, style }: IconSymbolProps) {
   };
 
   return (
-    <Ionicons
-      name={getIoniconName(name) as any}
-      size={size}
-      color={color}
-    />
+    <View style={style}>
+      {name in FontAwesome5Pairs ? (
+        <FontAwesome5 name={name} size={size} color={color} />
+      ) : (
+        <Ionicons
+          name={getIoniconName(name) as any}
+          size={size}
+          color={color}
+        />
+      )}
+    </View>
   );
 }
