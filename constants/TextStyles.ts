@@ -21,6 +21,11 @@ export const textStyles: Record<string, TextStyle> = {
     fontWeight: weight(400),
     fontFamily: "Poppins",
   },
+  mainSection: {
+    fontSize: 20,
+    fontWeight: weight(600),
+    fontFamily: "Poppins",
+  },
   section: {
     fontSize: 18,
     fontWeight: weight(700),

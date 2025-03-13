@@ -17,8 +17,17 @@ export type SidebarProps = {
   items: DrawerItemsType[];
 };
 export type TabProps = {
-    items: TabItemsType[];
+  items: TabItemsType[];
 };
+export const updateMyInfoZod = z.object({
+  full_name: z.string().nullable(),
+  email: z.string().email(),
+  recipient_name: z.string(),
+  street: z.string().nullable(),
+  city: z.string().nullable(),
+  state: z.string().nullable(),
+  zipcode: z.string().nullable(),
+});
 export const SignupResponseSchema = z.object({
   email: z.string().email(),
   is_active: z.boolean(),
@@ -40,4 +49,5 @@ export const SignupResponseSchema = z.object({
   id: z.string().uuid(),
 });
 
+export type UpdateMyInfoType = z.infer<typeof updateMyInfoZod>;
 export type SignupResponse = z.infer<typeof SignupResponseSchema>;
