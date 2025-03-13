@@ -2,6 +2,7 @@ import { Slot, usePathname, useRouter } from "expo-router";
 import { useEffect, useState, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-gesture-handler";
 import { Colors } from "@/constants/Colors";
 import {
@@ -10,7 +11,9 @@ import {
   Dimensions,
   Animated,
   SafeAreaView,
-  PanResponder
+  PanResponder,
+  Platform,
+  StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { DrawerItemsType, TabItemsType } from "@/constants/customTypes";
@@ -19,6 +22,9 @@ import { BottomTabs } from "@/components/BottomTabs";
 
 const screenWdith = Dimensions.get("window").width;
 const menuWidth = screenWdith * (216 / 390);
+const STATUS_BAR_HEIGHT =
+  Platform.OS === "android" ? StatusBar.currentHeight || 30 : 50;
+const BOTTOM_INSET_HEIGHT = 34;
 
 const drawerItems: DrawerItemsType[] = [
   {
@@ -27,7 +33,11 @@ const drawerItems: DrawerItemsType[] = [
     route: "/sync",
     onPress: () => console.log("Sync Data"),
   },
-  { icon: "notifications", label: "Notifications", route: "/main/notifications" },
+  {
+    icon: "notifications",
+    label: "Notifications",
+    route: "/main/notifications",
+  },
   { icon: "gift", label: "Invite Friends", route: "/main/inviteFriends" },
   { icon: "creditcard", label: "Payments", route: "/main/payment" },
   { icon: "tools", label: "Menu Item1", route: "/main" },
@@ -38,7 +48,7 @@ const drawerItems: DrawerItemsType[] = [
 
 const tabItems: TabItemsType[] = [
   { icon: "house", label: "Home", route: "/main/home" },
-  { icon: "grid", label: "Accounts", route: "/main/payment" },
+  { icon: "grid", label: "Accounts", route: "/main/account" },
   { icon: "file", label: "Fee/Tax", route: "/main/tax" },
   { icon: "gear", label: "Setting", route: "/main/settings" },
 ];
@@ -78,13 +88,13 @@ export default function DrawerLayout() {
   const translateX = slideAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, menuWidth],
-    extrapolate: 'clamp',
+    extrapolate: "clamp",
   });
 
   const sidebarTranslateX = slideAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [-menuWidth, 0],
-    extrapolate: 'clamp',
+    extrapolate: "clamp",
   });
 
   const panResponder = useRef(
@@ -112,6 +122,7 @@ export default function DrawerLayout() {
           }).start();
         } else {
           // Snap back to current state
+          setIsSidebarOpen(false);
           Animated.timing(slideAnim, {
             toValue: isSidebarOpen ? 1 : 0,
             duration: 200,
@@ -123,57 +134,78 @@ export default function DrawerLayout() {
   ).current;
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View className="flex-1 flex-col">
-        <View className="flex-1 flex-row overflow-hidden">
-          <Animated.View
-            style={{
-              width: menuWidth,
-              transform: [{ translateX: sidebarTranslateX }],
-              position: "absolute",
-              zIndex: 10,
-              height: "100%",
-            }}
-          >
-            <Sidebar items={drawerItems} />
-          </Animated.View>
-
-          <Animated.View
-            style={{
-              flex: 1,
-              transform: [{ translateX }],
-            }}
-            {...panResponder.panHandlers}
-          >
-            {/* Header */}
-            <View
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      {/* TOP SAFE AREA FIX cyan bg color*/}
+      <View
+        className="absolute left-0 right-0 z-0"
+        style={{
+          top: 0,
+          height: STATUS_BAR_HEIGHT,
+          backgroundColor: Colors[colorScheme].brandColor,
+        }}
+      />
+      {/* BOTTOM SAFE AREA FIX white bg color*/}
+      <View
+        className="absolute left-0 right-0 z-0"
+        style={{
+          bottom: 0,
+          height: BOTTOM_INSET_HEIGHT,
+          backgroundColor: Colors[colorScheme].backgroundCard,
+        }}
+      />
+      <SafeAreaView style={{ flex: 1 }}>
+        <View className="flex-1 flex-col">
+          <View className="flex-1 flex-row overflow-hidden">
+            <Animated.View
               style={{
+                width: menuWidth,
+                transform: [{ translateX: sidebarTranslateX }],
                 position: "absolute",
-                top: 10,
-                left: 10,
-                zIndex: 20,
-                backgroundColor: Colors[colorScheme].background,
-                borderRadius: 10,
-                alignItems: "center",
-                padding: 10,
-                elevation: 5,
+                zIndex: 10,
+                height: "100%",
               }}
             >
-              <TouchableOpacity
-                onPress={() => setIsSidebarOpen((prev) => !prev)}
+              <Sidebar items={drawerItems} />
+            </Animated.View>
+
+            <Animated.View
+              style={{
+                flex: 1,
+                transform: [{ translateX }],
+              }}
+              {...panResponder.panHandlers}
+            >
+              {/* Header button*/}
+              <View
+                style={{
+                  position: "absolute",
+                  top: 10,
+                  left: 10,
+                  zIndex: 20,
+                  // backgroundColor: Colors[colorScheme].background,
+                  borderRadius: 10,
+                  alignItems: "center",
+                  padding: 10,
+                  elevation: 5,
+                  // opacity: 0.8
+                }}
               >
-                <Ionicons
-                  name={isSidebarOpen ? "close" : "menu"}
-                  size={28}
-                  color={Colors[colorScheme].menuItemText}
-                />
-              </TouchableOpacity>
-            </View>
-            <Slot />
-          </Animated.View>
+                <TouchableOpacity
+                  onPress={() => setIsSidebarOpen((prev) => !prev)}
+                >
+                  <Ionicons
+                    name={isSidebarOpen ? "close" : "menu"}
+                    size={28}
+                    color={Colors[colorScheme].menuItemText}
+                  />
+                </TouchableOpacity>
+              </View>
+              <Slot />
+            </Animated.View>
+          </View>
+          <BottomTabs items={tabItems} />
         </View>
-        <BottomTabs items={tabItems} />
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 }
