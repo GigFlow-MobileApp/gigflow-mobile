@@ -1,4 +1,5 @@
 import { iconMap } from "@/components/ui/IconSymbol";
+import { z } from 'zod';
 
 export type DrawerItemsType = {
   label: string;
@@ -17,4 +18,26 @@ export type SidebarProps = {
 };
 export type TabProps = {
     items: TabItemsType[];
-  };
+};
+export const SignupResponseSchema = z.object({
+  email: z.string().email(),
+  is_active: z.boolean(),
+  is_superuser: z.boolean(),
+  full_name: z.string().nullable(),
+  recipient_name: z.string().nullable(),
+  street: z.string().nullable(),
+  city: z.string().nullable(),
+  state: z.string().nullable(),
+  zipcode: z.string().nullable(),
+  balance: z.number(),
+  preference: z.number(),
+  badge: z.number().nullable(),
+  account_ubereid: z.string().nullable().optional(),
+  account_lyftid: z.string().nullable().optional(),
+  account_doordashid: z.string().nullable().optional(),
+  account_upworkid: z.string().nullable().optional(),
+  account_fiverrid: z.string().nullable().optional(),
+  id: z.string().uuid(),
+});
+
+export type SignupResponse = z.infer<typeof SignupResponseSchema>;

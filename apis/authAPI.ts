@@ -2,7 +2,7 @@
 import axios from "axios";
 import Config from "@/constants/config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { SignupResponse, SignupResponseSchema } from "@/constants/customTypes";
+import { SignupResponseSchema } from "@/constants/customTypes";
 import { z } from 'zod';
 
 export const loginApi = async (username: string, password: string) => {
@@ -20,7 +20,7 @@ export const loginApi = async (username: string, password: string) => {
         },
       }
     );
-    console.log(JSON.stringify(response));
+    // console.log(JSON.stringify(response));
     const result = response.data;
     if (!result.access_token || !result.token_type) throw new Error("incorrect result format");
     if (result.token_type === "bearer") {
