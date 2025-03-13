@@ -25,8 +25,8 @@ import { Colors } from "@/constants/Colors";
 import Config from '@/constants/config';
 
 const screenHeight = Dimensions.get("window").height;
-const topMargin = screenHeight * (108 / 844);
-const field_btn_margin = screenHeight * (42 / 844);
+const topMargin = screenHeight * (108 - 40)/ (844 - 40);
+const field_btn_margin = screenHeight * (42 / (844 - 40));
 
 const STATUS_BAR_HEIGHT =
   Platform.OS === "android" ? StatusBar.currentHeight || 30 : 50;

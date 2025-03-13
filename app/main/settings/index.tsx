@@ -4,6 +4,12 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { Colors } from "@/constants/Colors";
 import { useRouter } from "expo-router";
+import { useState, useEffect } from "react";
+import { getMyInfo } from "@/apis/infoAPI";
+import {
+  SignupResponse,
+  SignupResponseSchema
+} from "@/constants/customTypes";
 
 const screenHeight = Dimensions.get("window").height;
 const topHeight = screenHeight * (269 / 844);
@@ -39,8 +45,31 @@ export default function SettingScreen() {
   const { colorScheme } = useColorScheme();
   const router = useRouter();
   const iconSize = 32;
-  const name = "my name";
-  const phoneNumber = "+1 (999) 999-9999"
+  const [name, setName] = useState<string | null>("");
+  const [phoneNumber, setPhoneNumber] = useState<string | null>("");
+
+  const fetchData = async () => {
+    try {
+      const raw = await getMyInfo();
+      if (!raw) throw new Error("User info not found");
+      const parsed = SignupResponseSchema.safeParse(raw);
+      if (!parsed.success) {
+        console.error(parsed.error);
+        throw new Error("Invalid user info format");
+      }
+
+      const data: SignupResponse = parsed.data;
+      setName(data?.full_name);
+      setPhoneNumber(data?.zipcode);
+    } catch (error) {
+      console.error("Failed to fetch info:", error);
+    }
+  };
+  useEffect(() => {
+    fetchData();
+    console.log(`name: ${name}`);
+    console.log(`phoneNumber: ${phoneNumber}`);
+  }, []);
   
   return (
     <View className="flex-1 flex-col justify-between" style={{backgroundColor: Colors[colorScheme].background}}>
