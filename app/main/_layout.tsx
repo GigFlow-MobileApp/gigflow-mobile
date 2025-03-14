@@ -40,7 +40,7 @@ const drawerItems: DrawerItemsType[] = [
   },
   { icon: "gift", label: "Invite Friends", route: "/main/inviteFriends" },
   { icon: "creditcard", label: "Payments", route: "/main/payment" },
-  { icon: "tools", label: "Menu Item1", route: "/main" },
+  { icon: "tools", label: "Menu Item1", route: "/main/item1" },
   { icon: "tools", label: "Menu Item2", route: "/main/about" },
   { icon: "tools", label: "Menu Item3", route: "/main/history" },
   { icon: "help", label: "Help", route: "/main/help" },
