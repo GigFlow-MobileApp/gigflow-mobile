@@ -84,11 +84,11 @@ export default function SettingScreen() {
       {/* bottom options part*/}
       <View className="flex-1">
         <View className="m-6">
-          <MenuItem iconName="person.circle" size={iconSize} text="My Info" onPress={() => router.replace("/main/settings/info")}/>
-          <MenuItem iconName="grid" size={iconSize} text="My Account" onPress={() => router.replace("/main/account")}/>
-          <MenuItem iconName="coins" size={iconSize} text="Payment history" onPress={() => router.replace("/main/payment")}/>
-          <MenuItem iconName="notifications" size={iconSize} text="Notification" onPress={() => router.replace("/main/notifications")}/>
-          <MenuItem iconName="tools" size={iconSize} text="Setting" onPress={() => router.replace("/main/settings/setting")}/>
+          <MenuItem iconName="person.circle" size={iconSize} text="My Info" onPress={() => router.push("/main/settings/info")}/>
+          <MenuItem iconName="grid" size={iconSize} text="My Account" onPress={() => router.push("/main/account")}/>
+          <MenuItem iconName="coins" size={iconSize} text="Payment history" onPress={() => router.push("/main/payment")}/>
+          <MenuItem iconName="notifications" size={iconSize} text="Notification" onPress={() => router.push("/main/notifications")}/>
+          <MenuItem iconName="tools" size={iconSize} text="Setting" onPress={() => router.push("/main/settings/setting")}/>
         </View>
       </View>
     </View>
