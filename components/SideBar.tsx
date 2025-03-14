@@ -29,23 +29,18 @@ export const Sidebar = ({ items }: SidebarProps) => {
           <Pressable
             key={idx}
             onPress={() =>
-              item.onPress ? item.onPress() : router.push(item.route as never)
+              item.onPress ? item.onPress() : pathname !== item.route ? router.replace(item.route as never) : ""
             }
             style={{
               borderRadius: 9999,
-              backgroundColor:
-                pathname === item.route ? Colors[colorScheme].onPressBg : "",
+              backgroundColor: pathname === item.route ? Colors[colorScheme].onPressBg : "",
             }}
           >
             {({ pressed }) => {
               const textColor =
-                pathname === item.route || pressed
-                  ? Colors[colorScheme].brandColor
-                  : Colors[colorScheme].menuItemText;
+                pathname === item.route || pressed ? Colors[colorScheme].brandColor : Colors[colorScheme].menuItemText;
               const backgroundColor =
-                pathname === item.route || pressed
-                  ? Colors[colorScheme].onPressBg
-                  : Colors[colorScheme].background;
+                pathname === item.route || pressed ? Colors[colorScheme].onPressBg : Colors[colorScheme].background;
               return (
                 <View
                   className="bg-blue-500"
@@ -63,27 +58,17 @@ export const Sidebar = ({ items }: SidebarProps) => {
                   ) : (
                     <View
                       style={{
-                        transform: [
-                          { rotate: item.rotate ? "180deg" : "0deg" },
-                        ],
+                        transform: [{ rotate: item.rotate ? "180deg" : "0deg" }],
                       }}
                     >
                       <IconSymbol
-                        name={
-                          pathname === item.route
-                            ? item.icon + ".fill"
-                            : item.icon
-                        }
+                        name={pathname === item.route ? item.icon + ".fill" : item.icon}
                         size={28}
                         color={textColor}
                       />
                     </View>
                   )}
-                  <ThemedText
-                    className="text-base pl-5"
-                    type="description"
-                    style={{ color: textColor }}
-                  >
+                  <ThemedText className="text-base pl-5" type="description" style={{ color: textColor }}>
                     {item.label}
                   </ThemedText>
                 </View>
@@ -106,14 +91,8 @@ export const Sidebar = ({ items }: SidebarProps) => {
       ]}
     >
       <ScrollView style={{ padding: 0 }}>
-        <View
-          className="py-10 h-full"
-          style={{ backgroundColor: Colors[colorScheme].background }}
-        >
-          <View
-            className={"items-center justify-start pb-5"}
-            style={{ marginTop: 0 }}
-          >
+        <View className="py-10 h-full" style={{ backgroundColor: Colors[colorScheme].background }}>
+          <View className={"items-center justify-start pb-5"} style={{ marginTop: 0 }}>
             <Logo className={"w-25 h-25"} />
             <ThemedText colorValue="text" type="subtitle">
               Gig-Flow
@@ -138,4 +117,4 @@ export const Sidebar = ({ items }: SidebarProps) => {
       </View>
     </Animated.View>
   );
-}
+};

@@ -14,12 +14,16 @@ export const BottomTabs = ({ items }: TabProps) => {
   return (
     <View
       className="h-[64px] flex-row justify-around items-center"
-      style={{ backgroundColor: Colors[colorScheme].background }}
+      style={{ backgroundColor: Colors[colorScheme].background, shadowColor: Colors[colorScheme].shadow,
+        shadowOffset: { width: 0, height: -3 }, // shadow above
+        shadowOpacity: 0.06,
+        shadowRadius: 1,
+        elevation: 0,}}
     >
       {items.map((tab, idx) => (
         <TouchableOpacity
           key={idx}
-          onPress={() => router.push(tab.route as never)}
+          onPress={() => pathname !== tab.route ? router.replace(tab.route as never) : ""}
         >
           <View
             className="bg-blue-500"
