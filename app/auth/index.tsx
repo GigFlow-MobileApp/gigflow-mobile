@@ -167,7 +167,7 @@ export default function AuthScreen() {
     const result = await loginApi(email, password);
     if (result.success) {
       console.log("routing to main");
-      router.replace("/main");
+      router.replace("/main/home");
     } else {
       setErrorMessage(result.error || "Login failed");
     }
