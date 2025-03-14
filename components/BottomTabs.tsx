@@ -23,7 +23,7 @@ export const BottomTabs = ({ items }: TabProps) => {
       {items.map((tab, idx) => (
         <TouchableOpacity
           key={idx}
-          onPress={() => router.push(tab.route as never)}
+          onPress={() => pathname !== tab.route ? router.replace(tab.route as never) : ""}
         >
           <View
             className="bg-blue-500"
