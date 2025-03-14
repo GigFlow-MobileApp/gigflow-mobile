@@ -152,15 +152,15 @@ export default function AuthScreen() {
 
   const login = async () => {
     setErrorMessage("");
-    if(Config.debug) {
-      const result = await loginApi(Config.username, Config.password);
-      if(result.success) {
-        router.replace("/main");
-      } else {
-        setErrorMessage(result.error || "Login failed");
-      }
-      return;
-    }
+    // if(Config.debug) {
+    //   const result = await loginApi(Config.username, Config.password);
+    //   if(result.success) {
+    //     router.replace("/main");
+    //   } else {
+    //     setErrorMessage(result.error || "Login failed");
+    //   }
+    //   return;
+    // }
     
     if (!validate()) return;
     
