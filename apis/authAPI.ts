@@ -21,23 +21,33 @@ export const loginApi = async (username: string, password: string) => {
     );
     // console.log(JSON.stringify(response));
     const result = response.data;
-    if (!result.access_token || !result.token_type) throw new Error("incorrect result format");
+    if (!result.access_token || !result.token_type) {
+      return { success: false, error: "Incorrect response format from server" };
+    }
     if (result.token_type === "bearer") {
       await AsyncStorage.setItem("userToken", result.access_token);
       console.log("token_set");
-      return true;
+      return { success: true };
     }
-    return false;
+    return { success: false, error: "Invalid token type" };
   } catch (error) {
-    let message = "Unknown error";
+    let message = "Unknown error occurred";
     if (axios.isAxiosError(error)) {
-      message = error.response?.data?.detail || error.message;
+      // Handle specific error cases
+      if (error.response?.status === 401) {
+        message = "Invalid email or password";
+      } else if (error.response?.status === 422) {
+        message = "Invalid input format";
+      } else {
+        message = error.response?.data?.detail || error.message;
+      }
     } else if (error instanceof Error) {
       message = error.message;
     }
-    throw new Error(
-      typeof message === "string" ? message : JSON.stringify(message)
-    );
+    return { 
+      success: false, 
+      error: typeof message === "string" ? message : JSON.stringify(message)
+    };
   }
 };
 
@@ -56,14 +66,27 @@ export const signupApi = async (email: string, password: string) => {
     // console.log(JSON.stringify(response.data, null, 2))
     const parsed = SignupResponseSchema.parse(response.data);
     console.log("✅ Signup response is valid:", parsed);
-    return parsed
+    return { success: true, data: parsed };
   } catch (error) {
+    let message = "Failed to create account";
+    
     if (axios.isAxiosError(error)) {
       console.error("❌ API Error:", JSON.stringify(error.response?.data));
+      // Handle specific error cases
+      if (error.response?.status === 400) {
+        message = error.response.data?.detail || "Email may already be registered";
+      } else if (error.response?.status === 422) {
+        message = "Invalid input format";
+      } else {
+        message = error.response?.data?.detail || error.message;
+      }
     } else if (error instanceof z.ZodError) {
       console.error("❌ Validation Error:", error.errors);
+      message = "Invalid response format from server";
     } else {
       console.error("❌ Unknown Error:", error);
     }
+    
+    return { success: false, error: message };
   }
 };
