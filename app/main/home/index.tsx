@@ -34,6 +34,7 @@ import {
   VictoryVoronoiContainer,
   VictoryLegend,
   VictoryScatter,
+  VictoryPie,
 } from "victory-native";
 
 const screenWidth = Dimensions.get("window").width;
@@ -114,6 +115,11 @@ const platformColors = {
   all: ["#6366f1", "#4f46e5"],
 };
 
+const paymentData = [
+  { status: "Success", value: 85, color: "#10B981" },
+  { status: "In Progress", value: 15, color: "#6366F1" },
+];
+
 // Add this helper function for data transformation
 const transformDataForVictory = (data: number[], labels: string[]) => {
   return data.map((y, index) => ({
@@ -162,6 +168,14 @@ export default function HomeScreen() {
       borderRadius: 16,
     },
   };
+
+  const platformData = [
+    { name: "Uber", color: "#000000", percent: 45 },
+    { name: "Lyft", color: "#FF00BF", percent: 30 },
+    { name: "DoorDash", color: "#FF1744", percent: 25 },
+    { name: "Upwork", color: "#3AC430", percent: 30 },
+    { name: "Fiverr", color: "#10B981", percent: 25 },
+  ];
 
   const lineData = {
     labels: generateTimeLabels(selectedDuration),
@@ -365,12 +379,101 @@ export default function HomeScreen() {
   );
 
   const styles = StyleSheet.create({
+    card: {
+      padding: 24,
+      borderRadius: 16,
+      marginTop: 20,
+    },
     container: {
       flex: 1,
       backgroundColor: Colors[colorScheme as keyof typeof Colors].background,
     },
     section: {
       marginBottom: 24,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 24,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: "#fff",
+      marginLeft: 12,
+      letterSpacing: 0.5,
+    },
+    content: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    chartContainer: {
+      width: 160,
+      height: 160,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    centerStats: {
+      position: "absolute",
+      alignItems: "center",
+    },
+    centerValue: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: "#fff",
+    },
+    centerLabel: {
+      fontSize: 14,
+      color: "#94A3B8",
+      marginTop: 4,
+    },
+    statsContainer: {
+      flex: 1,
+      marginLeft: 24,
+    },
+    illustration: {
+      width: "100%",
+      height: 120,
+      borderRadius: 16,
+      marginBottom: 20,
+    },
+    stats: {
+      gap: 16,
+    },
+    statItem: {
+      marginBottom: 12,
+    },
+    statHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginRight: 8,
+    },
+    statLabel: {
+      fontSize: 14,
+      color: "#94A3B8",
+    },
+    statValue: {
+      fontSize: 20,
+      fontWeight: "bold",
+      color: "#fff",
+      marginBottom: 8,
+    },
+    progressBar: {
+      height: 6,
+      backgroundColor: "rgba(148, 163, 184, 0.2)",
+      borderRadius: 3,
+      overflow: "hidden",
+    },
+    progressFill: {
+      height: "100%",
+      borderRadius: 3,
     },
     sectionHeader: {
       flexDirection: "row",
@@ -474,6 +577,52 @@ export default function HomeScreen() {
       height: 32,
       borderRadius: 16,
       marginRight: 12,
+    },
+    platformInfo: {
+      flex: 1,
+    },
+    platformSection: {
+      backgroundColor: Colors[colorScheme].backgroundCard,
+      marginTop: 20,
+      marginBottom: 16,
+      padding: 16,
+      borderRadius: 16,
+      elevation: 2,
+      color: "#FF000085",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+    },
+    platformContainer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    pieChartContainer: {
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    platformList: {
+      alignSelf: "stretch",
+    },
+    platformItem: {
+      padding: 8,
+    },
+    platformPercent: {
+      fontSize: 12,
+      color: "#6B7280",
+    },
+    fractionContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "baseline",
+      marginTop: 20,
+      marginBottom: 20,
+    },
+    fractionText: {
+      fontSize: 24,
+      fontWeight: "bold",
     },
     platformTitle: {
       fontSize: 18,
@@ -627,7 +776,7 @@ export default function HomeScreen() {
             />
           </View>
 
-          <View style={{ height: 280, marginTop: 20 }}>
+          <View style={{ height: 300, marginTop: 20 }}>
             <VictoryChart
               width={screenWidth - 40}
               height={280}
@@ -669,7 +818,7 @@ export default function HomeScreen() {
               />
               <VictoryAxis
                 dependentAxis
-                tickFormat={(t) => `$${(t / 1000)}k`}
+                tickFormat={(t) => `$${t / 1000}k`}
                 style={{
                   axis: { stroke: Colors[colorScheme].border },
                   ticks: { stroke: Colors[colorScheme].border },
@@ -688,7 +837,10 @@ export default function HomeScreen() {
                 lineData.datasets.map((dataset, index) => (
                   <VictoryLine
                     key={`line-${index}`}
-                    data={transformDataForVictory(dataset.data, lineData.labels)}
+                    data={transformDataForVictory(
+                      dataset.data,
+                      lineData.labels
+                    )}
                     style={{
                       data: {
                         stroke: dataset.color(1),
@@ -724,7 +876,10 @@ export default function HomeScreen() {
                 lineData.datasets.map((dataset, index) => (
                   <VictoryScatter
                     key={`scatter-${index}`}
-                    data={transformDataForVictory(dataset.data, lineData.labels)}
+                    data={transformDataForVictory(
+                      dataset.data,
+                      lineData.labels
+                    )}
                     size={4}
                     style={{
                       data: {
@@ -752,7 +907,7 @@ export default function HomeScreen() {
                 />
               )}
             </VictoryChart>
-            
+
             {/* Add Legend */}
             {selectedPlatform === "all" && (
               <VictoryLegend
@@ -761,7 +916,7 @@ export default function HomeScreen() {
                 orientation="horizontal"
                 gutter={20}
                 style={{
-                  labels: { fill: Colors[colorScheme].text }
+                  labels: { fill: Colors[colorScheme].text },
                 }}
                 data={[
                   { name: "All", symbol: { fill: "rgba(0, 122, 255, 1)" } },
@@ -776,42 +931,203 @@ export default function HomeScreen() {
       </Card>
 
       {/* Pie Charts */}
-      <View style={{ flexDirection: "row", marginTop: 24 }}>
-        <Card delay={300} style={{ flex: 1, marginRight: 8 }}>
-          <ThemedText
-            style={{ fontSize: 18, fontWeight: "600", marginBottom: 16 }}
+      <Animated.View entering={FadeInUp.delay(200)} style={styles.container}>
+        <LinearGradient
+          colors={["#1E293B", "#0F172A"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.card}
+        >
+          <View style={styles.header}>
+            <MaterialCommunityIcons
+              name="credit-card-check"
+              size={28}
+              color="#6366F1"
+            />
+            <Text style={styles.title}>Payment Status</Text>
+          </View>
+
+          <View style={styles.content}>
+            <View style={{ flexDirection: 'column'}}>
+              <View style={styles.chartContainer}>
+                <VictoryPie
+                  data={paymentData}
+                  x="status"
+                  y="value"
+                  colorScale={paymentData.map((d) => d.color)}
+                  radius={80}
+                  innerRadius={60}
+                  labelRadius={({ innerRadius }) =>
+                    ((innerRadius as number) + 80) / 2.5
+                  }
+                  style={{
+                    labels: { fill: "transparent" },
+                  }}
+                  animate={{
+                    duration: 1000,
+                    easing: "bounce",
+                  }}
+                />
+                <View style={styles.centerStats}>
+                  <Text style={styles.centerValue}>85%</Text>
+                  <Text style={styles.centerLabel}>Success</Text>
+                </View>
+              </View>
+
+              {/* Added fraction text below pie chart */}
+              <View style={styles.fractionContainer}>
+                <Text style={[styles.fractionText, { color: "#10B981" }]}>
+                  46
+                </Text>
+                <Text style={[styles.fractionText, { color: "#6366F1" }]}>
+                  /50
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.statsContainer}>
+              <Image
+                source={{
+                  uri: "https://images.unsplash.com/photo-1553729459-efe14ef6055d?q=80&w=500",
+                }}
+                style={styles.illustration}
+              />
+              <View style={styles.stats}>
+                {paymentData.map((item) => (
+                  <View key={item.status} style={styles.statItem}>
+                    <View style={styles.statHeader}>
+                      <View
+                        style={[styles.dot, { backgroundColor: item.color }]}
+                      />
+                      <Text style={styles.statLabel}>{item.status}</Text>
+                    </View>
+                    <Text style={styles.statValue}>{item.value}%</Text>
+                    <View style={styles.progressBar}>
+                      <View
+                        style={[
+                          styles.progressFill,
+                          {
+                            width: `${item.value}%`,
+                            backgroundColor: item.color,
+                          },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+        </LinearGradient>
+      </Animated.View>
+
+      <Animated.View
+        entering={FadeInUp.delay(800)}
+        style={[styles.platformSection, { paddingVertical: 24 }]}
+      >
+        <Text style={[styles.sectionTitle, { marginBottom: 20 }]}>
+          Platform Distribution
+        </Text>
+        <View style={[styles.platformContainer, { alignItems: "flex-start" }]}>
+          {/* Left side - Pie Chart */}
+          <View style={[styles.pieChartContainer, { flex: 1.2 }]}>
+            <VictoryPie
+              data={platformData.map((p) => ({ x: p.name, y: p.percent }))}
+              colorScale={platformData.map((p) => p.color)}
+              radius={({ datum }) => 100}
+              innerRadius={50}
+              labelRadius={({ datum, innerRadius }) => {
+                const radius =
+                  typeof innerRadius === "number" ? innerRadius : 40;
+                return (radius + 90) / 2.3;
+              }}
+              labels={({ datum }) => `${datum.y}%`}
+              style={{
+                labels: {
+                  fill: Colors[colorScheme].logoText,
+                  fontSize: 12,
+                  fontWeight: "bold",
+                },
+              }}
+              width={220}
+              height={220}
+              padding={35}
+              animate={{
+                duration: 1000,
+                easing: "bounce",
+              }}
+            />
+          </View>
+
+          {/* Right side - Platform List */}
+          <View
+            style={[
+              styles.platformList,
+              {
+                flex: 1,
+                backgroundColor: "rgba(255, 255, 255, 0.05)",
+                padding: 16,
+                borderRadius: 12,
+                justifyContent: "center",
+              },
+            ]}
           >
-            Payment Status
-          </ThemedText>
-          <PieChart
-            data={paymentStatusData}
-            width={screenWidth / 2 - 48}
-            height={160}
-            chartConfig={chartConfig}
-            accessor="population"
-            backgroundColor="transparent"
-            paddingLeft="15"
-          />
-        </Card>
-      </View>
-      <View style={{ marginTop: 24 }}>
-        <Card delay={400} style={{ flex: 1, marginLeft: 8 }}>
-          <ThemedText
-            style={{ fontSize: 18, fontWeight: "600", marginBottom: 16 }}
-          >
-            Platform Income
-          </ThemedText>
-          <PieChart
-            data={platformIncomeData}
-            width={screenWidth / 2 - 48}
-            height={160}
-            chartConfig={chartConfig}
-            accessor="population"
-            backgroundColor="transparent"
-            paddingLeft="15"
-          />
-        </Card>
-      </View>
+            {platformData.map((platform, index) => (
+              <View
+                key={platform.name}
+                style={[
+                  styles.platformItem,
+                  {
+                    marginBottom: index === platformData.length - 1 ? 0 : 6,
+                    flexDirection: "row",
+                    alignItems: "center",
+                  },
+                ]}
+              >
+                <View
+                  style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: 6,
+                    backgroundColor: platform.color,
+                    marginRight: 12,
+                  }}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "600",
+                      color: Colors[colorScheme].text,
+                      marginBottom: 4,
+                    }}
+                  >
+                    {platform.name}
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: Colors[colorScheme].secondaryText,
+                      opacity: 0.8,
+                    }}
+                  >
+                    ${platform.percent.toLocaleString()}k
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "bold",
+                    color: platform.color,
+                  }}
+                >
+                  {platform.percent}%
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </Animated.View>
 
       {/* Account Status */}
       <Card delay={500} style={{ marginTop: 24 }}>
