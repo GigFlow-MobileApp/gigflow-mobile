@@ -1,15 +1,27 @@
-import { View, ScrollView, Dimensions, Pressable } from "react-native";
+import {
+  View,
+  ScrollView,
+  Dimensions,
+  Pressable,
+  RefreshControl,
+} from "react-native";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { Colors } from "@/constants/Colors";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { LineChart, PieChart } from "react-native-chart-kit";
 import { ThemedText } from "@/components/ThemedText";
 import { Card } from "@/components/ui/Card";
 import { GradientButton } from "@/components/ui/GradientButton";
-import { MotiView } from "moti";
+import { ModernDropdown } from "@/components/ui/ModernDropDown";
+import { ModernCard } from "@/components/ui/ModernCard";
+import { Header } from "@/components/ui/Header";
+import { MotiView, AnimatePresence } from "moti";
 import { LinearGradient } from "expo-linear-gradient";
 import DropDownPicker from "react-native-dropdown-picker";
 import { FlatList } from "react-native-gesture-handler";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Image } from "react-native";
+import { StyleSheet } from "react-native";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -80,11 +92,21 @@ const platforms = {
   fiverr: { name: "Fiverr", color: "#1DBF73" },
 };
 
+const platformColors = {
+  uber: ["#000000", "#333333"],
+  lyft: ["#FF00BF", "#B4008C"],
+  doordash: ["#FF3008", "#CC2606"],
+  upwork: ["#14a800", "#108600"],
+  fiverr: ["#1DBF73", "#17995C"],
+  all: ["#6366f1", "#4f46e5"],
+};
+
 export default function HomeScreen() {
   const { colorScheme } = useColorScheme();
   const [selectedDuration, setSelectedDuration] = useState("1M");
   const [selectedPlatform, setSelectedPlatform] = useState("all");
   const [open, setOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [items, setItems] = useState([
     { label: "All", value: "all" },
@@ -94,6 +116,12 @@ export default function HomeScreen() {
     { label: "Upwork", value: "upwork" },
     { label: "Fiverr", value: "fiverr" },
   ]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    // Simulate data refresh
+    setTimeout(() => setRefreshing(false), 2000);
+  }, []);
 
   const chartConfig = {
     backgroundColor: Colors[colorScheme].backgroundCard,
@@ -193,40 +221,55 @@ export default function HomeScreen() {
     platform: string,
     amount: number,
     index: number
-  ) => (
-    <Card
-      delay={index * 100}
-      style={{
-        width: screenWidth * 0.7,
-        marginRight: 16,
-        marginVertical: 8,
-      }}
-    >
-      <LinearGradient
-        colors={["#6366f1", "#4f46e5"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 80,
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-        }}
-      />
-      <View style={{ marginTop: 40 }}>
-        <ThemedText style={{ fontSize: 32, opacity: 0.8 }}>
-          {platform}
-        </ThemedText>
-        <ThemedText style={{ fontSize: 32, fontWeight: "bold", marginTop: 8 }}>
-          ${amount.toLocaleString()}
-        </ThemedText>
-      </View>
-    </Card>
-  );
+  ) => {
+    const platformKey = platform
+      .toLowerCase()
+      .replace(" ", "") as keyof typeof platformColors;
+    const colors = platformColors[platformKey] || platformColors.all;
 
+    return (
+      <MotiView
+        from={{ opacity: 0, scale: 0.9, translateY: 20 }}
+        animate={{ opacity: 1, scale: 1, translateY: 0 }}
+        transition={{
+          type: "spring",
+          delay: index * 100,
+          damping: 15,
+        }}
+        style={styles.balanceCardContainer}
+      >
+        <ModernCard gradient gradientColors={colors} style={styles.balanceCard}>
+          <LinearGradient
+            colors={["rgba(255,255,255,0.2)", "transparent"]}
+            style={styles.cardOverlay}
+          />
+          <View style={styles.balanceHeader}>
+            <Image
+              source={{
+                uri: `https://logo.clearbit.com/${platform
+                  .toLowerCase()
+                  .replace(" ", "")}.com`,
+              }}
+              style={styles.platformLogo}
+            />
+            <ThemedText style={styles.platformName}>{platform}</ThemedText>
+          </View>
+          <ThemedText style={styles.balanceAmount}>
+            ${amount.toLocaleString()}
+          </ThemedText>
+          <View style={styles.balanceFooter}>
+            <MaterialCommunityIcons
+              name="trending-up"
+              size={20}
+              color="#4ade80"
+            />
+            <ThemedText style={styles.balanceChange}>+12.5%</ThemedText>
+            <ThemedText style={styles.balancePeriod}>this month</ThemedText>
+          </View>
+        </ModernCard>
+      </MotiView>
+    );
+  };
   const renderActivityItem = (
     activity: { title: string; amount: number; date: string },
     index: number
@@ -273,6 +316,187 @@ export default function HomeScreen() {
     </MotiView>
   );
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: Colors[colorScheme as keyof typeof Colors].background,
+    },
+    section: {
+      marginBottom: 24,
+    },
+    sectionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 16,
+    },
+    sectionTitle: {
+      fontSize: 24,
+      fontWeight: "bold",
+    },
+    balanceCardContainer: {
+      marginRight: 16,
+    },
+    balanceCard: {
+      width: screenWidth * 0.7,
+      height: 180,
+      padding: 20,
+    },
+    cardOverlay: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 80,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+    },
+    balanceHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 16,
+    },
+    platformLogo: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      marginRight: 12,
+    },
+    platformName: {
+      fontSize: 18,
+      color: "#ffffff",
+      fontWeight: "600",
+    },
+    balanceAmount: {
+      fontSize: 32,
+      fontWeight: "bold",
+      color: "#ffffff",
+      marginBottom: 12,
+    },
+    balanceFooter: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    balanceChange: {
+      fontSize: 14,
+      color: "#4ade80",
+      marginLeft: 4,
+      marginRight: 8,
+    },
+    balancePeriod: {
+      fontSize: 14,
+      color: "#ffffff",
+      opacity: 0.8,
+    },
+    graphCard: {
+      marginBottom: 24,
+      padding: 20,
+    },
+    graphHeader: {
+      marginBottom: 20,
+    },
+    durationButtons: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 16,
+    },
+    graphContainer: {
+      alignItems: "center",
+    },
+    graph: {
+      marginVertical: 8,
+      borderRadius: 16,
+    },
+    statsSection: {
+      marginBottom: 24,
+    },
+    platformCardContainer: {
+      marginBottom: 16,
+    },
+    platformCard: {
+      padding: 20,
+    },
+    platformHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 12,
+    },
+    platformIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      marginRight: 12,
+    },
+    platformTitle: {
+      fontSize: 18,
+      color: "#ffffff",
+      fontWeight: "600",
+    },
+    platformStats: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    platformAmount: {
+      fontSize: 24,
+      color: "#ffffff",
+      fontWeight: "bold",
+    },
+    platformPercentage: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    percentageText: {
+      fontSize: 14,
+      color: "#ffffff",
+      marginLeft: 8,
+    },
+    activityCard: {
+      marginBottom: 24,
+    },
+    activityItem: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: "rgba(255,255,255,0.1)",
+    },
+    activityLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    activityIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 12,
+    },
+    activityTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    activityDate: {
+      fontSize: 14,
+      opacity: 0.6,
+    },
+    activityAmount: {
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    seeAllButton: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    seeAllText: {
+      fontSize: 14,
+      fontWeight: "600",
+      marginRight: 4,
+    },
+  });
+
   return (
     <ScrollView
       style={{
@@ -284,17 +508,18 @@ export default function HomeScreen() {
       {/* Balance Cards */}
       <View style={{ marginBottom: 24 }}>
         <ThemedText
-          style={{ 
-            fontSize: 24, 
-            fontWeight: "bold", 
+          style={{
+            fontSize: 24,
+            fontWeight: "bold",
             marginBottom: 16,
-            textAlign: 'right' 
+            textAlign: "right",
           }}
         >
           Your Balance
         </ThemedText>
         <FlatList
           horizontal
+          scrollEnabled={true}
           showsHorizontalScrollIndicator={false}
           data={[
             { platform: "All Platforms", amount: 12500 },
@@ -313,7 +538,7 @@ export default function HomeScreen() {
 
       {/* Graph Section */}
       <Card delay={200}>
-        <View style={{ marginBottom: 24 }}>
+        <View>
           <View
             style={{
               flexDirection: "row",
@@ -321,54 +546,89 @@ export default function HomeScreen() {
               marginBottom: 16,
             }}
           >
-            {["1Y", "6M", "1M", "1W", "1D"].map((duration) => (
+            {["1Y", "6M", "1M", "1W", "1D"].map((duration, index) => (
               <GradientButton
-                key={duration}
+                key={index}
                 label={duration}
                 isActive={selectedDuration === duration}
                 onPress={() => setSelectedDuration(duration)}
               />
             ))}
           </View>
-
-          <DropDownPicker
-            open={open}
-            value={selectedPlatform}
-            items={items}
-            setOpen={setOpen}
-            setValue={setSelectedPlatform}
-            setItems={setItems}
+          <View
             style={{
-              backgroundColor: Colors[colorScheme].background,
-              borderColor: Colors[colorScheme].border,
-              marginBottom: 16,
+              alignItems: "center"
             }}
-            textStyle={{
-              color: Colors[colorScheme].text,
-            }}
-            dropDownContainerStyle={{
-              backgroundColor: Colors[colorScheme].background,
-              borderColor: Colors[colorScheme].border,
-            }}
-          />
+          >
+            <ModernDropdown
+              open={open}
+              value={selectedPlatform}
+              items={items}
+              setOpen={setOpen}
+              setValue={setSelectedPlatform}
+              setItems={setItems}
+            />
+          </View>
 
-          <LineChart
-            data={lineData}
-            width={screenWidth - 80}
-            height={220}
-            chartConfig={{
-              ...chartConfig,
-              propsForBackgroundLines: {
-                strokeDasharray: "",
-                stroke: Colors[colorScheme].border,
-                strokeOpacity: 0.1,
-              },
-            }}
-            bezier
+          <View
             style={{
-              borderRadius: 16,
+              alignItems: "center",
+              marginLeft: 80
             }}
-          />
+          >
+            <LineChart
+              data={lineData}
+              width={screenWidth - 40}
+              height={220}
+              chartConfig={{
+                ...chartConfig,
+                propsForBackgroundLines: {
+                  strokeDasharray: "",
+                  stroke: Colors[colorScheme].border,
+                  strokeOpacity: 0.1,
+                },
+                propsForLabels: {
+                  fontSize: 12,
+                  fontWeight: "600",
+                },
+                propsForDots: {
+                  r: "4",
+                  strokeWidth: "2",
+                  stroke: "#fff",
+                },
+                fillShadowGradientFrom: Colors[colorScheme].backgroundCard,
+                fillShadowGradientTo: "transparent",
+                fillShadowGradientOpacity: 0.3,
+                // Adjust label spacing
+                decimalPlaces: 0,
+                yAxisInterval: 1,
+                yAxisSuffix: "",
+                yAxisLabel: "$",
+                // Improve padding for labels
+              }}
+              bezier
+              style={{
+                borderRadius: 16,
+                paddingRight: 20, // Add right padding
+                paddingLeft: 10, // Add left padding
+                paddingTop: 10,
+                marginRight: 10, // Add margin to ensure right labels are visible
+              }}
+              withInnerLines={true}
+              withOuterLines={true}
+              withVerticalLines={false}
+              withHorizontalLabels={true}
+              withVerticalLabels={true}
+              withDots={true}
+              segments={5}
+              formatYLabel={(value) => `$${parseInt(value).toLocaleString()}`}
+              // Add horizontal padding
+              horizontalLabelRotation={0}
+              verticalLabelRotation={0}
+              xLabelsOffset={10} // Adjust x-axis labels position
+              yLabelsOffset={10} // Adjust y-axis labels position
+            />
+          </View>
         </View>
       </Card>
 
@@ -419,7 +679,7 @@ export default function HomeScreen() {
         </ThemedText>
         {Object.entries(platforms).map(([key, platform], index) => (
           <MotiView
-            key={key}
+            key={index}
             from={{ opacity: 0, translateY: 20 }}
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ delay: index * 100 }}
@@ -461,7 +721,9 @@ export default function HomeScreen() {
           { title: "Lyft Earnings", amount: 280, date: "2024-01-19" },
           { title: "Upwork Payment", amount: 500, date: "2024-01-18" },
           { title: "Fiverr Order", amount: 150, date: "2024-01-17" },
-        ].map((activity, index) => renderActivityItem(activity, index))}
+        ].map((activity, index) => (
+          <View key={index}>{renderActivityItem(activity, index)}</View>
+        ))}
       </Card>
     </ScrollView>
   );
