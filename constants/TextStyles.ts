@@ -21,6 +21,11 @@ export const textStyles: Record<string, TextStyle> = {
     fontWeight: weight(400),
     fontFamily: "Poppins",
   },
+  mainSection: {
+    fontSize: 20,
+    fontWeight: weight(600),
+    fontFamily: "Poppins",
+  },
   section: {
     fontSize: 18,
     fontWeight: weight(700),
@@ -50,6 +55,11 @@ export const textStyles: Record<string, TextStyle> = {
     fontSize: 16,
     fontFamily: "Montserrat",
     fontWeight: weight(700),
+  },
+  defautlSmall: {
+    fontSize: 14,
+    fontFamily: "Montserrat",
+    fontWeight: weight(400),
   },
   small: {
     fontSize: 10,

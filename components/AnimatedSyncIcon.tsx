@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef} from "react";
 import { Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/components/ColorSchemeProvider";
 
 export const AnimatedSyncIcon = ({ rotating }: { rotating: boolean }) => {
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const [syncing, setSyncing] = useState(false);
+    const { colorScheme } = useColorScheme();
 
   useEffect(() => {
     if (rotating) {
@@ -35,7 +38,7 @@ export const AnimatedSyncIcon = ({ rotating }: { rotating: boolean }) => {
 
   return (
     <Animated.View style={{ transform: [{ rotate: rotation }]}}>
-      <Ionicons name="sync" size={28} />
+      <Ionicons name="sync" size={28} color={Colors[colorScheme].menuItemText}/>
     </Animated.View>
   );
 };
