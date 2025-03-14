@@ -100,7 +100,13 @@ export default function DrawerLayout() {
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Activate on horizontal swipe only
+        // Don't capture gestures on specific screens where we want native back gesture
+        // or where we need horizontal scrolling
+        if (pathname.includes('/settings/info')) {
+          return false;
+        }
+        
+        // Activate on horizontal swipe only for other screens
         return Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
       },
       onPanResponderMove: (_, gestureState) => {
