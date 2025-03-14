@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   StatusBar,
   Pressable,
+  Animated,
 } from "react-native";
 import { useState, useRef, useMemo, useEffect } from "react";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
@@ -48,7 +49,10 @@ export default function AuthScreen() {
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [agreeTermConditions, setAgreeTermConditions] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const inputFocusCount = useRef(0);
+  const errorBannerOpacity = useRef(new Animated.Value(0)).current;
+  const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const snapPoints = useMemo(() => ["57%", "95%"], []);
 
@@ -77,6 +81,45 @@ export default function AuthScreen() {
     };
   }, []);
 
+  // Show/hide error banner animation
+  useEffect(() => {
+    // Clear any existing timeout
+    if (errorTimeoutRef.current) {
+      clearTimeout(errorTimeoutRef.current);
+      errorTimeoutRef.current = null;
+    }
+
+    if (errorMessage) {
+      // Show the error banner immediately
+      Animated.timing(errorBannerOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+
+      // Set a timeout to clear the error message after 5 seconds
+      errorTimeoutRef.current = setTimeout(() => {
+        // Fade out the banner
+        Animated.timing(errorBannerOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          // Clear the error message after the animation completes
+          setErrorMessage("");
+        });
+        errorTimeoutRef.current = null;
+      }, 5000);
+    }
+
+    // Cleanup function to clear the timeout when component unmounts or when errorMessage changes
+    return () => {
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+    };
+  }, [errorMessage, errorBannerOpacity]);
+
   const handleInputFocus = () => {
     inputFocusCount.current += 1;
     const targetIdx = Platform.OS === "ios" ? 2 : 1;
@@ -95,55 +138,57 @@ export default function AuthScreen() {
   };
 
   const validate = () => {
+    setErrorMessage("");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      alert('Invalid email format');
+      setErrorMessage('Invalid email format');
       return false;
     }
     if (password.length < 8) {
-      alert('Password must be at least 8 characters');
+      setErrorMessage('Password must be at least 8 characters');
       return false;
     }
     return true;
   };
 
   const login = async () => {
+    setErrorMessage("");
     if(Config.debug) {
-      if( await loginApi(Config.username, Config.password)) {
+      const result = await loginApi(Config.username, Config.password);
+      if(result.success) {
         router.replace("/main");
       } else {
-        alert("login failed");
+        setErrorMessage(result.error || "Login failed");
       }
       return;
     }
-    if (!validate()) return
-    let loginSuccess;
-    try {
-      loginSuccess = await loginApi(email, password);
-    } catch (e) {
-      console.error("Login API failed:", e);
-    }
-    if (loginSuccess) {
+    
+    if (!validate()) return;
+    
+    const result = await loginApi(email, password);
+    if (result.success) {
       console.log("routing to main");
       router.replace("/main");
     } else {
-      alert("login failed");
+      setErrorMessage(result.error || "Login failed");
     }
   };
 
   const signup = async () => {
-    if(!validate()) return
+    setErrorMessage("");
+    if(!validate()) return;
+    
     if(!agreeTermConditions) {
-      alert("You have to agree on the Terms & Conditions before continue");
-      return
+      setErrorMessage("You have to agree on the Terms & Conditions before continue");
+      return;
     }
-    let signupSuccess;
-    try {
-      signupSuccess = await signupApi(email, password);
-    } catch (e) {
-      console.error("Login API failed:", e);
+    
+    const result = await signupApi(email, password);
+    if (!result.success) {
+      setErrorMessage(result.error || "Signup failed");
+    } else {
+      // Proceed to login after successful signup
+      login();
     }
-    if (!signupSuccess) alert("signup failed");
-    else login();
   };
 
   return (
@@ -167,6 +212,30 @@ export default function AuthScreen() {
           backgroundColor: Colors[colorScheme].backgroundCard,
         }}
       />
+
+      {/* Error Alert Banner */}
+      <Animated.View 
+        className="absolute left-0 right-0 z-50 px-4"
+        style={{
+          top: STATUS_BAR_HEIGHT + 10,
+          opacity: errorBannerOpacity,
+          transform: [{ 
+            translateY: errorBannerOpacity.interpolate({
+              inputRange: [0, 1],
+              outputRange: [-50, 0]
+            })
+          }]
+        }}
+      >
+        {errorMessage ? (
+          <View className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(255, 0, 0, 0.1)', borderColor: '#d32f2f', borderWidth: 1 }}>
+            <ThemedText style={{ color: '#d32f2f' }}>
+              {errorMessage}
+            </ThemedText>
+          </View>
+        ) : null}
+      </Animated.View>
+
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <SafeAreaView style={{ flex: 1 }}>
           <View
