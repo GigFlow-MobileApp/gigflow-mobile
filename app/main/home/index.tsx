@@ -206,7 +206,9 @@ export default function HomeScreen() {
         : [
             {
               data: generateRandomData(6),
-              color: (opacity = 1) => platforms[selectedPlatform].color,
+              color: (opacity = 1) => selectedPlatform === "all" 
+                ? `rgba(0, 122, 255, ${opacity})`  // Default color for "all"
+                : platforms[selectedPlatform as keyof typeof platforms].color,
               strokeWidth: 2,
             },
           ],
@@ -861,7 +863,9 @@ export default function HomeScreen() {
                   )}
                   style={{
                     data: {
-                      stroke: platforms[selectedPlatform].color,
+                      stroke: selectedPlatform === "all"
+                        ? `rgba(0, 122, 255, 1)`  // Default blue color for "all"
+                        : platforms[selectedPlatform as keyof typeof platforms].color,
                       strokeWidth: 2,
                     },
                   }}
@@ -900,7 +904,9 @@ export default function HomeScreen() {
                   style={{
                     data: {
                       fill: Colors[colorScheme].background,
-                      stroke: platforms[selectedPlatform].color,
+                      stroke: selectedPlatform === "all"
+                        ? `rgba(0, 122, 255, 1)`  // Default blue color for "all"
+                        : platforms[selectedPlatform as keyof typeof platforms].color,
                       strokeWidth: 2,
                     },
                   }}
