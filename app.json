@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "gigflowapp",
-    "slug": "gigflowapp",
+    "name": "GigFlow",
+    "slug": "GigFlow",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,13 +9,21 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gigflow",
+      "scheme": "myapp"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.gigflow",
+      "intentFilters": [{
+        "action": "VIEW",
+        "data": [{ "scheme": "myapp" }],
+        "category": ["BROWSABLE", "DEFAULT"]
+      }]
     },
     "web": {
       "bundler": "metro",
@@ -32,10 +40,13 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ]      
     ],
     "experiments": {
       "typedRoutes": true
     }
   }
 }
+
+
+
