@@ -9,7 +9,8 @@ import Config from '@/constants/config';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const UBER_CLIENT_ID = 'TlUtvyyQkBcI6LUPphdzJogdzwL8aVIs';
+const UBER_CLIENT_ID = 'zWjTtPk-NXJTmybcPRvDkqE-QmHt7gT1';
+const UBER_CLIENT_SECRET = 'aiWITz0K2wneae_LzoF8GEhK8I4EqMxk_qyTGrOP';
 
 interface ServiceState {
   isAuthenticated: boolean;
@@ -34,12 +35,12 @@ const getRedirectUri = () => {
 
 const uberAuthConfig = {
   clientId: UBER_CLIENT_ID,
-  scopes: ['profile'],
-  redirectUri: getRedirectUri(),
+  clientSecret: UBER_CLIENT_SECRET,
+  scopes: ['profile partner.accounts'],
+  redirectUri: "exp://192.168.104.149:8081/--/oauth/callback",
   serviceConfiguration: {
-    // Use sandbox endpoints for testing
-    authorizationEndpoint: 'https://sandbox-login.uber.com/oauth/v2/authorize',
-    tokenEndpoint: 'https://sandbox-login.uber.com/oauth/v2/token',
+    authorizationEndpoint: 'https://login.uber.com/oauth/v2/authorize',
+    tokenEndpoint: 'https://login.uber.com/oauth/v2/token',
   }
 };
 
@@ -67,45 +68,48 @@ export default function AccountScreen() {
       
       const authRequest = new AuthSession.AuthRequest({
         clientId: uberAuthConfig.clientId,
+        clientSecret: uberAuthConfig.clientSecret,
         scopes: uberAuthConfig.scopes,
         redirectUri: uberAuthConfig.redirectUri,
         usePKCE: true,
       });
 
       const authResult = await authRequest.promptAsync(uberAuthConfig.serviceConfiguration);
+      
+      console.log("### auth request:", authRequest)
 
       console.log("auth result:", authResult)
       
-      if (authResult.type === 'success') {
-        // Token exchange should happen on your backend
-        const tokenResponse = await fetch(`${Config.apiBaseUrl}/api/v1/uber/token-exchange`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            code: authResult.params.code,
-            code_verifier: authRequest.codeVerifier,
-            redirect_uri: uberAuthConfig.redirectUri
-          }),
-        });
+      // if (authResult.type === 'success') {
+      //   // Token exchange should happen on your backend
+      //   const tokenResponse = await fetch(`${Config.apiBaseUrl}/api/v1/uber/token-exchange`, {
+      //     method: 'POST',
+      //     headers: {
+      //       'Content-Type': 'application/json',
+      //     },
+      //     body: JSON.stringify({
+      //       code: authResult.params.code,
+      //       code_verifier: authRequest.codeVerifier,
+      //       redirect_uri: uberAuthConfig.redirectUri
+      //     }),
+      //   });
 
-        if (!tokenResponse.ok) {
-          throw new Error('Token exchange failed');
-        }
+      //   if (!tokenResponse.ok) {
+      //     throw new Error('Token exchange failed');
+      //   }
 
-        const tokenData = await tokenResponse.json();
+      //   const tokenData = await tokenResponse.json();
         
-        await SecureStore.setItemAsync('uber_access_token', tokenData.access_token);
-        await SecureStore.setItemAsync('uber_refresh_token', tokenData.refresh_token);
+      //   await SecureStore.setItemAsync('uber_access_token', tokenData.access_token);
+      //   await SecureStore.setItemAsync('uber_refresh_token', tokenData.refresh_token);
 
-        setUberState({
-          isAuthenticated: true,
-          isLoading: false,
-        });
-      } else {
-        throw new Error(authResult.type || 'Authentication failed');
-      }
+      //   setUberState({
+      //     isAuthenticated: true,
+      //     isLoading: false,
+      //   });
+      // } else {
+      //   throw new Error(authResult.type || 'Authentication failed');
+      // }
     } catch (error) {
       console.error('Uber auth error:', error);
       setUberState({
