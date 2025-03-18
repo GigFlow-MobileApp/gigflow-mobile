@@ -61,6 +61,11 @@ export const textStyles: Record<string, TextStyle> = {
     fontFamily: "Montserrat",
     fontWeight: weight(400),
   },
+  semiSmall: {
+    fontSize: 12,
+    fontFamily: "Montserrat",
+    fontWeight: weight(400),
+  },
   small: {
     fontSize: 10,
     fontFamily: "Montserrat",
