@@ -1,5 +1,5 @@
 import { StyleProp, ViewStyle, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, Feather } from "@expo/vector-icons";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Svg, { Path } from "react-native-svg";
@@ -12,6 +12,11 @@ interface IconSymbolProps {
   style?: StyleProp<ViewStyle>;
   className?: string;
 }
+
+const FeatherPairs: { [key: string]: string } = {
+  income: "arrow-down-right",
+  expense: "arrow-up-left",
+};
 
 const AntDesign5Pairs: { [key: string]: string } = {
   edit: "edit",
@@ -39,6 +44,7 @@ const iconPairs: { [key: string]: string } = {
   gear: "settings",
   tools: "construct",
   help: "help",
+  detail: "help-circle",
   notifications: "notifications",
   gift: "gift",
   leave: "log-out",
@@ -47,7 +53,8 @@ const iconPairs: { [key: string]: string } = {
   "right-arrow": "chevron-forward",
   "left-arrow": "chevron-back",
   "qrcode": "qr-code",
-  link: "link"
+  link: "link",
+  arrow: "arrow-back-circle",
 }
 
 function createIconMap(pairs: Record<string, string>): Record<string, string> {
@@ -65,7 +72,8 @@ function createIconMap(pairs: Record<string, string>): Record<string, string> {
 export const iconMap: Record<string, string> = {
   ...createIconMap(iconPairs),
   ...FontAwesome5Pairs,
-  ...AntDesign5Pairs
+  ...AntDesign5Pairs,
+  ...FeatherPairs
 };
 
 function getSimpleIconPath(name: string): string | null {
@@ -100,6 +108,8 @@ export function IconSymbol({ name, size, color, style, className }: IconSymbolPr
         <FontAwesome5 name={FontAwesome5Pairs[name] as any} size={size} color={color} />
       ) : name in AntDesign5Pairs ? (
         <AntDesign name={AntDesign5Pairs[name] as any} size={size} color={color} />
+      ) : name in FeatherPairs ? (
+        <Feather name={FeatherPairs[name] as any} size={size} color={color} />
       ) : (
         <Ionicons name={getIoniconName(name) as any} size={size} color={color} />
       )}
