@@ -1,6 +1,6 @@
 // app/(drawer)/setting.tsx
 import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
+import { View, Alert, ScrollView, TouchableOpacity, Image } from "react-native";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { Colors } from "@/constants/Colors";
@@ -30,10 +30,36 @@ const iconMap: Record<string, any> = {
   fiverr: require("@/assets/images/logos/fiverr.png"),
 };
 
-const padTop = 6;
-
-const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked, onPress }) => {
+const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: initialLinked, onPress }) => {
   const { colorScheme } = useColorScheme();
+  const [linked, setLinked] = useState(initialLinked);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
+  useEffect(() => {
+    if (showConfirmDialog) {
+
+      Alert.alert(
+        "Confirm Link",
+        `Do you want to ${linked ? "un" : ""}link this account?`,
+        [
+          {
+            text: "Cancel",
+            onPress: () => setShowConfirmDialog(false),
+            style: "cancel",
+          },
+          {
+            text: "Yes",
+            onPress: () => {
+              setLinked(!linked);
+              setShowConfirmDialog(false);
+            },
+          },
+        ],
+        { cancelable: true }
+      );
+    }
+  }, [showConfirmDialog]);
+
   return (
     <View
       className="flex flex-row justify-between align-center px-5 pt-4"
@@ -67,10 +93,11 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked, on
       </View>
       <View className="flex flex-col justify-between">
         <TouchableOpacity
-          className={`mt-2 px-3 py-1 rounded-lg flex-row align-center`}
+          className="mt-2 px-3 py-1 rounded-lg flex-row items-center"
           style={{ backgroundColor: linked ? Colors[colorScheme].btnBackground : Colors[colorScheme].tabIconDefault }}
+          onPress={() => { setShowConfirmDialog(true)}}
         >
-          <IconSymbol name="link" size={16} color="btnText" className="pr-2" />
+          <IconSymbol name="link" size={16} color={Colors[colorScheme].btnText} className="pr-2" />
           <ThemedText type="defautlSmall" colorValue="btnText">
             {linked ? "linked" : "unlinked"}
           </ThemedText>
@@ -101,22 +128,23 @@ export default function AccountScreen() {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await fetch("https://your-backend.com/api/accounts");
+        // const res = await fetch("https://your-backend.com/api/accounts");
 
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(`HTTP ${res.status}: ${errorText}`);
-        }
+        // if (!res.ok) {
+        //   const errorText = await res.text();
+        //   throw new Error(`HTTP ${res.status}: ${errorText}`);
+        // }
 
-        const text = await res.text(); // fetch as text first
+        // const text = await res.text(); // fetch as text first
 
-        try {
-          const data: Account[] = JSON.parse(text);
-          setAccounts(data);
-        } catch (jsonError) {
-          console.log("❌ Failed to parse JSON. Raw response:\n", text);
-          throw jsonError;
-        }
+        // try {
+        //   const data: Account[] = JSON.parse(text);
+        //   setAccounts(data);
+        // } catch (jsonError) {
+        //   console.log("❌ Failed to parse JSON. Raw response:\n", text);
+        //   throw jsonError;
+        // }
+        throw Error("");
       } catch (error) {
         console.log("Error fetching accounts:", error);
         console.log("Using Mockdata...");
@@ -132,7 +160,7 @@ export default function AccountScreen() {
 
   return (
     <View className="rounded-3xl" style={{ backgroundColor: Colors[colorScheme].background }}>
-      <ThemedText type="title" className={`self-center pt-${padTop.toString()}`}>
+      <ThemedText type="title" className="self-center" style={{paddingTop: 20}}>
         Your Accounts
       </ThemedText>
       {/* account list */}
@@ -144,24 +172,16 @@ export default function AccountScreen() {
               iconName={account.iconName}
               balance={account.balance}
               linked={account.linked}
-              onPress={() => router.push({
-                pathname: "/main/account/[name]",
-                params: { name: account.iconName }
-              })}
+              onPress={() =>
+                router.push({
+                  pathname: "/main/account/[name]",
+                  params: { name: account.iconName },
+                })
+              }
             />
           );
         })}
       </ScrollView>
-      <View className={`absolute bottom-${(10 + padTop).toString()} left-4 right-4 `}>
-        <TouchableOpacity
-          className="mx-3 py-3 rounded-lg items-center"
-          style={{ backgroundColor: Colors[colorScheme].brandColor }}
-        >
-          <ThemedText type="btnText" colorValue="btnText" className="self-start pl-8">
-            +   Add Account
-          </ThemedText>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
