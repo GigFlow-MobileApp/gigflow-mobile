@@ -52,25 +52,25 @@ export default function AccountBalancePage() {
         // Attempt to call the API function
         // Replace this with your actual API call
         // const response = await fetchAccountAPI(name);
-        
+
         // If API call is successful, set the values from the response
         // setAvailable(response.available);
         // setPending(response.pending);
         // setAccountId(response.accountId);
         // setDate(response.date);
         // setActivities(response.activities);
-        
+
         // For demonstration, we'll simulate an API failure
         throw new Error(`${name} API not working, Use Mock Data`);
       } catch (error) {
         console.log("Error fetching account data:", error);
-        
+
         // Set default values if API fails
         setAvailable(850);
         setPending(350);
         setAccountId("2412 7512 3412 3456");
         setDate("Monday 21/08/23");
-        
+
         // Set default activities
         setActivities([
           {
@@ -99,17 +99,14 @@ export default function AccountBalancePage() {
   }, [name]); // Re-run when name changes
 
   // Ensure name is a valid platform name for indexing
-  const platformName = typeof name === 'string' && name in logoMap 
-    ? name as PlatformName 
-    : 'uber'; // Default to uber if name is not valid
-  
+  const platformName = typeof name === "string" && name in logoMap ? (name as PlatformName) : "uber"; // Default to uber if name is not valid
+
   // Get the logo source
   const logoSource = logoMap[platformName];
-  
+
   // Get the platform color
-  const platformBgColor = platformName in platformColor 
-    ? platformColor[platformName as keyof typeof platformColor] 
-    : platformColor.uber;
+  const platformBgColor =
+    platformName in platformColor ? platformColor[platformName as keyof typeof platformColor] : platformColor.uber;
 
   return (
     <View className="flex-1 bg-white px-4 pt-4">
@@ -131,8 +128,15 @@ export default function AccountBalancePage() {
           resizeMode="cover"
         />
         <View
-          className="flex-1 h-[90px] rounded-xl shadow-sm flex-row justify-between items-center"
-          style={{ backgroundColor: colors.background }}
+          className="flex-1 h-[90px] rounded-xl flex-row justify-between items-center"
+          style={{
+            backgroundColor: colors.background,
+            elevation: 8,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 6,
+          }}
         >
           <View className="flex-1 h-full flex-col p-4 justify-between">
             <View className="flex-row items-center">
@@ -169,6 +173,16 @@ export default function AccountBalancePage() {
               </View>
             </View>
           </View>
+
+          <View
+            style={{
+              width: 1,
+              height: "80%",
+              backgroundColor: "rgba(0,0,0,0.1)",
+              marginVertical: "10%",
+              borderRadius: 1,
+            }}
+          />
           <View
             className="h-full rounded-r-xl relative overflow-hidden"
             style={{ width: blackWidth, backgroundColor: platformBgColor }}
@@ -212,7 +226,7 @@ export default function AccountBalancePage() {
           // Safely convert label to a valid key for colors object
           const colorKey = label.replace(/\s+/g, "").toLowerCase();
           const buttonColor = colors[colorKey as keyof typeof colors] || colors.background;
-          
+
           return (
             <View key={label} className="items-center">
               <View
@@ -236,7 +250,7 @@ export default function AccountBalancePage() {
         </ThemedText>
         <TouchableOpacity onPress={() => ""}>
           <ThemedText type="semiSmall" colorValue="textTertiary">
-            See all {'>'}
+            See all {">"}
           </ThemedText>
         </TouchableOpacity>
       </View>
