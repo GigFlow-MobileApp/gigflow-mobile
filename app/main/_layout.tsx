@@ -182,7 +182,7 @@ export default function DrawerLayout() {
                 flex: 1,
                 transform: [{ translateX }],
               }}
-              {...panResponder.panHandlers}
+              // {...panResponder.panHandlers}
             >
               {/* Header button*/}
               <View
