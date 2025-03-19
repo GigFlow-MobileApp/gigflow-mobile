@@ -12,6 +12,12 @@ WebBrowser.maybeCompleteAuthSession();
 const UBER_CLIENT_ID = 'zWjTtPk-NXJTmybcPRvDkqE-QmHt7gT1';
 const UBER_CLIENT_SECRET = 'aiWITz0K2wneae_LzoF8GEhK8I4EqMxk_qyTGrOP';
 
+const REDIRECT_URI = AuthSession.makeRedirectUri(); // Ensure this matches Uber dashboard
+const AUTH_URL = `https://auth.uber.com/oauth/v2/authorize?client_id=${UBER_CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=history%20history_lite%20profile`;
+
+const LYFT_CLIENT_ID = 'YOUR_LYFT_CLIENT_ID';
+const LYFT_CLIENT_SECRET = 'YOUR_LYFT_CLIENT_SECRET';
+
 interface ServiceState {
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -44,6 +50,17 @@ const uberAuthConfig = {
   }
 };
 
+const lyftAuthConfig = {
+  clientId: LYFT_CLIENT_ID,
+  clientSecret: LYFT_CLIENT_SECRET,
+  scopes: ['public', 'profile', 'rides.read', 'offline'],
+  redirectUri: "exp://192.168.104.149:8081/--/oauth/callback",
+  serviceConfiguration: {
+    authorizationEndpoint: 'https://api.lyft.com/oauth/authorize',
+    tokenEndpoint: 'https://api.lyft.com/oauth/token',
+  }
+};
+
 export default function AccountScreen() {
 
   const [uberState, setUberState] = useState<ServiceState>({
@@ -51,11 +68,25 @@ export default function AccountScreen() {
     isLoading: false,
   });
 
+  const [lyftState, setLyftState] = useState<ServiceState>({
+    isAuthenticated: false,
+    isLoading: false,
+  });
+
   useEffect(() => {
     const checkAuthStatus = async () => {
-      const token = await SecureStore.getItemAsync('uber_access_token');
+      const [uberToken, lyftToken] = await Promise.all([
+        SecureStore.getItemAsync('uber_access_token'),
+        SecureStore.getItemAsync('lyft_access_token')
+      ]);
+      
       setUberState({
-        isAuthenticated: !!token,
+        isAuthenticated: !!uberToken,
+        isLoading: false,
+      });
+      
+      setLyftState({
+        isAuthenticated: !!lyftToken,
         isLoading: false,
       });
     };
@@ -125,6 +156,68 @@ export default function AccountScreen() {
     setUberState({ isAuthenticated: false, isLoading: false });
   };
 
+  const handleLyftAuth = async () => {
+    try {
+      setLyftState(prev => ({ ...prev, isLoading: true }));
+      
+      const authRequest = new AuthSession.AuthRequest({
+        clientId: lyftAuthConfig.clientId,
+        clientSecret: lyftAuthConfig.clientSecret,
+        scopes: lyftAuthConfig.scopes,
+        redirectUri: lyftAuthConfig.redirectUri,
+        usePKCE: true,
+      });
+
+      const authResult = await authRequest.promptAsync(lyftAuthConfig.serviceConfiguration);
+      
+      console.log("### Lyft auth request:", authRequest);
+      console.log("Lyft auth result:", authResult);
+      
+      if (authResult.type === 'success') {
+        // Token exchange should happen on your backend
+        const tokenResponse = await fetch(`${Config.apiBaseUrl}/api/v1/lyft/token-exchange`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            code: authResult.params.code,
+            code_verifier: authRequest.codeVerifier,
+            redirect_uri: lyftAuthConfig.redirectUri
+          }),
+        });
+
+        if (!tokenResponse.ok) {
+          throw new Error('Token exchange failed');
+        }
+
+        const tokenData = await tokenResponse.json();
+        
+        await SecureStore.setItemAsync('lyft_access_token', tokenData.access_token);
+        await SecureStore.setItemAsync('lyft_refresh_token', tokenData.refresh_token);
+
+        setLyftState({
+          isAuthenticated: true,
+          isLoading: false,
+        });
+      } else {
+        throw new Error(authResult.type || 'Authentication failed');
+      }
+    } catch (error) {
+      console.error('Lyft auth error:', error);
+      setLyftState({
+        isAuthenticated: false,
+        isLoading: false,
+      });
+    }
+  };
+
+  const handleLyftDisconnect = async () => {
+    await SecureStore.deleteItemAsync('lyft_access_token');
+    await SecureStore.deleteItemAsync('lyft_refresh_token');
+    setLyftState({ isAuthenticated: false, isLoading: false });
+  };
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
@@ -142,6 +235,25 @@ export default function AccountScreen() {
             : uberState.isLoading 
             ? 'Connecting to Uber...'
             : 'Connect Uber Account'}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[
+          styles.button,
+          { backgroundColor: '#FF00BF' }, // Lyft's brand color
+          lyftState.isAuthenticated && styles.buttonConnected,
+          lyftState.isLoading && styles.buttonLoading,
+        ]}
+        onPress={lyftState.isAuthenticated ? handleLyftDisconnect : handleLyftAuth}
+        disabled={lyftState.isLoading}
+      >
+        <Text style={styles.buttonText}>
+          {lyftState.isAuthenticated 
+            ? '✓ Lyft Connected (Tap to Disconnect)'
+            : lyftState.isLoading 
+            ? 'Connecting to Lyft...'
+            : 'Connect Lyft Account'}
         </Text>
       </TouchableOpacity>
     </View>
