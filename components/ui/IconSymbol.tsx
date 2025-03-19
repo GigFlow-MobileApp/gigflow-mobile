@@ -1,7 +1,9 @@
 import { StyleProp, ViewStyle, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, Feather } from "@expo/vector-icons";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import AntDesign from '@expo/vector-icons/AntDesign';
+import Svg, { Path } from "react-native-svg";
+import * as SimpleIcons from "simple-icons";
 
 interface IconSymbolProps {
   name: string;
@@ -11,6 +13,11 @@ interface IconSymbolProps {
   className?: string;
 }
 
+const FeatherPairs: { [key: string]: string } = {
+  income: "arrow-down-right",
+  expense: "arrow-up-left",
+};
+
 const AntDesign5Pairs: { [key: string]: string } = {
   edit: "edit",
 };
@@ -18,6 +25,14 @@ const AntDesign5Pairs: { [key: string]: string } = {
 const FontAwesome5Pairs: { [key: string]: string } = {
   coins: "coins",
 };
+
+const SimpleIconNames: Set<string> = new Set([
+  "uber",
+  "lyft",
+  "doordash",
+  "upwork",
+  "fiverr",
+]);
 
 const iconPairs: { [key: string]: string } = {
   house: "home",
@@ -29,6 +44,7 @@ const iconPairs: { [key: string]: string } = {
   gear: "settings",
   tools: "construct",
   help: "help",
+  detail: "help-circle",
   notifications: "notifications",
   gift: "gift",
   leave: "log-out",
@@ -37,6 +53,8 @@ const iconPairs: { [key: string]: string } = {
   "right-arrow": "chevron-forward",
   "left-arrow": "chevron-back",
   "qrcode": "qr-code",
+  link: "link",
+  arrow: "arrow-back-circle",
 }
 
 function createIconMap(pairs: Record<string, string>): Record<string, string> {
@@ -54,8 +72,16 @@ function createIconMap(pairs: Record<string, string>): Record<string, string> {
 export const iconMap: Record<string, string> = {
   ...createIconMap(iconPairs),
   ...FontAwesome5Pairs,
-  ...AntDesign5Pairs
+  ...AntDesign5Pairs,
+  ...FeatherPairs
 };
+
+function getSimpleIconPath(name: string): string | null {
+  const key = name.toLowerCase();
+  const iconKey = "si" + key.charAt(0).toUpperCase() + key.slice(1);
+  const icon = (SimpleIcons as any)[iconKey];
+  return icon?.path || null;
+}
 
 export function IconSymbol({ name, size, color, style, className }: IconSymbolProps) {
   // Map SF Symbol names to Ionicons names
@@ -63,12 +89,27 @@ export function IconSymbol({ name, size, color, style, className }: IconSymbolPr
     return iconMap[sfSymbolName] || sfSymbolName;
   };
 
+  if (SimpleIconNames.has(name.toLowerCase())) {
+    const path = getSimpleIconPath(name);
+    if (path) {
+      return (
+        <View style={style} className={className}>
+          <Svg width={size} height={size} viewBox="0 0 24 24">
+            <Path d={path} fill={color} />
+          </Svg>
+        </View>
+      );
+    }
+  }
+
   return (
     <View style={style} className={className}>
       {name in FontAwesome5Pairs ? (
         <FontAwesome5 name={FontAwesome5Pairs[name] as any} size={size} color={color} />
       ) : name in AntDesign5Pairs ? (
         <AntDesign name={AntDesign5Pairs[name] as any} size={size} color={color} />
+      ) : name in FeatherPairs ? (
+        <Feather name={FeatherPairs[name] as any} size={size} color={color} />
       ) : (
         <Ionicons name={getIoniconName(name) as any} size={size} color={color} />
       )}

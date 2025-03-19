@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useMemo } from 'react';
 import { useColorScheme as _useColorScheme } from 'react-native';
+import { Colors } from '@/constants/Colors';
 
 const ColorSchemeContext = createContext<{
   colorScheme: 'light' | 'dark';
@@ -26,4 +27,9 @@ export const useColorScheme = () => {
   const context = useContext(ColorSchemeContext);
   if (!context) throw new Error("useColorScheme must be used inside a ColorSchemeProvider");
   return context;
+};
+
+export const useThemeColors = () => {
+  const { colorScheme } = useColorScheme();
+  return { colorScheme, colors: Colors[colorScheme] };
 };
