@@ -8,7 +8,6 @@ import { platformColor } from "@/constants/Colors";
 import { ThemedText } from "@/components/ThemedText";
 import { router } from "expo-router";
 import { textStyles } from "@/constants/TextStyles";
-import { colorKeys } from "moti";
 
 // Define the Activity type
 interface Activity {
@@ -119,7 +118,9 @@ export default function AccountBalancePage() {
         <ThemedText type="title" className="self-center" style={{ fontWeight: 700 }}>
           Your Balance
         </ThemedText>
-        <IconSymbol name="notifications" size={24} color={colors.primaryText} />
+        <TouchableOpacity onPress={() => ""}>
+          <IconSymbol name="notifications" size={24} color={colors.primaryText} />
+        </TouchableOpacity>
       </View>
 
       {/* Balance Card */}
@@ -169,7 +170,7 @@ export default function AccountBalancePage() {
             </View>
           </View>
           <View
-            className="h-full rounded-e-xl relative overflow-hidden"
+            className="h-full rounded-r-xl relative overflow-hidden"
             style={{ width: blackWidth, backgroundColor: platformBgColor }}
           >
             <View
