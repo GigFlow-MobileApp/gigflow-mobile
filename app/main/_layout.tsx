@@ -57,6 +57,9 @@ export default function DrawerLayout() {
   const { colorScheme } = useColorScheme();
   const router = useRouter();
   const pathname = usePathname();
+  const pathDepth = pathname.startsWith('/main')
+  ? pathname.replace('/main', '').split('/').filter(Boolean).length
+  : 0;
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const slideAnim = useState(new Animated.Value(0))[0];
@@ -194,15 +197,15 @@ export default function DrawerLayout() {
                   // opacity: 0.8
                 }}
               >
-                <TouchableOpacity
-                  onPress={() => setIsSidebarOpen((prev) => !prev)}
-                >
-                  <Ionicons
-                    name={isSidebarOpen ? "close" : "menu"}
-                    size={28}
-                    color={Colors[colorScheme].menuItemText}
-                  />
-                </TouchableOpacity>
+                {pathDepth <= 1 && (
+                  <TouchableOpacity onPress={() => setIsSidebarOpen((prev) => !prev)}>
+                    <Ionicons
+                      name={isSidebarOpen ? "close" : "menu"}
+                      size={28}
+                      color={Colors[colorScheme].menuItemText}
+                    />
+                  </TouchableOpacity>
+                )}
               </View>
               <Slot />
             </Animated.View>
