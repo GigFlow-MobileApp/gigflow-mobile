@@ -7,6 +7,8 @@ import { Colors } from "@/constants/Colors";
 import { ThemedText } from "@/components/ThemedText";
 import { useRouter } from "expo-router";
 import Config from "@/constants/config";
+import { Linking } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AccountItemProps {
   iconName: string;
@@ -30,14 +32,47 @@ const iconMap: Record<string, any> = {
   fiverr: require("@/assets/images/logos/fiverr.png"),
 };
 
+const UBER_CLIENT_ID = 'zWjTtPk-NXJTmybcPRvDkqE-QmHt7gT1';
+const UBER_REDIRECT_URI = 'exp://192.168.104.149:8081/--/oauth/callback'; 
+const UBER_SCOPE = 'profile'; // Add required scopes  partner.payments partner.trips
+
 const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: initialLinked, onPress }) => {
   const { colorScheme } = useColorScheme();
   const [linked, setLinked] = useState(initialLinked);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
+  const handleUberOAuth = async () => {
+    try {
+      const state = Math.random().toString(36).substring(7); // Generate random state
+      const authUrl = `https://auth.uber.com/oauth/v2/authorize?` +
+        `client_id=${UBER_CLIENT_ID}` +
+        `&response_type=code` +
+        `&redirect_uri=${encodeURIComponent(UBER_REDIRECT_URI)}` +
+        `&scope=${encodeURIComponent(UBER_SCOPE)}` +
+        `&state=${state}`;
+
+      // Store state for verification
+      await AsyncStorage.setItem('oauth_state', state);
+      await AsyncStorage.setItem('linking_platform', iconName);
+      
+      console.log("OAuth URL: ", authUrl);
+      
+      const supported = await Linking.canOpenURL(authUrl);
+      
+      if (supported) {
+        await Linking.openURL(authUrl);
+      } else {
+        throw new Error("Can't open OAuth URL");
+      }
+    } catch (error) {
+      console.error('OAuth Error:', error);
+      Alert.alert('Error', 'Failed to connect with Uber');
+      setLinked(false);
+    }
+  };
+
   useEffect(() => {
     if (showConfirmDialog) {
-
       Alert.alert(
         "Confirm Link",
         `Do you want to ${linked ? "un" : ""}link this account?`,
@@ -49,8 +84,17 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
           },
           {
             text: "Yes",
-            onPress: () => {
-              setLinked(!linked);
+            onPress: async () => {
+              if (linked) {
+                // Handle unlinking
+                setLinked(false);
+              } else {
+                // Handle OAuth
+                if (iconName === 'uber') {
+                  await handleUberOAuth();
+                }
+                // Add other platforms here
+              }
               setShowConfirmDialog(false);
             },
           },
@@ -112,11 +156,11 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
 };
 
 const accountData: Account[] = [
-  { id: "1", iconName: "uber", balance: 850, linked: true },
-  { id: "2", iconName: "lyft", balance: 850, linked: true },
+  { id: "1", iconName: "uber", balance: 0, linked: false },
+  { id: "2", iconName: "lyft", balance: 0, linked: false },
   { id: "3", iconName: "doordash", balance: 0, linked: false },
   { id: "4", iconName: "upwork", balance: 0, linked: false },
-  { id: "5", iconName: "fiverr", balance: 850, linked: true },
+  { id: "5", iconName: "fiverr", balance: 0, linked: false },
 ];
 
 export default function AccountScreen() {
