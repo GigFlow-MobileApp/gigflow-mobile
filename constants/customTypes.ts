@@ -19,6 +19,12 @@ export type SidebarProps = {
 export type TabProps = {
   items: TabItemsType[];
 };
+export interface Activity {
+  title: string;
+  subtitle: string;
+  amount: string;
+  type: "in" | "out";
+}
 export const updateMyInfoZod = z.object({
   full_name: z.string().nullable(),
   email: z.string().email(),
