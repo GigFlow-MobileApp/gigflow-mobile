@@ -6,16 +6,12 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useThemeColors } from "@/components/ColorSchemeProvider";
 import { platformColor } from "@/constants/Colors";
 import { ThemedText } from "@/components/ThemedText";
-import { router } from "expo-router";
+import { useRouter } from "expo-router";
 import { textStyles } from "@/constants/TextStyles";
+import {Activity} from "@/constants/customTypes";
 
 // Define the Activity type
-interface Activity {
-  title: string;
-  subtitle: string;
-  amount: string;
-  type: "in" | "out";
-}
+
 
 // Define valid platform names
 type PlatformName = keyof typeof logoMap;
@@ -44,6 +40,7 @@ export default function AccountBalancePage() {
   const [accountId, setAccountId] = useState("");
   const [date, setDate] = useState("");
   const [activities, setActivities] = useState<Activity[]>([]);
+    const router = useRouter();
 
   // useEffect to fetch account data and set default values if API fails
   useEffect(() => {
@@ -248,7 +245,10 @@ export default function AccountBalancePage() {
         <ThemedText type="mainSection" colorValue="primaryText">
           Recent Activities
         </ThemedText>
-        <TouchableOpacity onPress={() => ""}>
+        <TouchableOpacity onPress={() => router.push({
+          pathname: "/main/home/activities",
+          params: { name },
+        })}>
           <ThemedText type="semiSmall" colorValue="textTertiary">
             See all {">"}
           </ThemedText>
@@ -260,7 +260,7 @@ export default function AccountBalancePage() {
 
       <ScrollView showsVerticalScrollIndicator={false} className="mt-4">
         {activities.map((a, i) => (
-          <View key={i} className="bg-white rounded-xl border border-gray-200 p-1 mb-3 shadow-xs">
+          <View key={i} className="rounded-xl border border-gray-200 p-1 mb-3 shadow-xs" style={{ backgroundColor: colors.background }}>
             <View className="flex-row justify-between items-center my-2 pl-3">
               <View className="flex-row items-start">
                 <IconSymbol

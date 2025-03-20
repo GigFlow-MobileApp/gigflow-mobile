@@ -34,10 +34,10 @@ export const BottomTabs = ({ items }: TabProps) => {
             }}
           >
             <IconSymbol
-              name={pathname === tab.route ? tab.icon + ".fill" : tab.icon}
+              name={pathname.startsWith(tab.route) ? tab.icon + ".fill" : tab.icon}
               size={24}
               color={
-                pathname === tab.route
+                pathname.startsWith(tab.route)
                   ? Colors[colorScheme].brandColor
                   : Colors[colorScheme].menuItemText
               }
@@ -46,7 +46,7 @@ export const BottomTabs = ({ items }: TabProps) => {
               type="small"
               style={{
                 color:
-                  pathname === tab.route
+                  pathname.startsWith(tab.route)
                     ? Colors[colorScheme].brandColor
                     : Colors[colorScheme].menuItemText,
               }}
