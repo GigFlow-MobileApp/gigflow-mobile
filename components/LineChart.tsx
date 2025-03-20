@@ -273,7 +273,6 @@ export default function LineChart({
                 <VictoryArea
                   key={`area-${keySuffix}`}
                   data={transformedData}
-                  labels={() => null}
                   interpolation="monotoneX"
                   style={{ 
                     data: { 
@@ -315,8 +314,7 @@ export default function LineChart({
               return (
                 <VictoryScatter
                   key={`scatter-${keySuffix}`}
-                  data={transformedData}
-                  size={2}
+                  data={transformedData} size={2}
                   style={{
                     data: {
                       fill: dataset.color(0.5),
