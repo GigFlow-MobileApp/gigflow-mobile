@@ -246,7 +246,7 @@ export default function AccountBalancePage() {
           Recent Activities
         </ThemedText>
         <TouchableOpacity onPress={() => router.push({
-          pathname: "/main/account/activities",
+          pathname: "/main/home/activities",
           params: { name },
         })}>
           <ThemedText type="semiSmall" colorValue="textTertiary">
@@ -260,7 +260,7 @@ export default function AccountBalancePage() {
 
       <ScrollView showsVerticalScrollIndicator={false} className="mt-4">
         {activities.map((a, i) => (
-          <View key={i} className="bg-white rounded-xl border border-gray-200 p-1 mb-3 shadow-xs">
+          <View key={i} className="rounded-xl border border-gray-200 p-1 mb-3 shadow-xs" style={{ backgroundColor: colors.background }}>
             <View className="flex-row justify-between items-center my-2 pl-3">
               <View className="flex-row items-start">
                 <IconSymbol
