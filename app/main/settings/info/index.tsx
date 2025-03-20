@@ -12,45 +12,87 @@ import {
   KeyboardEvent,
 } from "react-native";
 import { NativeSyntheticEvent, TextInputFocusEventData } from "react-native";
+
+import QRCode from "react-native-qrcode-svg";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { Colors } from "@/constants/Colors";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { getMyInfo, updateMyInfo } from "@/apis/infoAPI";
 import { SignupResponse, SignupResponseSchema, UpdateMyInfoType, updateMyInfoZod } from "@/constants/customTypes";
 import KeyboardAwareView from "@/components/KeyboardAwareView";
 
 const screenHeight = Dimensions.get("window").height;
-const screenWdith = Dimensions.get("window").width;
+const screenWidth = Dimensions.get("window").width;
 const topHeight = (screenHeight * (175 - 30)) / (844 - 40);
-const iconWidth = screenWdith / 6;
+const iconWidth = screenWidth / 6;
 
-interface FieldItemProps {
-  text: string;
-  value: string | null;
-  onChange: (val: string) => void;
-  onBlur?: (e: NativeSyntheticEvent<TextInputFocusEventData>) => void;
-  onFocus?: (e: NativeSyntheticEvent<TextInputFocusEventData>) => void;
-  enableEdit: boolean;
-  inputRef?: React.RefObject<TextInput>;
+// Form field type
+interface FormField {
+  key: string;
+  label: string;
+  ref: React.RefObject<TextInput>;
+  keyboardType?: "default" | "email-address" | "numeric" | "phone-pad";
+  apiKey?: string; // Maps to API field name if different from key
+  position: number; // Approximate position from top for scrolling
 }
 
-const FieldItem: React.FC<FieldItemProps> = ({ text, value, onChange, onBlur, onFocus, enableEdit, inputRef }) => {
+// QR Code component
+const QRCodeView = ({ profile, onClose }: { profile: SignupResponse; onClose: () => void }) => {
+  const { colorScheme } = useColorScheme();
+  
+  return (
+    <View className="flex-1 items-center justify-center" style={{ backgroundColor: Colors[colorScheme].background }}>
+      <View className="absolute top-10 right-5 z-10">
+        <TouchableOpacity onPress={onClose}>
+          <IconSymbol name="close" size={24} color={Colors[colorScheme].primaryText} />
+        </TouchableOpacity>
+      </View>
+      <View className="items-center p-6 rounded-xl" style={{ backgroundColor: Colors[colorScheme].background }}>
+        <ThemedText type="mainSection" className="mb-4">Your QR Code</ThemedText>
+        <QRCode
+          value={JSON.stringify(profile)}
+          size={200}
+          backgroundColor={Colors[colorScheme].background}
+          color={Colors[colorScheme].primaryText}
+        />
+        <ThemedText className="mt-4 text-center" style={{ maxWidth: 250 }}>
+          Scan this code to share your contact information
+        </ThemedText>
+      </View>
+    </View>
+  );
+};
+
+// Field item component
+const FieldItem = ({ 
+  field, 
+  value, 
+  onChange, 
+  onFocus, 
+  enableEdit 
+}: { 
+  field: FormField; 
+  value: string | null; 
+  onChange: (key: string, value: string) => void; 
+  onFocus: (fieldName: string) => void; 
+  enableEdit: boolean; 
+}) => {
   const { colorScheme } = useColorScheme();
 
   return (
     <View className="px-5 mt-2 mb-3">
       <ThemedText colorValue="secondaryText" type="section" className="pl-1 pb-1">
-        {text}
+        {field.label}
       </ThemedText>
       <TextInput
-        ref={inputRef}
+        ref={field.ref}
         value={value ?? ""}
-        onChangeText={onChange}
-        onBlur={onBlur}
-        onFocus={onFocus}
+        onChangeText={(val) => onChange(field.key, val)}
+        onFocus={() => onFocus(field.key)}
         editable={enableEdit}
+        keyboardType={field.keyboardType}
         className="border rounded-lg px-4 pb-1 mb-4 text-lg"
         style={{
           borderColor: enableEdit ? Colors[colorScheme].brandColor : Colors[colorScheme].border,
@@ -66,47 +108,83 @@ const FieldItem: React.FC<FieldItemProps> = ({ text, value, onChange, onBlur, on
   );
 };
 
-export default function InfoScreen() {
+// Error banner component
+const ErrorBanner = ({ message, opacity }: { message: string; opacity: Animated.Value }) => {
   const { colorScheme } = useColorScheme();
-  const [name, setName] = useState<string | null>("");
-  const [email, setEmail] = useState<string | null>("");
-  const [recipientName, setRecipientName] = useState<string | null>("");
-  const [phone, setPhone] = useState<string | null>("");
-  const [country, setCountry] = useState<string | null>("");
-  const [state, setState] = useState<string | null>("");
-  const [city, setCity] = useState<string | null>("");
-  const [zipcode, setZipcode] = useState<string | null>("");
-  const [address, setAddress] = useState<string | null>("");
-  const [enableEdit, setEnableEdit] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string>("");
-  // const [notificationMessage, setNotificationMessage] = useState<string>("");
+  
+  if (!message) return null;
+  
+  return (
+    <Animated.View
+      className="absolute left-0 right-0 z-50 px-4"
+      style={{
+        top: Platform.OS === "ios" ? 50 : 30,
+        opacity,
+        transform: [
+          {
+            translateY: opacity.interpolate({
+              inputRange: [0, 1],
+              outputRange: [-50, 0],
+            }),
+          },
+        ],
+      }}
+    >
+      <View
+        className="p-3 rounded-lg"
+        style={{
+          backgroundColor: `${Colors[colorScheme].badBanner}19`,
+          borderColor: `${Colors[colorScheme].badBanner}4C`,
+          borderWidth: 1,
+        }}
+      >
+        <ThemedText style={{ color: `${Colors[colorScheme].badBanner}4C` }}>{message}</ThemedText>
+      </View>
+    </Animated.View>
+  );
+};
 
-  // Refs for TextInputs and ScrollView
-  const scrollViewRef = useRef<ScrollView>(null);
-  const nameInputRef = useRef<TextInput>(null);
-  const emailInputRef = useRef<TextInput>(null);
-  const phoneInputRef = useRef<TextInput>(null);
-  const countryInputRef = useRef<TextInput>(null);
-  const stateInputRef = useRef<TextInput>(null);
-  const cityInputRef = useRef<TextInput>(null);
-  const zipcodeInputRef = useRef<TextInput>(null);
-  const addressInputRef = useRef<TextInput>(null);
+// Save button component
+const SaveButton = ({ onPress }: { onPress: () => void }) => {
+  const { colorScheme } = useColorScheme();
+  
+  return (
+    <View
+      style={{
+        position: "absolute",
+        bottom: Platform.OS === "ios" ? 40 : 20,
+        right: 20,
+        backgroundColor: Colors[colorScheme].brandColor,
+        borderRadius: 30,
+        elevation: 5,
+        shadowColor: Colors[colorScheme].shadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+      }}
+    >
+      <TouchableOpacity
+        onPress={onPress}
+        style={{
+          paddingVertical: 12,
+          paddingHorizontal: 20,
+          flexDirection: "row",
+          alignItems: "center",
+        }}
+      >
+        <IconSymbol name="save" size={20} color={Colors[colorScheme].logoText} />
+        <ThemedText colorValue="logoText" style={{ marginLeft: 8, fontWeight: "bold" }}>
+          Save Changes
+        </ThemedText>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
-  // Animation values and timeouts
-  const errorBannerOpacity = useRef(new Animated.Value(0)).current;
-  const notificationBannerOpacity = useRef(new Animated.Value(0)).current;
-  const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Track original values to detect changes
-  const [originalValues, setOriginalValues] = useState<{
-    [key: string]: string | null;
-  }>({});
-  const [hasChanges, setHasChanges] = useState<{ [key: string]: boolean }>({});
-  const [anyChanges, setAnyChanges] = useState<boolean>(false);
+// Custom hook for keyboard handling
+const useKeyboardHandling = () => {
   const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
-
-  // Keyboard event listeners
+  
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
@@ -127,36 +205,116 @@ export default function InfoScreen() {
       keyboardDidHideListener.remove();
     };
   }, []);
+  
+  return keyboardHeight;
+};
 
+// Custom hook for error handling
+const useErrorHandling = () => {
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const errorBannerOpacity = useRef(new Animated.Value(0)).current;
+  const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  useEffect(() => {
+    if (errorTimeoutRef.current) {
+      clearTimeout(errorTimeoutRef.current);
+      errorTimeoutRef.current = null;
+    }
+
+    if (errorMessage) {
+      Animated.timing(errorBannerOpacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+
+      errorTimeoutRef.current = setTimeout(() => {
+        Animated.timing(errorBannerOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
+          setErrorMessage("");
+        });
+        errorTimeoutRef.current = null;
+      }, 5000);
+    }
+
+    return () => {
+      if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
+    };
+  }, [errorMessage, errorBannerOpacity]);
+  
+  return { errorMessage, setErrorMessage, errorBannerOpacity };
+};
+
+export default function InfoScreen() {
+  const { colorScheme } = useColorScheme();
+  const scrollViewRef = useRef<ScrollView>(null);
+  
+  // State
+  const [profile, setProfile] = useState<SignupResponse>({} as SignupResponse);
+  const [showQR, setShowQR] = useState<boolean>(false);
+  const [enableEdit, setEnableEdit] = useState<boolean>(false);
+  
+  // Form state
+  const [formData, setFormData] = useState<{[key: string]: string | null}>({
+    name: "",
+    email: "",
+    recipientName: "",
+    phone: "",
+    country: "",
+    state: "",
+    city: "",
+    zipcode: "",
+    address: "",
+  });
+  
+  // Track changes
+  const [originalValues, setOriginalValues] = useState<{[key: string]: string | null}>({});
+  const [hasChanges, setHasChanges] = useState<{[key: string]: boolean}>({});
+  const [anyChanges, setAnyChanges] = useState<boolean>(false);
+  
+  // Refs for TextInputs
+  const nameInputRef = useRef<TextInput>(null);
+  const emailInputRef = useRef<TextInput>(null);
+  const phoneInputRef = useRef<TextInput>(null);
+  const countryInputRef = useRef<TextInput>(null);
+  const stateInputRef = useRef<TextInput>(null);
+  const cityInputRef = useRef<TextInput>(null);
+  const zipcodeInputRef = useRef<TextInput>(null);
+  const addressInputRef = useRef<TextInput>(null);
+  
+  // Custom hooks
+  const keyboardHeight = useKeyboardHandling();
+  const { errorMessage, setErrorMessage, errorBannerOpacity } = useErrorHandling();
+  
+  // Form field configuration
+  const formFields: FormField[] = [
+    { key: 'name', label: 'Name', ref: nameInputRef, position: 120 },
+    { key: 'email', label: 'Email Address', ref: emailInputRef, keyboardType: 'email-address', position: 200 },
+    { key: 'phone', label: 'Phone Number', ref: phoneInputRef, keyboardType: 'phone-pad', position: 280 },
+    { key: 'country', label: 'Country/Region', ref: countryInputRef, position: 360 },
+    { key: 'state', label: 'State', ref: stateInputRef, position: 440 },
+    { key: 'city', label: 'City', ref: cityInputRef, position: 520 },
+    { key: 'zipcode', label: 'Zipcode', ref: zipcodeInputRef, keyboardType: 'numeric', position: 600 },
+    { key: 'address', label: 'Address', ref: addressInputRef, position: 680 },
+  ];
+  
+  // Function to handle field changes
+  const handleFieldChange = (key: string, value: string) => {
+    setFormData(prev => ({ ...prev, [key]: value }));
+    checkFieldModified(key, value);
+  };
+  
   // Function to handle input focus and scroll to the focused input
-  const handleInputFocus = (inputRef: React.RefObject<TextInput>, fieldName: string) => {
-    if (!inputRef.current || !scrollViewRef.current) return;
+  const handleInputFocus = (fieldName: string) => {
+    if (!scrollViewRef.current) return;
+    
+    const field = formFields.find(f => f.key === fieldName);
+    if (!field) return;
 
     // Use a timeout to allow the keyboard to appear first
     setTimeout(() => {
       // Get screen height and calculate visible area
-      const screenHeight = Dimensions.get("window").height;
       const visibleHeight = screenHeight - keyboardHeight;
-
-      // Calculate approximate positions for each field
-      // These are relative positions from the top of the scroll view
-      const fieldPositions = {
-        name: 120,
-        email: 200,
-        phone: 280,
-        country: 360,
-        state: 440,
-        city: 520,
-        zipcode: 600,
-        address: 680,
-      };
-
-      const fieldPosition = fieldPositions[fieldName as keyof typeof fieldPositions] || 0;
 
       // For fields near the bottom, ensure they're well above the keyboard
       // The multiplier increases the scroll amount for lower fields
       const adjustmentFactor = fieldName === "address" || fieldName === "zipcode" ? 0.7 : 0.5;
-      const targetY = Math.max(0, fieldPosition - visibleHeight * adjustmentFactor);
+      const targetY = Math.max(0, field.position - visibleHeight * adjustmentFactor);
 
       // Scroll to the target position with animation
       scrollViewRef.current?.scrollTo({ y: targetY, animated: true });
@@ -176,6 +334,8 @@ export default function InfoScreen() {
         [fieldName]: isModified,
       };
 
+      console.log("Modified field:", fieldName, "Is modified:", isModified);
+
       setHasChanges(newChanges);
 
       // Check if any field has changes
@@ -185,34 +345,6 @@ export default function InfoScreen() {
 
     return isModified;
   };
-
-  // Handle error message animation and auto-hide
-  useEffect(() => {
-    // Clear any existing timeout
-    if (errorTimeoutRef.current) {
-      clearTimeout(errorTimeoutRef.current);
-      errorTimeoutRef.current = null;
-    }
-
-    if (errorMessage) {
-      // Show the error banner immediately
-      Animated.timing(errorBannerOpacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
-
-      // Set a timeout to clear the error message after 5 seconds
-      errorTimeoutRef.current = setTimeout(() => {
-        // Fade out the banner
-        Animated.timing(errorBannerOpacity, { toValue: 0, duration: 300, useNativeDriver: true }).start(() => {
-          setErrorMessage("");
-        });
-        errorTimeoutRef.current = null;
-      }, 5000);
-    }
-
-    // Cleanup function to clear the timeout when component unmounts or when errorMessage changes
-    return () => {
-      if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
-    };
-  }, [errorMessage, errorBannerOpacity]);
 
   const fetchData = async () => {
     try {
@@ -225,20 +357,10 @@ export default function InfoScreen() {
       }
 
       const data: SignupResponse = parsed.data;
+      setProfile(data);
 
       // Set current values
-      setName(data?.full_name);
-      setRecipientName(data?.recipient_name);
-      setEmail(data?.email);
-      setPhone(data?.zipcode);
-      setCountry(data?.state);
-      setState(data?.state);
-      setCity(data?.city);
-      setZipcode(data?.zipcode);
-      setAddress(data?.street);
-
-      // Store original values for change detection
-      setOriginalValues({
+      const newFormData = {
         name: data?.full_name,
         recipientName: data?.recipient_name,
         email: data?.email,
@@ -248,7 +370,12 @@ export default function InfoScreen() {
         city: data?.city,
         zipcode: data?.zipcode,
         address: data?.street,
-      });
+      };
+      
+      setFormData(newFormData);
+
+      // Store original values for change detection
+      setOriginalValues(newFormData);
 
       // Reset change tracking
       setHasChanges({});
@@ -267,14 +394,16 @@ export default function InfoScreen() {
     setAnyChanges(false);
     try {
       const newInfo: UpdateMyInfoType = {
-        full_name: name,
-        email: email ?? "",
-        recipient_name: recipientName ?? "",
-        street: address,
-        city,
-        state,
-        zipcode,
+        full_name: formData.name,
+        email: formData.email ?? "",
+        recipient_name: formData.recipientName ?? "",
+        street: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zipcode: formData.zipcode,
       };
+
+      // console.log(newInfo);
 
       const parsed = updateMyInfoZod.safeParse(newInfo);
       if (!parsed.success) {
@@ -303,28 +432,19 @@ export default function InfoScreen() {
         setErrorMessage(errorMessage);
         return;
       }
+      
+      // console.log(newInfo);
 
       const newData = await updateMyInfo(newInfo);
       console.log("Info updated successfully:", newData);
 
       // Update original values after successful update
-      setOriginalValues({
-        name,
-        recipientName,
-        email,
-        phone,
-        country,
-        state,
-        city,
-        zipcode,
-        address,
-      });
+      setOriginalValues(formData);
 
       // Reset change tracking
       setHasChanges({});
 
       setEnableEdit(false);
-      // setNotificationMessage("Information updated successfully");
     } catch (error) {
       console.error("Failed to update info:", error);
       setErrorMessage("Failed to update information");
@@ -335,239 +455,115 @@ export default function InfoScreen() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if(!enableEdit) saveChanges();
+  }, [enableEdit]);
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <KeyboardAwareView style={{ backgroundColor: Colors[colorScheme].brandColor }} avoidOffset={0}>
-        <View className="flex-1 flex-col justify-between" style={{ backgroundColor: Colors[colorScheme].brandColor }}>
-          {/* Error Banner */}
-          <Animated.View
-            className="absolute left-0 right-0 z-50 px-4"
-            style={{
-              top: Platform.OS === "ios" ? 50 : 30,
-              opacity: errorBannerOpacity,
-              transform: [
-                {
-                  translateY: errorBannerOpacity.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-50, 0],
-                  }),
-                },
-              ],
-            }}
-          >
-            {errorMessage ? (
-              <View
-                className="p-3 rounded-lg"
-                style={{
-                  backgroundColor: `${Colors[colorScheme].badBanner}19`,
-                  borderColor: `${Colors[colorScheme].badBanner}4C`,
-                  borderWidth: 1,
-                }}
-              >
-                <ThemedText style={{ color: `${Colors[colorScheme].badBanner}4C` }}>{errorMessage}</ThemedText>
-              </View>
-            ) : null}
-          </Animated.View>
+        {showQR ? (
+          <QRCodeView profile={profile} onClose={() => setShowQR(false)} />
+        ) : (
+          <View className="flex-1 flex-col justify-between" style={{ backgroundColor: Colors[colorScheme].brandColor }}>
+            {/* Error Banner */}
+            <ErrorBanner message={errorMessage} opacity={errorBannerOpacity} />
 
-          {/* Top */}
-          <View
-            className="flex-col justify-between"
-            style={{
-              height: topHeight,
-              backgroundColor: Colors[colorScheme].brandColor,
-            }}
-          >
-            {/* Top banner */}
-            <View className="flex-row items-start justify-center" style={{ height: topHeight - 6 }}>
-              <ThemedText className="mt-8" type="mainSection" colorValue="logoText">
-                My Info
-              </ThemedText>
-              {/* Optional edit icon */}
-              <View className="absolute right-5 top-5 flex-row justify-between" style={{ width: iconWidth }}>
-                <TouchableOpacity
-                // onPress={() => setEnableEdit(!enableEdit)}
-                // style={{
-                //   backgroundColor: enableEdit ? Colors[colorScheme].brandColor : 'transparent',
-                // }}
-                >
-                  <IconSymbol name="qrcode" size={24} color={Colors[colorScheme].shadow} />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => setEnableEdit(!enableEdit)}
-                  style={{
-                    backgroundColor: enableEdit ? Colors[colorScheme].brandColor : "transparent",
-                  }}
-                >
-                  <IconSymbol
-                    name="edit"
-                    size={24}
-                    color={enableEdit ? Colors[colorScheme].logoText : Colors[colorScheme].shadow}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-            {/* top avatar part*/}
-            <View className="items-center -mt-16 mb-4">
-              <Image
-                source={require("@/assets/images/Avatar.png")}
-                className="w-36 h-36 rounded-full z-30"
-                resizeMode="cover"
-              />
-            </View>
-          </View>
-
-          {/* bottom fields part*/}
-          <View
-            className="flex-1 flex-col rounded-t-2xl"
-            style={{
-              backgroundColor: Colors[colorScheme].background,
-              marginTop: 0,
-            }}
-          >
-            <View className="h-16" />
-            <ScrollView
-              ref={scrollViewRef}
+            {/* Top */}
+            <View
+              className="flex-col justify-between"
               style={{
-                backgroundColor: Colors[colorScheme].background,
+                height: topHeight,
+                backgroundColor: Colors[colorScheme].brandColor,
               }}
-              contentContainerStyle={{
-                paddingBottom: Platform.OS === "ios" ? 120 : 80,
-                backgroundColor: Colors[colorScheme].background,
-                flexGrow: 1, // Ensure content fills the scroll view
-              }}
-              keyboardShouldPersistTaps="handled"
-              bounces={false}
-              overScrollMode="never" // Android property to disable overscroll
-              showsVerticalScrollIndicator={false}
-              alwaysBounceVertical={false} // iOS property to disable vertical bounce
             >
-              <FieldItem
-                text="Name"
-                value={name}
-                onChange={(val) => {
-                  setName(val);
-                  checkFieldModified("name", val);
-                }}
-                onFocus={() => handleInputFocus(nameInputRef, "name")}
-                enableEdit={enableEdit}
-                inputRef={nameInputRef}
-              />
-              <FieldItem
-                text="Email Address"
-                value={email}
-                onChange={(val) => {
-                  setEmail(val);
-                  checkFieldModified("email", val);
-                }}
-                onFocus={() => handleInputFocus(emailInputRef, "email")}
-                enableEdit={enableEdit}
-                inputRef={emailInputRef}
-              />
-              <FieldItem
-                text="Phone Number"
-                value={phone}
-                onChange={(val) => {
-                  setPhone(val);
-                  checkFieldModified("phone", val);
-                }}
-                onFocus={() => handleInputFocus(phoneInputRef, "phone")}
-                enableEdit={enableEdit}
-                inputRef={phoneInputRef}
-              />
-              <FieldItem
-                text="Country/Region"
-                value={country}
-                onChange={(val) => {
-                  setCountry(val);
-                  checkFieldModified("country", val);
-                }}
-                onFocus={() => handleInputFocus(countryInputRef, "country")}
-                enableEdit={enableEdit}
-                inputRef={countryInputRef}
-              />
-              <FieldItem
-                text="State"
-                value={state}
-                onChange={(val) => {
-                  setState(val);
-                  checkFieldModified("state", val);
-                }}
-                onFocus={() => handleInputFocus(stateInputRef, "state")}
-                enableEdit={enableEdit}
-                inputRef={stateInputRef}
-              />
-              <FieldItem
-                text="City"
-                value={city}
-                onChange={(val) => {
-                  setCity(val);
-                  checkFieldModified("city", val);
-                }}
-                onFocus={() => handleInputFocus(cityInputRef, "city")}
-                enableEdit={enableEdit}
-                inputRef={cityInputRef}
-              />
-              <FieldItem
-                text="Zipcode"
-                value={zipcode}
-                onChange={(val) => {
-                  setZipcode(val);
-                  checkFieldModified("zipcode", val);
-                }}
-                onFocus={() => handleInputFocus(zipcodeInputRef, "zipcode")}
-                enableEdit={enableEdit}
-                inputRef={zipcodeInputRef}
-              />
-              <FieldItem
-                text="Address"
-                value={address}
-                onChange={(val) => {
-                  setAddress(val);
-                  checkFieldModified("address", val);
-                }}
-                onFocus={() => handleInputFocus(addressInputRef, "address")}
-                enableEdit={enableEdit}
-                inputRef={addressInputRef}
-              />
-              {/* Save Changes Button */}
-              {enableEdit && anyChanges && (
-                <View
-                  style={{
-                    position: "absolute",
-                    bottom: Platform.OS === "ios" ? 40 : 20,
-                    right: 20,
-                    backgroundColor: Colors[colorScheme].brandColor,
-                    borderRadius: 30,
-                    elevation: 5,
-                    shadowColor: Colors[colorScheme].shadow,
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 3.84,
-                  }}
-                >
+              {/* Top banner */}
+              <View className="flex-row items-start justify-center" style={{ height: topHeight - 6 }}>
+                <ThemedText className="mt-8" type="mainSection" colorValue="logoText">
+                  My Info
+                </ThemedText>
+                {/* Optional edit icon */}
+                <View className="absolute right-5 top-5 flex-row justify-between" style={{ width: iconWidth }}>
                   <TouchableOpacity
-                    onPress={saveChanges}
+                    onPress={() => setShowQR(true)}
                     style={{
-                      paddingVertical: 12,
-                      paddingHorizontal: 20,
-                      flexDirection: "row",
-                      alignItems: "center",
+                      backgroundColor: 'transparent',
                     }}
                   >
-                    <IconSymbol name="save" size={20} color={Colors[colorScheme].logoText} />
-                    <ThemedText colorValue="logoText" style={{ marginLeft: 8, fontWeight: "bold" }}>
-                      Save Changes
-                    </ThemedText>
+                    <IconSymbol name="qrcode" size={24} color={Colors[colorScheme].shadow} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => setEnableEdit(!enableEdit)}
+                    style={{
+                      backgroundColor: enableEdit ? Colors[colorScheme].brandColor : "transparent",
+                    }}
+                  >
+                    <IconSymbol
+                      name="edit"
+                      size={24}
+                      color={enableEdit ? Colors[colorScheme].logoText : Colors[colorScheme].shadow}
+                    />
                   </TouchableOpacity>
                 </View>
-              )}
+              </View>
+              {/* top avatar part*/}
+              <View className="items-center -mt-16 mb-4">
+                <Image
+                  source={require("@/assets/images/Avatar.png")}
+                  className="w-36 h-36 rounded-full z-30"
+                  resizeMode="cover"
+                />
+              </View>
+            </View>
 
-              {/* Add extra padding at the bottom to ensure the last field is not covered by keyboard */}
-              <View style={{ height: 100 }} />
-            </ScrollView>
+            {/* bottom fields part*/}
+            <View
+              className="flex-1 flex-col rounded-t-2xl"
+              style={{
+                backgroundColor: Colors[colorScheme].background,
+                marginTop: 0,
+              }}
+            >
+              <View className="h-16" />
+              <ScrollView
+                ref={scrollViewRef}
+                style={{
+                  backgroundColor: Colors[colorScheme].background,
+                }}
+                contentContainerStyle={{
+                  paddingBottom: Platform.OS === "ios" ? 120 : 80,
+                  backgroundColor: Colors[colorScheme].background,
+                  flexGrow: 1, // Ensure content fills the scroll view
+                }}
+                keyboardShouldPersistTaps="handled"
+                bounces={false}
+                overScrollMode="never" // Android property to disable overscroll
+                showsVerticalScrollIndicator={false}
+                alwaysBounceVertical={false} // iOS property to disable vertical bounce
+              >
+                {formFields.map((field) => (
+                  <FieldItem
+                    key={field.key}
+                    field={field}
+                    value={formData[field.key]}
+                    onChange={handleFieldChange}
+                    onFocus={handleInputFocus}
+                    enableEdit={enableEdit}
+                  />
+                ))}
+
+                {/* Save Changes Button */}
+                {enableEdit && anyChanges && (
+                  <SaveButton onPress={saveChanges} />
+                )}
+
+                {/* Add extra padding at the bottom to ensure the last field is not covered by keyboard */}
+                <View style={{ height: 100 }} />
+              </ScrollView>
+            </View>
           </View>
-        </View>
+        )}
       </KeyboardAwareView>
     </SafeAreaView>
   );
