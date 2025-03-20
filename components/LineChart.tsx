@@ -118,6 +118,7 @@ export default function LineChart({
         {
           backgroundColor: Colors[colorScheme].backgroundCard,
           borderRadius: 24,
+          height: screenWidth * 1.3,
           borderWidth: 1,
           borderColor: Colors[colorScheme].border + '20', // 20% opacity
           shadowColor: Colors[colorScheme].shadow,
