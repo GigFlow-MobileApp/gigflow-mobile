@@ -4,6 +4,7 @@ import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Svg, { Path } from "react-native-svg";
 import * as SimpleIcons from "simple-icons";
+import WheelIcon from "../../assets/icons/Wheel.svg";
 
 interface IconSymbolProps {
   name: string;
@@ -33,6 +34,7 @@ const SimpleIconNames: Set<string> = new Set([
   "upwork",
   "fiverr",
 ]);
+
 
 const iconPairs: { [key: string]: string } = {
   house: "home",
@@ -88,6 +90,15 @@ export function IconSymbol({ name, size, color, style, className }: IconSymbolPr
   const getIoniconName = (sfSymbolName: string) => {
     return iconMap[sfSymbolName] || sfSymbolName;
   };
+
+  // Check if the name is "wheel" and render the wheel SVG
+  if (name.toLowerCase() === "wheel") {
+    return (
+      <View style={style} className={className}>
+        <WheelIcon width={size} height={size} stroke={color} />
+      </View>
+    );
+  }
 
   if (SimpleIconNames.has(name.toLowerCase())) {
     const path = getSimpleIconPath(name);
