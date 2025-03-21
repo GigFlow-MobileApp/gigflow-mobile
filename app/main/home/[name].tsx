@@ -226,7 +226,9 @@ export default function AccountBalancePage() {
                 className="w-16 h-14 rounded-full justify-center items-center mb-1"
                 style={{ backgroundColor: buttonColor }}
               >
-                <Ionicons name={icon as any} size={20} color="#333" />
+                <TouchableOpacity onPress={() => ""}>
+                  <Ionicons name={icon as any} size={20} color="#333" />
+                </TouchableOpacity>
               </View>
               <ThemedText type="defautlSmall" colorValue="cardText">
                 {label}
@@ -286,7 +288,11 @@ export default function AccountBalancePage() {
       </ScrollView>
 
       <View className="absolute bottom-7 right-5 mb-16 p-2.5 rounded-full" style={{backgroundColor: platformBgColor}}>
-        <TouchableOpacity onPress={() => ""}>
+        <TouchableOpacity onPress={() => {
+          router.push({
+          pathname: "/main/account/profile",
+          params: { name },
+        })}}>
           <IconSymbol name="wheel" size={24} color={colors.background} />
         </TouchableOpacity>
       </View>
