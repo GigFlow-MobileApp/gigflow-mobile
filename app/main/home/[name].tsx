@@ -10,10 +10,6 @@ import { useRouter } from "expo-router";
 import { textStyles } from "@/constants/TextStyles";
 import {Activity} from "@/constants/customTypes";
 
-// Define the Activity type
-
-
-// Define valid platform names
 type PlatformName = keyof typeof logoMap;
 
 const logoMap = {
@@ -106,7 +102,7 @@ export default function AccountBalancePage() {
     platformName in platformColor ? platformColor[platformName as keyof typeof platformColor] : platformColor.uber;
 
   return (
-    <View className="flex-1 bg-white px-4 pt-4">
+    <View className="flex-1 px-4 pt-4" style={{ backgroundColor: colors.background }}>
       {/* Header */}
       <View className="flex-row justify-between items-center mb-6">
         <ThemedText type="title" className="self-center" style={{ fontWeight: 700 }}>
@@ -288,6 +284,12 @@ export default function AccountBalancePage() {
           </View>
         ))}
       </ScrollView>
+
+      <View className="absolute bottom-7 right-5 mb-16 p-2.5 rounded-full" style={{backgroundColor: platformBgColor}}>
+        <TouchableOpacity onPress={() => ""}>
+          <IconSymbol name="wheel" size={24} color={colors.background} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
