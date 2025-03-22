@@ -22,7 +22,7 @@ export const Colors = {
     background: "#ffffff",
     backgroundCard: "#ffffff",
     btnBackground: brandColorLight,
-    onPressBg: "#007aff1a",
+    onPressBg: "#007aff",
     transfer: "#F8FBE4",
     info: "#F3F1FE",
     paybills: "#FEF6F1",
@@ -36,6 +36,8 @@ export const Colors = {
     shadow: "#000000",
     goodBanner: "#00FF00",
     badBanner: "#FF0000",
+    bullish: "#1DD75B",
+    burish: "#ef4444",
   },
   dark: {
     brandColor: brandColorDark,
@@ -55,7 +57,7 @@ export const Colors = {
     background: "#000000",
     backgroundCard: "#1C1C1C",
     btnBackground: brandColorDark,
-    onPressBg: "#007aff1a",
+    onPressBg: "#007aff",
     transfer: "#F8FBE4",
     info: "#F3F1FE",
     paybills: "#FEF6F1",
@@ -69,6 +71,8 @@ export const Colors = {
     shadow: "#000000",
     goodBanner: "#00FF00",
     badBanner: "#FF0000",
+    bullish: "#1DD75B",
+    burish: "#ef4444",
   },
 } as const;
 

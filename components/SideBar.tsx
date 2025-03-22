@@ -33,14 +33,14 @@ export const Sidebar = ({ items }: SidebarProps) => {
             }
             style={{
               borderRadius: 9999,
-              backgroundColor: pathname === item.route ? Colors[colorScheme].onPressBg : "",
+              backgroundColor: pathname === item.route ? `${Colors[colorScheme].onPressBg}1a` : "",
             }}
           >
             {({ pressed }) => {
               const textColor =
                 pathname === item.route || pressed ? Colors[colorScheme].brandColor : Colors[colorScheme].menuItemText;
               const backgroundColor =
-                pathname === item.route || pressed ? Colors[colorScheme].onPressBg : Colors[colorScheme].background;
+                pathname === item.route || pressed ? `${Colors[colorScheme].onPressBg}1a` : Colors[colorScheme].background;
               return (
                 <View
                   className="bg-blue-500"
