@@ -36,7 +36,7 @@ export default function AccountBalancePage() {
   const [accountId, setAccountId] = useState("");
   const [date, setDate] = useState("");
   const [activities, setActivities] = useState<Activity[]>([]);
-    const router = useRouter();
+  const router = useRouter();
 
   // useEffect to fetch account data and set default values if API fails
   useEffect(() => {
@@ -105,9 +105,14 @@ export default function AccountBalancePage() {
     <View className="flex-1 px-4 pt-4" style={{ backgroundColor: colors.background }}>
       {/* Header */}
       <View className="flex-row justify-between items-center mb-6">
-        <ThemedText type="title" className="self-center" style={{ fontWeight: 700 }}>
-          Your Balance
-        </ThemedText>
+        <View className="flex-row items-center">
+          <TouchableOpacity onPress={() => router.push("/main/account")} className="mr-3">
+            <IconSymbol name="back" size={24} color={colors.primaryText} />
+          </TouchableOpacity>
+          <ThemedText type="title" className="self-center" style={{ fontWeight: 700 }}>
+            Your Balance
+          </ThemedText>
+        </View>
         <TouchableOpacity onPress={() => ""}>
           <IconSymbol name="notifications" size={24} color={colors.primaryText} />
         </TouchableOpacity>
