@@ -1,9 +1,10 @@
 import { StyleProp, ViewStyle, View } from "react-native";
-import { Ionicons, Feather } from "@expo/vector-icons";
+import { Ionicons, Feather, MaterialIcons } from "@expo/vector-icons";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Svg, { Path } from "react-native-svg";
 import * as SimpleIcons from "simple-icons";
+import WheelIcon from "../../assets/icons/Wheel.svg";
 
 interface IconSymbolProps {
   name: string;
@@ -20,6 +21,13 @@ const FeatherPairs: { [key: string]: string } = {
 
 const AntDesign5Pairs: { [key: string]: string } = {
   edit: "edit",
+  star: "staro",
+  calendar: "calendar",
+  app: "appstore-o",
+};
+
+const MaterialIconsPairs: { [key: string]: string } = {
+  email: "alternate-email",
 };
 
 const FontAwesome5Pairs: { [key: string]: string } = {
@@ -33,6 +41,7 @@ const SimpleIconNames: Set<string> = new Set([
   "upwork",
   "fiverr",
 ]);
+
 
 const iconPairs: { [key: string]: string } = {
   house: "home",
@@ -55,6 +64,12 @@ const iconPairs: { [key: string]: string } = {
   "qrcode": "qr-code",
   link: "link",
   arrow: "arrow-back-circle",
+  location: "location",
+  people: "people",
+  briefcase: "briefcase",
+  halfHeart: "heart-half",
+  heart: "heart",
+  back: "arrow-back",
 }
 
 function createIconMap(pairs: Record<string, string>): Record<string, string> {
@@ -73,7 +88,8 @@ export const iconMap: Record<string, string> = {
   ...createIconMap(iconPairs),
   ...FontAwesome5Pairs,
   ...AntDesign5Pairs,
-  ...FeatherPairs
+  ...FeatherPairs,
+  ...MaterialIconsPairs
 };
 
 function getSimpleIconPath(name: string): string | null {
@@ -88,6 +104,15 @@ export function IconSymbol({ name, size, color, style, className }: IconSymbolPr
   const getIoniconName = (sfSymbolName: string) => {
     return iconMap[sfSymbolName] || sfSymbolName;
   };
+
+  // Check if the name is "wheel" and render the wheel SVG
+  if (name.toLowerCase() === "wheel") {
+    return (
+      <View style={style} className={className}>
+        <WheelIcon width={size} height={size} stroke={color} />
+      </View>
+    );
+  }
 
   if (SimpleIconNames.has(name.toLowerCase())) {
     const path = getSimpleIconPath(name);
@@ -110,6 +135,8 @@ export function IconSymbol({ name, size, color, style, className }: IconSymbolPr
         <AntDesign name={AntDesign5Pairs[name] as any} size={size} color={color} />
       ) : name in FeatherPairs ? (
         <Feather name={FeatherPairs[name] as any} size={size} color={color} />
+      ) : name in MaterialIconsPairs ? (
+        <MaterialIcons name={MaterialIconsPairs[name] as any} size={size} color={color} />
       ) : (
         <Ionicons name={getIoniconName(name) as any} size={size} color={color} />
       )}
