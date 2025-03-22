@@ -174,7 +174,7 @@ export default function AccountScreen() {
               linked={account.linked}
               onPress={() =>
                 router.push({
-                  pathname: "/main/home/[name]",
+                  pathname: "/main/home/balance",
                   params: { name: account.iconName },
                 })
               }
