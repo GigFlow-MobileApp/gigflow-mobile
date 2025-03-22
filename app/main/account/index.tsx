@@ -9,6 +9,7 @@ import { useRouter } from "expo-router";
 import Config from "@/constants/config";
 import { Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ProgressDialog } from '@/components/ProgressDialog';
 
 interface AccountItemProps {
   iconName: string;
@@ -24,6 +25,18 @@ type Account = {
   linked: boolean;
 };
 
+type AccountResponse = {
+  id: string;
+  type: string;
+  balance: number;
+  token: string;
+  is_active: boolean;
+  connection_status: boolean;
+  description: string;
+  user_id: string;
+  last_updated: string;
+};
+
 const iconMap: Record<string, any> = {
   uber: require("@/assets/images/logos/uber.png"),
   lyft: require("@/assets/images/logos/lyft.png"),
@@ -32,19 +45,28 @@ const iconMap: Record<string, any> = {
   fiverr: require("@/assets/images/logos/fiverr.png"),
 };
 
-const UBER_CLIENT_ID = 'zWjTtPk-NXJTmybcPRvDkqE-QmHt7gT1';
+const UBER_CLIENT_ID = 'TlUtvyyQkBcI6LUPphdzJogdzwL8aVIs';
 const UBER_REDIRECT_URI = 'exp://192.168.104.149:8081/--/oauth/callback'; 
 const UBER_SCOPE = 'profile'; // Add required scopes  partner.payments partner.trips
+
+const LYFT_CLIENT_ID = 'your_lyft_client_id';
+const LYFT_REDIRECT_URI = 'exp://192.168.104.149:8081/--/oauth/callback';
+const LYFT_SCOPE = 'profile';
 
 const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: initialLinked, onPress }) => {
   const { colorScheme } = useColorScheme();
   const [linked, setLinked] = useState(initialLinked);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [progressMessage, setProgressMessage] = useState('');
 
   const handleUberOAuth = async () => {
     try {
+      setLoading(true);
+      setProgressMessage('Connecting to Uber...');
+      
       const state = Math.random().toString(36).substring(7); // Generate random state
-      const authUrl = `https://auth.uber.com/oauth/v2/authorize?` +
+      const authUrl = `https://sandbox-login.uber.com/oauth/v2/authorize?` +
         `client_id=${UBER_CLIENT_ID}` +
         `&response_type=code` +
         `&redirect_uri=${encodeURIComponent(UBER_REDIRECT_URI)}` +
@@ -66,15 +88,51 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
       }
     } catch (error) {
       console.error('OAuth Error:', error);
-      Alert.alert('Error', 'Failed to connect with Uber');
+      Alert.alert('Connection Failed', 'Failed to connect with Uber');
       setLinked(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLyftOAuth = async () => {
+    try {
+      setLoading(true);
+      setProgressMessage('Connecting to Lyft...');
+      
+      const state = Math.random().toString(36).substring(7);
+      const authUrl = `https://api.lyft.com/oauth/authorize?` +
+        `client_id=${LYFT_CLIENT_ID}` +
+        `&response_type=code` +
+        `&scope=${encodeURIComponent(LYFT_SCOPE)}` +
+        `&state=${state}` +
+        `&redirect_uri=${encodeURIComponent(LYFT_REDIRECT_URI)}`;
+
+      await AsyncStorage.setItem('oauth_state', state);
+      await AsyncStorage.setItem('linking_platform', 'lyft');
+      
+      console.log("Lyft OAuth URL: ", authUrl);
+      
+      const supported = await Linking.canOpenURL(authUrl);
+      
+      if (supported) {
+        await Linking.openURL(authUrl);
+      } else {
+        throw new Error("Can't open OAuth URL");
+      }
+    } catch (error) {
+      console.error('Lyft OAuth Error:', error);
+      Alert.alert('Connection Failed', 'Failed to connect with Lyft');
+      setLinked(false);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     if (showConfirmDialog) {
       Alert.alert(
-        "Confirm Link",
+        "Connection",
         `Do you want to ${linked ? "un" : ""}link this account?`,
         [
           {
@@ -86,14 +144,17 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
             text: "Yes",
             onPress: async () => {
               if (linked) {
-                // Handle unlinking
                 setLinked(false);
               } else {
-                // Handle OAuth
-                if (iconName === 'uber') {
-                  await handleUberOAuth();
+                switch (iconName) {
+                  case 'uber':
+                    await handleUberOAuth();
+                    break;
+                  case 'lyft':
+                    await handleLyftOAuth();
+                    break;
+                  // Add other platforms here
                 }
-                // Add other platforms here
               }
               setShowConfirmDialog(false);
             },
@@ -105,53 +166,56 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
   }, [showConfirmDialog]);
 
   return (
-    <View
-      className="flex flex-row justify-between align-center px-5 pt-4"
-      style={{
-        borderBottomWidth: 1,
-        borderColor: Colors[colorScheme].tabIconDefault,
-      }}
-    >
-      <View className="flex flex-row">
-        <View className="pt-2 pl-1">
-          <Image source={iconMap[iconName]} style={{ width: 52, height: 52, borderRadius: 25 }} resizeMode="cover" />
+    <>
+      <ProgressDialog visible={loading} message={progressMessage} />
+      <View
+        className="flex flex-row justify-between align-center px-5 pt-4"
+        style={{
+          borderBottomWidth: 1,
+          borderColor: Colors[colorScheme].tabIconDefault,
+        }}
+      >
+        <View className="flex flex-row">
+          <View className="pt-2 pl-1">
+            <Image source={iconMap[iconName]} style={{ width: 52, height: 52, borderRadius: 25 }} resizeMode="cover" />
+          </View>
+          <View className="flex flex-col justify-between ml-6">
+            {linked ? (
+              <>
+                <ThemedText type="semiSmall" colorValue="menuItemText" className="py-3">
+                  Balance
+                </ThemedText>
+                <ThemedText type="title" colorValue="text" className="pt-2 pb-1">
+                  {"$"}
+                  {Number(balance).toFixed(2)}
+                </ThemedText>
+              </>
+            ) : (
+              <>
+                <View className="py-3" />
+                <View className="pt-3" />
+              </>
+            )}
+          </View>
         </View>
-        <View className="flex flex-col justify-between ml-6">
-          {linked ? (
-            <>
-              <ThemedText type="semiSmall" colorValue="menuItemText" className="py-3">
-                Balance
-              </ThemedText>
-              <ThemedText type="title" colorValue="text" className="pt-2 pb-1">
-                {"$"}
-                {Number(balance).toFixed(2)}
-              </ThemedText>
-            </>
-          ) : (
-            <>
-              <View className="py-3" />
-              <View className="pt-3" />
-            </>
-          )}
-        </View>
-      </View>
-      <View className="flex flex-col justify-between">
-        <TouchableOpacity
-          className="mt-2 px-3 py-1 rounded-lg flex-row items-center"
-          style={{ backgroundColor: linked ? Colors[colorScheme].btnBackground : Colors[colorScheme].tabIconDefault }}
-          onPress={() => { setShowConfirmDialog(true)}}
-        >
-          <IconSymbol name="link" size={16} color={Colors[colorScheme].btnText} className="pr-2" />
-          <ThemedText type="defautlSmall" colorValue="btnText">
-            {linked ? "linked" : "unlinked"}
-          </ThemedText>
-        </TouchableOpacity>
+        <View className="flex flex-col justify-between">
+          <TouchableOpacity
+            className="mt-2 px-3 py-1 rounded-lg flex-row items-center"
+            style={{ backgroundColor: linked ? Colors[colorScheme].btnBackground : Colors[colorScheme].tabIconDefault }}
+            onPress={() => { setShowConfirmDialog(true)}}
+          >
+            <IconSymbol name="link" size={16} color={Colors[colorScheme].btnText} className="pr-2" />
+            <ThemedText type="defautlSmall" colorValue="btnText">
+              {linked ? "linked" : "unlinked"}
+            </ThemedText>
+          </TouchableOpacity>
 
-        <TouchableOpacity onPress={onPress} disabled={!linked} className="flex-row justify-end p-3">
-          <IconSymbol name="gear" size={22} color="primaryText" />
-        </TouchableOpacity>
+          <TouchableOpacity onPress={onPress} disabled={!linked} className="flex-row justify-end p-3">
+            <IconSymbol name="gear" size={22} color="primaryText" />
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </>
   );
 };
 
