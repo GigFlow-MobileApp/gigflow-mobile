@@ -10,10 +10,6 @@ import { useRouter } from "expo-router";
 import { textStyles } from "@/constants/TextStyles";
 import {Activity} from "@/constants/customTypes";
 
-// Define the Activity type
-
-
-// Define valid platform names
 type PlatformName = keyof typeof logoMap;
 
 const logoMap = {
@@ -40,7 +36,7 @@ export default function AccountBalancePage() {
   const [accountId, setAccountId] = useState("");
   const [date, setDate] = useState("");
   const [activities, setActivities] = useState<Activity[]>([]);
-    const router = useRouter();
+  const router = useRouter();
 
   // useEffect to fetch account data and set default values if API fails
   useEffect(() => {
@@ -106,12 +102,17 @@ export default function AccountBalancePage() {
     platformName in platformColor ? platformColor[platformName as keyof typeof platformColor] : platformColor.uber;
 
   return (
-    <View className="flex-1 bg-white px-4 pt-4">
+    <View className="flex-1 px-4 pt-4" style={{ backgroundColor: colors.background }}>
       {/* Header */}
       <View className="flex-row justify-between items-center mb-6">
-        <ThemedText type="title" className="self-center" style={{ fontWeight: 700 }}>
-          Your Balance
-        </ThemedText>
+        <View className="flex-row items-center">
+          <TouchableOpacity onPress={() => router.push("/main/account")} className="mr-3">
+            <IconSymbol name="back" size={24} color={colors.primaryText} />
+          </TouchableOpacity>
+          <ThemedText type="title" className="self-center" style={{ fontWeight: 700 }}>
+            Your Balance
+          </ThemedText>
+        </View>
         <TouchableOpacity onPress={() => ""}>
           <IconSymbol name="notifications" size={24} color={colors.primaryText} />
         </TouchableOpacity>
@@ -230,7 +231,9 @@ export default function AccountBalancePage() {
                 className="w-16 h-14 rounded-full justify-center items-center mb-1"
                 style={{ backgroundColor: buttonColor }}
               >
-                <Ionicons name={icon as any} size={20} color="#333" />
+                <TouchableOpacity onPress={() => ""}>
+                  <Ionicons name={icon as any} size={20} color="#333" />
+                </TouchableOpacity>
               </View>
               <ThemedText type="defautlSmall" colorValue="cardText">
                 {label}
@@ -288,6 +291,16 @@ export default function AccountBalancePage() {
           </View>
         ))}
       </ScrollView>
+
+      <View className="absolute bottom-7 right-5 mb-16 p-2.5 rounded-full" style={{backgroundColor: platformBgColor}}>
+        <TouchableOpacity onPress={() => {
+          router.push({
+          pathname: "/main/account/profile",
+          params: { name },
+        })}}>
+          <IconSymbol name="wheel" size={24} color={colors.background} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
