@@ -5,60 +5,64 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from "@/constants/config";
+import axios from 'axios';
+import { useState } from 'react';
+import { ProgressDialog } from '@/components/ProgressDialog';
+import { Alert } from 'react-native';
 
 export default function OAuthCallback() {
-  const { code, error, state } = useLocalSearchParams();
+  const [loading, setLoading] = useState(false);
+  const [progressMessage, setProgressMessage] = useState('');
   const router = useRouter();
+  const { code, state, error } = useLocalSearchParams();
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
       try {
-        // Verify state to prevent CSRF attacks
+        if (error) {
+          throw new Error(error.toString());
+        }
+
         const savedState = await AsyncStorage.getItem('oauth_state');
-
-        console.log("result 1:", savedState);
-
-        console.log("result", code, "____", error, "____", state, )
+        const platform = await AsyncStorage.getItem('linking_platform');
 
         if (state !== savedState) {
-          console.error('State mismatch');
-          router.replace('/main/account');
-          return;
+          throw new Error('Invalid state parameter');
         }
 
-        if (error) {
-          console.error('OAuth error:', error);
-          router.replace('/main/account');
-          return;
+        if (code) {
+          setLoading(true);
+          
+          switch (platform) {
+            case 'uber':
+              setProgressMessage('Connecting your Uber account...');
+              await axios.post(
+                `${Config.apiBaseUrl}/api/v1/oauth/uber/connect`,
+                { code, state }
+              );
+              break;
+              
+            case 'lyft':
+              setProgressMessage('Connecting your Lyft account...');
+              await axios.post(
+                `${Config.apiBaseUrl}/api/v1/oauth/lyft/connect`,
+                { code, state }
+              );
+              break;
+          }
+
+          // Clean up state
+          await AsyncStorage.removeItem('oauth_state');
+          await AsyncStorage.removeItem('linking_platform');
         }
 
-        // if (code) {
-        //   // Exchange the code for access token
-        //   const response = await fetch(`${Config.apiBaseUrl}/api/v1/oauth/uber/callback`, {
-        //     method: 'POST',
-        //     headers: {
-        //       'Content-Type': 'application/json',
-        //     },
-        //     body: JSON.stringify({ 
-        //       code,
-        //       redirect_uri: 'exp://192.168.104.149:8081/--/oauth/callback' 
-        //     }),
-        //   });
-
-        //   if (!response.ok) {
-        //     throw new Error('Failed to exchange code for token');
-        //   }
-
-        //   // Clean up state
-        //   await AsyncStorage.removeItem('oauth_state');
-        // }
-
-        // Always return to account page
-        
         router.replace('/main/account');
       } catch (error) {
         console.error('Callback Error:', error);
+        Alert.alert('Error', 'Failed to connect account');
         router.replace('/main/account');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -67,7 +71,8 @@ export default function OAuthCallback() {
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <ThemedText>Processing authentication...</ThemedText>
+      <ProgressDialog visible={loading} message={progressMessage} />
+      <ThemedText>Processing OAuth callback...</ThemedText>
     </View>
   );
 }
