@@ -33,7 +33,7 @@ const capitalizeFirst = (str: string): string => {
 const InfoItem = ({ icon, text, value }: { icon: string; text: string; value: string }) => (
   <View className="flex-row items-center my-2">
     {/* <View> */}
-    <IconSymbol name={icon} size={24} color="#000" className="flex-col self-start pt-1"/>
+    <IconSymbol name={icon} size={24} color="#000" className="flex-col self-start pt-1" />
     {/* </View> */}
     <View className="flex-col items-start ml-1">
       <ThemedText colorValue="primaryText" type="defautlSmall" className="p-1">
@@ -58,40 +58,33 @@ export default function ProfilePage() {
     const fullHearts = Math.floor(numRating);
     const hasHalfHeart = numRating % 1 >= 0.5;
     const emptyHearts = 5 - fullHearts - (hasHalfHeart ? 1 : 0);
-    const size = 24
-    
+    const size = 24;
+
     const hearts: JSX.Element[] = [];
-    
+
     // Add full hearts
     for (let i = 0; i < fullHearts; i++) {
-      hearts.push(
-        <IconSymbol key={`full-${i}`} name="heart.fill" size={size} color="#DE3B40" />
-      );
+      hearts.push(<IconSymbol key={`full-${i}`} name="heart.fill" size={size} color="#DE3B40" />);
     }
-    
+
     // Add half heart if needed
     if (hasHalfHeart) {
-      hearts.push(
-        <IconSymbol key="half" name="halfHeart" size={size} color="#DE3B40" />
-      );
+      hearts.push(<IconSymbol key="half" name="halfHeart" size={size} color="#DE3B40" />);
     }
-    
+
     // Add empty hearts
     for (let i = 0; i < emptyHearts; i++) {
-      hearts.push(
-        <IconSymbol key={`empty-${i}`} name="heart" size={size} color="#DE3B40" />
-      );
+      hearts.push(<IconSymbol key={`empty-${i}`} name="heart" size={size} color="#DE3B40" />);
     }
-    
+
     return hearts;
   };
-  
+
   const platformName = typeof name === "string" && name in logoMap ? (name as PlatformName) : "uber";
   const platformBgColor =
-      platformName in platformColor ? platformColor[platformName as keyof typeof platformColor] : platformColor.uber;
+    platformName in platformColor ? platformColor[platformName as keyof typeof platformColor] : platformColor.uber;
   const logoSource = logoMap[platformName];
-  
-  
+
   // State for each InfoItem's value
   const [email, setEmail] = useState<string>("user@example.com");
   const [phoneNumber, setPhoneNumber] = useState<string>("+1 (555) 123-4567");
@@ -105,7 +98,7 @@ export default function ProfilePage() {
     { x: 3, y: 28 },
     { x: 4, y: 80 },
     { x: 5, y: 99 },
-    { x: 6, y: 43 }
+    { x: 6, y: 43 },
   ]);
   const [change, setChange] = useState<number>(5.39);
 
@@ -113,12 +106,12 @@ export default function ProfilePage() {
     // Generate 6 random points with x from 1–6 and y from 10–100
     const newPastData = Array.from({ length: 6 }, (_, i) => ({
       x: i + 1,
-      y: Math.floor(Math.random() * 91) + 10 // Random y between 10–100
+      y: Math.floor(Math.random() * 91) + 10, // Random y between 10–100
     }));
-  
+
     // Random change value between -10 and +10 with 2 decimals
     const newChange = parseFloat((Math.random() * 20 - 10).toFixed(2));
-  
+
     // Update state
     setPastData(newPastData);
     setChange(newChange);
@@ -134,117 +127,136 @@ export default function ProfilePage() {
     }
     return result;
   };
-  
-    useEffect(() => {
-      // fetchData().then(data => setActivities(data));
-      generateRandomData();
-    }, []);
+
+  useEffect(() => {
+    // fetchData().then(data => setActivities(data));
+    generateRandomData();
+  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {/* Page Title */}
       <View className="flex-row items-center justify-between">
         <TouchableOpacity onPress={() => router.back()} className="self-start">
           <IconSymbol name="back" size={24} color={colors.primaryText} className="p-4" />
         </TouchableOpacity>
-        <ThemedText colorValue="primaryText" type="title" className="absolute left-1/2 -translate-x-1/2 text-center my-4">
+        <ThemedText
+          colorValue="primaryText"
+          type="title"
+          className="absolute left-1/2 -translate-x-1/2 text-center my-4"
+        >
           {`My ${capitalizeFirst(name as string)} Profile`}
         </ThemedText>
       </View>
       {/* Top card section with fixed height */}
-      <View style={{ height: cardHeight }}>
-        <Image
-          source={require("@/assets/images/profile_bg.png")}
-          style={{ width: screenWidth }}
-          className="h-1/2"
-          resizeMode="cover"
-        />
-        <View className="flex-row p-4">
+
+      <ScrollView
+        className="h-auto"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={{ height: cardHeight }}>
           <Image
-            source={logoSource}
-            style={{ width: 60, height: 60, borderRadius: 30, marginBottom: 12 }}
+            source={require("@/assets/images/profile_bg.png")}
+            style={{ width: screenWidth }}
+            className="h-1/2"
             resizeMode="cover"
           />
-          <View className="flex-col justify-between items-start pl-3">
-            <ThemedText colorValue="primaryText" style={{ fontWeight: 700 }}>
-              Driver Name
-            </ThemedText>
-            <ThemedText colorValue="textTertiary">driver</ThemedText>
-            <View className="flex-row items-center justify-between" style={{ width: cardWidth }}>
-              <View className="flex-row">
-                <IconSymbol name="location" size={24} color={colors.brandColor} />
-                <ThemedText colorValue="textTertiary">Onboarding_status</ThemedText>
-              </View>
-              <TouchableOpacity
-                onPress={() => ""}
-                className="mr-4 px-3 py-1 rounded-2xl"
-                style={{ backgroundColor: colors.btnBackground }}
-              >
-                <ThemedText colorValue="btnText">online</ThemedText>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </View>
-      {/* Scrollable content section that takes remaining space */}
-      <View style={{ flex: 1, backgroundColor: `${platformBgColor}36` }}>
-        <ScrollView 
-          contentContainerStyle={{ paddingBottom: 10}} // 64px for tabs + 34px for bottom inset
-          showsVerticalScrollIndicator={false}
-        >
-        <View className="p-4">
-          <ThemedText type="defaultSemiBold" colorValue="menuItemText" className="mb-2">
-            General Information
-          </ThemedText>
-          <InfoItem icon="email" text="Email" value={email} />
-          <InfoItem icon="app" text="Phone Number" value={phoneNumber} />
-          <View className="flex-row items-center my-2">
-            <IconSymbol name="star" size={24} color="#000" className="flex-col self-start pt-1"/>
-            <View className="flex-col items-start ml-1">
-              <ThemedText colorValue="primaryText" type="defautlSmall" className="p-1">
-                Rating
-              </ThemedText>
-              <View className="flex-row p-1">
-                {ratingToHearts(rating)}
-                <ThemedText colorValue="textTertiary" type="defautlSmall" className="ml-2">
-                  ({rating})
-                </ThemedText>
-              </View>
-            </View>
-          </View>
-          <InfoItem icon="people" text="Partner Type" value={partnerType} />
-          <InfoItem icon="briefcase" text="Available Time" value={availableTime} />
-          <InfoItem icon="calendar" text="Joined" value={joined} />
-        </View>
-        <View 
-          style={{backgroundColor: colors.backgroundCard}} 
-          className="flex-row mx-4 p-4 rounded-lg justify-between"
-        >
-          <View className="flex-col justify-between">
-            <ThemedText colorValue="primaryText" type="defautlSmall">Total Trips</ThemedText>
-            <ThemedText colorValue="brandColor" type="defautlSmall">
-              + 1250 Km
-            </ThemedText>
-          </View>
-          <View className="self-end">
-            <ThemedText colorValue= {change > 0 ? "bullish" : "burish"} type="defautlSmall" style={{ fontWeight: 700 }}>
-              {change > 0 ? "+" : ""}{change}%
-            </ThemedText>
-          </View>
-          <View style={{ width: 80, height: 40 }}>
-            <VictoryLine
-              padding={0}
-              height={40}
-              width={80}
-              style={{data: { stroke: change > 0 ? colors.bullish : colors.burish, strokeWidth: 2 }, parent: { border: "none"}}}
-              data={pastData}
-              domain={{ y: [Math.min(...pastData.map(point => point.y)), Math.max(...pastData.map(point => point.y))] }}
-              standalone={true}
-              animate={false}
+          <View className="flex-row p-4">
+            <Image
+              source={logoSource}
+              style={{ width: 60, height: 60, borderRadius: 30, marginBottom: 12 }}
+              resizeMode="cover"
             />
+            <View className="flex-col justify-between items-start pl-3">
+              <ThemedText colorValue="primaryText" style={{ fontWeight: 700 }}>
+                Driver Name
+              </ThemedText>
+              <ThemedText colorValue="textTertiary">driver</ThemedText>
+              <View className="flex-row items-center justify-between" style={{ width: cardWidth }}>
+                <View className="flex-row">
+                  <IconSymbol name="location" size={24} color={colors.brandColor} />
+                  <ThemedText colorValue="textTertiary">Onboarding_status</ThemedText>
+                </View>
+                <TouchableOpacity
+                  onPress={() => ""}
+                  className="mr-4 px-3 py-1 rounded-2xl"
+                  style={{ backgroundColor: colors.btnBackground }}
+                >
+                  <ThemedText colorValue="btnText">online</ThemedText>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+        {/* General Information Space */}
+        <View style={{ flex: 1, backgroundColor: `${platformBgColor}36` }}>
+          <View className="p-4">
+            <ThemedText type="defaultSemiBold" colorValue="menuItemText" className="mb-2">
+              General Information
+            </ThemedText>
+            <InfoItem icon="email" text="Email" value={email} />
+            <InfoItem icon="app" text="Phone Number" value={phoneNumber} />
+            <View className="flex-row items-center my-2">
+              <IconSymbol name="star" size={24} color="#000" className="flex-col self-start pt-1" />
+              <View className="flex-col items-start ml-1">
+                <ThemedText colorValue="primaryText" type="defautlSmall" className="p-1">
+                  Rating
+                </ThemedText>
+                <View className="flex-row p-1">
+                  {ratingToHearts(rating)}
+                  <ThemedText colorValue="textTertiary" type="defautlSmall" className="ml-2">
+                    ({rating})
+                  </ThemedText>
+                </View>
+              </View>
+            </View>
+            <InfoItem icon="people" text="Partner Type" value={partnerType} />
+            <InfoItem icon="briefcase" text="Available Time" value={availableTime} />
+            <InfoItem icon="calendar" text="Joined" value={joined} />
+          </View>
+          {/* Graph Section */}
+          <View
+            style={{ backgroundColor: colors.backgroundCard }}
+            className="flex-row mx-4 mb-4 p-4 rounded-lg justify-between"
+          >
+            <View className="flex-col justify-between">
+              <ThemedText colorValue="primaryText" type="defautlSmall">
+                Total Trips
+              </ThemedText>
+              <ThemedText colorValue="brandColor" type="defautlSmall">
+                + 1250 Km
+              </ThemedText>
+            </View>
+            <View className="self-end">
+              <ThemedText
+                colorValue={change > 0 ? "bullish" : "burish"}
+                type="defautlSmall"
+                style={{ fontWeight: 700 }}
+              >
+                {change > 0 ? "+" : ""}
+                {change}%
+              </ThemedText>
+            </View>
+            <View style={{ width: 80, height: 40 }}>
+              <VictoryLine
+                padding={0}
+                height={40}
+                width={80}
+                style={{
+                  data: { stroke: change > 0 ? colors.bullish : colors.burish, strokeWidth: 2 },
+                  parent: { border: "none" },
+                }}
+                data={pastData}
+                domain={{
+                  y: [Math.min(...pastData.map((point) => point.y)), Math.max(...pastData.map((point) => point.y))],
+                }}
+                standalone={true}
+                animate={false}
+              />
+            </View>
           </View>
         </View>
       </ScrollView>
-      </View>
     </View>
   );
 }
