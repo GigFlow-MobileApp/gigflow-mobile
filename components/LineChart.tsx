@@ -10,7 +10,7 @@ import {
   VictoryArea
 } from "victory-native";
 import React, { useState, useEffect } from "react";
-import { View, StyleProp, ViewStyle, Dimensions } from "react-native";
+import { View, StyleProp, ViewStyle, Dimensions  } from "react-native";
 import { platformColor } from "@/constants/Colors";
 import { MotiView } from 'moti';
 import { GradientButton } from "@/components/ui/GradientButton";
@@ -77,6 +77,7 @@ export default function LineChart({
   const [showScatter, setShowScatter] = useState(false);
   const allYValues = lineData.datasets.flatMap(ds => ds.data);
   const maxY = Math.max(...allYValues) * 1.1;
+  const [readyToRenderChart, setReadyToRenderChart] = useState(false);
   
   useEffect(() => {
     setShowScatter(false);
@@ -119,7 +120,7 @@ export default function LineChart({
           backgroundColor: Colors[colorScheme].backgroundCard,
           borderRadius: 24,
           height: screenWidth * 1.3,
-          width: "100%",
+          flex: 1,
           borderWidth: 1,
           borderColor: Colors[colorScheme].border + '20', // 20% opacity
           shadowColor: Colors[colorScheme].shadow,

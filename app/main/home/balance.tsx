@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
-import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Dimensions } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Dimensions, Animated, Easing } from "react-native";
 import { Ionicons, Feather, MaterialIcons } from "@expo/vector-icons";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useThemeColors } from "@/components/ColorSchemeProvider";
@@ -9,7 +9,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useRouter } from "expo-router";
 import { textStyles } from "@/constants/TextStyles";
 import { Activity } from "@/constants/customTypes";
-import ActionButton from 'react-native-action-button';
+// import ActionButton from 'react-native-action-button';
 
 type PlatformName = keyof typeof logoMap;
 
@@ -29,6 +29,72 @@ const cardHeight = screenHeight * (272 / 897);
 const bcrhc = screenHeight / (897 - 40); //blackCardRelativeHeightConst
 const bcrwc = screenWidth / 390; //blackCardRelativeWidthConst
 
+type ActivityItem = {
+  title: string;
+  subtitle: string;
+  amount: string;
+  type: "in" | "out";
+};
+
+interface ActivityItemProps {
+  a: ActivityItem;
+  i: number;
+}
+
+const ActivityItem:React.FC<ActivityItemProps> = ({a, i}) => {
+  const { colors } = useThemeColors();
+
+  const contentTranslateX = useRef(new Animated.Value(screenWidth)).current;
+  
+  useEffect(() => {
+    // Entrance animation with staggered delay based on index
+    const animationDelay = i * 100; // 100ms delay between items
+    
+    Animated.timing(contentTranslateX, {
+      toValue: 0,
+      duration: 500,
+      delay: animationDelay,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  return (
+    <Animated.View
+      key={i}
+      className="rounded-xl border border-gray-200 p-1 mb-3 shadow-xs"
+      style={{ 
+        backgroundColor: colors.background,
+        transform: [{ translateX: contentTranslateX }]
+      }}
+    >
+      <View className="flex-row justify-between items-center my-2 pl-3">
+        <View className="flex-row items-start">
+          <IconSymbol
+            name="arrow"
+            size={24}
+            color={colors.primaryText}
+            style={{ transform: [{ rotate: a.type === "in" ? "-135deg" : "45deg" }] }}
+          />
+          <View className="flex-col pt-1 pl-2">
+            <ThemedText type="defautlSmall" style={{ fontWeight: 600 }} colorValue="cardText">
+              {a.title}
+            </ThemedText>
+            <ThemedText type="semiSmall" colorValue="textTertiary" className="pt-1">
+              {a.subtitle}
+            </ThemedText>
+          </View>
+        </View>
+        <View className="flex-col pt-1 justify-between">
+          <Text className={`text-base font-semibold pr-2 ${a.type === "in" ? "text-green-600" : "text-red-500"}`}>
+            {a.amount}
+          </Text>
+          <IconSymbol className="self-end" name="detail" size={22} color={colors.primaryText} />
+        </View>
+      </View>
+    </Animated.View>
+  )
+}
+
 export default function AccountBalancePage() {
   const { name } = useLocalSearchParams();
   const { colors } = useThemeColors();
@@ -39,6 +105,54 @@ export default function AccountBalancePage() {
   const [date, setDate] = useState("");
   const [activities, setActivities] = useState<Activity[]>([]);
   const router = useRouter();
+  
+  // Animation values
+  const cardFlipAnimation = useState(new Animated.Value(0))[0];
+  const buttonsTranslateX  = useState(new Animated.Value(100))[0];
+
+  // Start animations when component mounts
+  useEffect(() => {
+    // Run all animations simultaneously
+    Animated.sequence([
+      // Card flip animation
+      Animated.timing(cardFlipAnimation, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }),
+      // Buttons scale animation
+      Animated.spring(buttonsTranslateX, {
+        toValue: 0,
+        friction: 5,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  // Calculate flip animation interpolations
+  const frontFlipRotation = cardFlipAnimation.interpolate({
+    inputRange: [0, 0.5, 0.501, 1],
+    outputRange: ['0deg', '90deg', '-90deg', '0deg'],
+  });
+  
+  // Simplified approach - just use the animation value directly
+  const frontSideVisibility = cardFlipAnimation.interpolate({
+    inputRange: [0, 0.5, 0.501, 1],
+    outputRange: [0, 0, 1, 1],
+  });
+  
+  const backSideVisibility = cardFlipAnimation.interpolate({
+    inputRange: [0, 0.499, 0.5, 1],
+    outputRange: [1, 1, 0, 0],
+  });
+
+  // Calculate scale animation interpolations
+  const buttonPos = buttonsTranslateX .interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
 
   // useEffect to fetch account data and set default values if API fails
   useEffect(() => {
@@ -128,91 +242,127 @@ export default function AccountBalancePage() {
             style={{ width: 60, height: 60, borderRadius: 30, marginBottom: 12 }}
             resizeMode="cover"
           />
-          <View
-            className="flex-1 h-[90px] rounded-xl flex-row justify-between items-center"
-            style={{
-              backgroundColor: colors.background,
-              elevation: 8,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.2,
-              shadowRadius: 6,
-            }}
-          >
-            <View className="flex-1 h-full flex-col p-4 justify-between">
-              <View className="flex-row items-center">
-                <ThemedText type="defautlSmall" colorValue="cardText">
-                  Available
-                </ThemedText>
-                <ThemedText type="title" colorValue="primaryText" className="ml-6">
-                  ${available.toFixed(2)}
-                </ThemedText>
-              </View>
-              <View className="flex-row items-center">
-                <ThemedText type="defautlSmall" colorValue="cardText">
-                  Pending
-                </ThemedText>
-                <ThemedText type="btnText" colorValue="textTertiary" className="ml-6" style={{ fontWeight: 600 }}>
-                  ${pending.toFixed(2)}
-                </ThemedText>
-              </View>
-              <View className="flex-col">
-                <ThemedText type="semiSmall" colorValue="textTertiary">
-                  Account ID
-                </ThemedText>
-                <View className="flex-row justify-between items-center pt-1">
-                  <TextInput
-                    value={accountId}
-                    style={{ color: colors.textTertiary, fontFamily: "Poppins", ...textStyles.default }}
-                    secureTextEntry={secureId}
-                    autoCapitalize="none"
-                    editable={false}
-                  />
-                  <TouchableOpacity onPress={() => setSecureId(!secureId)}>
-                    <Feather name={secureId ? "eye-off" : "eye"} size={16} color={colors.textTertiary} />
-                  </TouchableOpacity>
+          <View className="flex-1 h-[90px] relative">
+            {/* Back side of the card (visible first) */}
+            <Animated.View
+              className="absolute w-full h-full rounded-xl"
+              style={{
+                backgroundColor: platformBgColor,
+                elevation: 8,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 6,
+                opacity: backSideVisibility,
+                transform: [{ rotateY: frontFlipRotation }],
+                zIndex: 1,
+              }}
+            >
+              {/* Simple white rectangle decorations */}
+              <View className="absolute rounded-lg w-16 h-4 opacity-40" 
+                style={{ backgroundColor: 'white', top: 15, left: 20 }} />
+              <View className="absolute rounded-lg w-24 h-4 opacity-40" 
+                style={{ backgroundColor: 'white', top: 15, right: 20 }} />
+              <View className="absolute rounded-lg w-20 h-4 opacity-30" 
+                style={{ backgroundColor: 'white', top: 35, left: 30 }} />
+              <View className="absolute rounded-lg w-32 h-4 opacity-30" 
+                style={{ backgroundColor: 'white', top: 55, left: 20 }} />
+              <View className="absolute rounded-lg w-16 h-4 opacity-20" 
+                style={{ backgroundColor: 'white', top: 55, right: 30 }} />
+              <View className="absolute rounded-lg w-24 h-4 opacity-20" 
+                style={{ backgroundColor: 'white', bottom: 15, left: 40 }} />
+            </Animated.View>
+            
+            {/* Front side of the card (visible after flip) */}
+            <Animated.View
+              className="absolute w-full h-full rounded-xl flex-row justify-between items-center"
+              style={{
+                backgroundColor: colors.background,
+                elevation: 8,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 6,
+                transform: [{ rotateY: frontFlipRotation }],
+                opacity: frontSideVisibility,
+                zIndex: 2,
+              }}
+            >
+              <View className="flex-1 h-full flex-col p-4 justify-between">
+                <View className="flex-row items-center">
+                  <ThemedText type="defautlSmall" colorValue="cardText">
+                    Available
+                  </ThemedText>
+                  <ThemedText type="title" colorValue="primaryText" className="ml-6">
+                    ${available.toFixed(2)}
+                  </ThemedText>
+                </View>
+                <View className="flex-row items-center">
+                  <ThemedText type="defautlSmall" colorValue="cardText">
+                    Pending
+                  </ThemedText>
+                  <ThemedText type="btnText" colorValue="textTertiary" className="ml-6" style={{ fontWeight: 600 }}>
+                    ${pending.toFixed(2)}
+                  </ThemedText>
+                </View>
+                <View className="flex-col">
+                  <ThemedText type="semiSmall" colorValue="textTertiary">
+                    Account ID
+                  </ThemedText>
+                  <View className="flex-row justify-between items-center pt-1">
+                    <TextInput
+                      value={accountId}
+                      style={{ color: colors.textTertiary, fontFamily: "Poppins", ...textStyles.default }}
+                      secureTextEntry={secureId}
+                      autoCapitalize="none"
+                      editable={false}
+                    />
+                    <TouchableOpacity onPress={() => setSecureId(!secureId)}>
+                      <Feather name={secureId ? "eye-off" : "eye"} size={16} color={colors.textTertiary} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
-            </View>
 
-            <View
-              style={{
-                width: 1,
-                height: "80%",
-                backgroundColor: "rgba(0,0,0,0.1)",
-                marginVertical: "10%",
-                borderRadius: 1,
-              }}
-            />
-            <View
-              className="h-full rounded-r-xl relative overflow-hidden"
-              style={{ width: blackWidth, backgroundColor: platformBgColor }}
-            >
               <View
-                className="absolute rounded-full w-6 h-6 opacity-70"
-                style={{ backgroundColor: colors.background, top: 24 * bcrhc, left: 25 * bcrwc }}
+                style={{
+                  width: 1,
+                  height: "80%",
+                  backgroundColor: "rgba(0,0,0,0.1)",
+                  marginVertical: "10%",
+                  borderRadius: 1,
+                }}
               />
               <View
-                className="absolute rounded-full w-6 h-6 opacity-70"
-                style={{ backgroundColor: colors.background, top: 24 * bcrhc, left: 40 * bcrwc }}
-              />
-              <View
-                className="absolute rounded-lg w-[69px] h-6 opacity-40"
-                style={{ backgroundColor: colors.background, top: 104 * bcrhc, left: -29 * bcrwc }}
-              />
-              <View
-                className="absolute rounded-lg w-14 h-6 opacity-40"
-                style={{ backgroundColor: colors.background, top: 131 * bcrhc, left: 50 * bcrwc }}
-              />
-              <View
-                className="absolute rounded-lg w-[69px] h-8 opacity-20"
-                style={{ backgroundColor: colors.background, top: 162 * bcrhc, left: -29 * bcrwc }}
-              />
-              <View
-                className="absolute rounded-lg w-[69px] h-8 opacity-20"
-                style={{ backgroundColor: colors.background, top: 171 * bcrhc, left: 30 * bcrwc }}
-              />
-            </View>
+                className="h-full rounded-r-xl relative overflow-hidden"
+                style={{ width: blackWidth, backgroundColor: platformBgColor }}
+              >
+                <View
+                  className="absolute rounded-full w-6 h-6 opacity-70"
+                  style={{ backgroundColor: colors.background, top: 24 * bcrhc, left: 25 * bcrwc }}
+                />
+                <View
+                  className="absolute rounded-full w-6 h-6 opacity-70"
+                  style={{ backgroundColor: colors.background, top: 24 * bcrhc, left: 40 * bcrwc }}
+                />
+                <View
+                  className="absolute rounded-lg w-[69px] h-6 opacity-40"
+                  style={{ backgroundColor: colors.background, top: 104 * bcrhc, left: -29 * bcrwc }}
+                />
+                <View
+                  className="absolute rounded-lg w-14 h-6 opacity-40"
+                  style={{ backgroundColor: colors.background, top: 131 * bcrhc, left: 50 * bcrwc }}
+                />
+                <View
+                  className="absolute rounded-lg w-[69px] h-8 opacity-20"
+                  style={{ backgroundColor: colors.background, top: 162 * bcrhc, left: -29 * bcrwc }}
+                />
+                <View
+                  className="absolute rounded-lg w-[69px] h-8 opacity-20"
+                  style={{ backgroundColor: colors.background, top: 171 * bcrhc, left: 30 * bcrwc }}
+                />
+              </View>
+            </Animated.View>
           </View>
         </View>
 
@@ -269,53 +419,22 @@ export default function AccountBalancePage() {
         </ThemedText>
 
         {activities.map((a, i) => (
-          <View
-            key={i}
-            className="rounded-xl border border-gray-200 p-1 mb-3 shadow-xs"
-            style={{ backgroundColor: colors.background }}
-          >
-            <View className="flex-row justify-between items-center my-2 pl-3">
-              <View className="flex-row items-start">
-                <IconSymbol
-                  name="arrow"
-                  size={24}
-                  color={colors.primaryText}
-                  style={{ transform: [{ rotate: a.type === "in" ? "-135deg" : "45deg" }] }}
-                />
-                <View className="flex-col pt-1 pl-2">
-                  <ThemedText type="defautlSmall" style={{ fontWeight: 600 }} colorValue="cardText">
-                    {a.title}
-                  </ThemedText>
-                  <ThemedText type="semiSmall" colorValue="textTertiary" className="pt-1">
-                    {a.subtitle}
-                  </ThemedText>
-                </View>
-              </View>
-              <View className="flex-col pt-1 justify-between">
-                <Text className={`text-base font-semibold pr-2 ${a.type === "in" ? "text-green-600" : "text-red-500"}`}>
-                  {a.amount}
-                </Text>
-                <IconSymbol className="self-end" name="detail" size={22} color={colors.primaryText} />
-              </View>
-            </View>
-          </View>
+          <ActivityItem a={a} i={i} key={i}/>
         ))}
       </ScrollView>
 
-      <View className="absolute bottom-7 right-5 mb-16 p-2.5 rounded-full" style={{ backgroundColor: platformBgColor }}>
-        <ActionButton
-          buttonColor={platformBgColor}
-          onPress={() => {
-            router.push({
-              pathname: "/main/account/profile",
-              params: { name },
-            });
-          }}
-          renderIcon={() => (
-            <IconSymbol name="wheel" size={34} color={colors.background} />
-          )}
-        />
-      </View>
+      <Animated.View 
+        className="absolute bottom-7 right-5 mb-16 p-2.5 rounded-full" 
+        style={{ backgroundColor: platformBgColor, transform: [{ translateX: buttonsTranslateX }] }}
+      >
+        <TouchableOpacity onPress={() => {
+          router.push({
+          pathname: "/main/account/profile",
+          params: { name },
+        })}}>
+          <IconSymbol name="wheel" size={34} color={colors.background} />
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 }
