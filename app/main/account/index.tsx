@@ -1,6 +1,6 @@
 // app/(drawer)/setting.tsx
-import React, { useState, useEffect } from "react";
-import { View, Alert, ScrollView, TouchableOpacity, Image } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, Alert, ScrollView, TouchableOpacity, Image, Animated } from "react-native";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { Colors } from "@/constants/Colors";
@@ -13,6 +13,7 @@ interface AccountItemProps {
   balance: number;
   linked: boolean;
   onPress: () => void;
+  index?: number; // For staggered animation
 }
 
 type Account = {
@@ -30,12 +31,34 @@ const iconMap: Record<string, any> = {
   fiverr: require("@/assets/images/logos/fiverr.png"),
 };
 
-const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: initialLinked, onPress }) => {
+const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: initialLinked, onPress, index = 0 }) => {
   const { colorScheme } = useColorScheme();
   const [linked, setLinked] = useState(initialLinked);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  
+  // Animation values
+  const imageTranslateX = useRef(new Animated.Value(-200)).current;
+  const contentTranslateX = useRef(new Animated.Value(200)).current;
 
   useEffect(() => {
+    // Entrance animation with staggered delay based on index
+    const animationDelay = index * 100; // 100ms delay between items
+    
+    Animated.parallel([
+      Animated.timing(imageTranslateX, {
+        toValue: 0,
+        duration: 300,
+        delay: animationDelay,
+        useNativeDriver: true,
+      }),
+      Animated.timing(contentTranslateX, {
+        toValue: 0,
+        duration: 300,
+        delay: animationDelay,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    
     if (showConfirmDialog) {
 
       Alert.alert(
@@ -69,10 +92,10 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
       }}
     >
       <View className="flex flex-row">
-        <View className="pt-2 pl-1">
+        <Animated.View className="pt-2 pl-1" style={{ transform: [{ translateX: imageTranslateX }] }}>
           <Image source={iconMap[iconName]} style={{ width: 52, height: 52, borderRadius: 25 }} resizeMode="cover" />
-        </View>
-        <View className="flex flex-col justify-between ml-6">
+        </Animated.View>
+        <Animated.View className="flex flex-col justify-between ml-6" style={{ transform: [{ translateX: imageTranslateX }] }}>
           {linked ? (
             <>
               <ThemedText type="semiSmall" colorValue="menuItemText" className="py-3">
@@ -89,9 +112,9 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
               <View className="pt-3" />
             </>
           )}
-        </View>
+        </Animated.View>
       </View>
-      <View className="flex flex-col justify-between">
+      <Animated.View className="flex flex-col justify-between" style={{ transform: [{ translateX: contentTranslateX }] }}>
         <TouchableOpacity
           className="mt-2 px-3 py-1 rounded-lg flex-row items-center"
           style={{ backgroundColor: linked ? Colors[colorScheme].btnBackground : Colors[colorScheme].tabIconDefault }}
@@ -106,7 +129,7 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
         <TouchableOpacity onPress={onPress} disabled={!linked} className="flex-row justify-end p-3">
           <IconSymbol name="gear" size={22} color="primaryText" />
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </View>
   );
 };
@@ -124,8 +147,18 @@ export default function AccountScreen() {
   const [loading, setLoading] = useState(true);
   const { colorScheme } = useColorScheme();
   const router = useRouter();
+  
+  // Animation value for title fade-in
+  const titleOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Title fade-in animation
+    Animated.timing(titleOpacity, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+    
     const fetchAccounts = async () => {
       try {
         // const res = await fetch("https://your-backend.com/api/accounts");
@@ -160,18 +193,21 @@ export default function AccountScreen() {
 
   return (
     <View className="rounded-3xl" style={{ backgroundColor: Colors[colorScheme].background }}>
-      <ThemedText type="title" className="self-center" style={{paddingTop: 20}}>
-        Your Accounts
-      </ThemedText>
+      <Animated.View style={{ opacity: titleOpacity }}>
+        <ThemedText type="title" className="self-center" style={{paddingTop: 20}}>
+          Your Accounts
+        </ThemedText>
+      </Animated.View>
       {/* account list */}
       <ScrollView showsVerticalScrollIndicator={false} className="pt-4 h-full">
-        {accounts.map((account) => {
+        {accounts.map((account, index) => {
           return (
             <AccountItem
               key={account.id}
               iconName={account.iconName}
               balance={account.balance}
               linked={account.linked}
+              index={index}
               onPress={() =>
                 router.push({
                   pathname: "/main/home/balance",
