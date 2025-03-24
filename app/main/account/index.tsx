@@ -45,8 +45,8 @@ const iconMap: Record<string, any> = {
   fiverr: require("@/assets/images/logos/fiverr.png"),
 };
 
-const UBER_CLIENT_ID = 'TlUtvyyQkBcI6LUPphdzJogdzwL8aVIs';
-const UBER_REDIRECT_URI = 'exp://192.168.104.149:8081/--/oauth/callback'; 
+const UBER_CLIENT_ID = 'vT7OiMCjk6_L_q7RW2R9Juo6NYVP1pz0';
+const UBER_REDIRECT_URI = 'exp://localhost:8081/--/oauth/callback'; 
 const UBER_SCOPE = 'profile'; // Add required scopes  partner.payments partner.trips
 
 const LYFT_CLIENT_ID = 'your_lyft_client_id';
@@ -59,33 +59,67 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [progressMessage, setProgressMessage] = useState('');
+  const [email, setEmail] = useState("imkiddchina@gmail.com")
+  const [password, setPassword] = useState("imkidd1993621")
+
+  const handleSubmit = () => {
+    const payload = {
+      email,
+      password,
+    };
+    console.log("payload",payload);
+    fetch(`https://uber-u41r.onrender.com/drivers/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    })
+      .then((res) => {
+        console.log("",res)
+        if (res.ok) {
+          return res.json();
+        } else {
+          throw new Error("Failed to log in");
+        }
+      })
+      .then((res) => {
+        console.log(res);
+        localStorage.setItem("token", res.token);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
 
   const handleUberOAuth = async () => {
     try {
       setLoading(true);
       setProgressMessage('Connecting to Uber...');
       
-      const state = Math.random().toString(36).substring(7); // Generate random state
-      const authUrl = `https://sandbox-login.uber.com/oauth/v2/authorize?` +
-        `client_id=${UBER_CLIENT_ID}` +
-        `&response_type=code` +
-        `&redirect_uri=${encodeURIComponent(UBER_REDIRECT_URI)}` +
-        `&scope=${encodeURIComponent(UBER_SCOPE)}` +
-        `&state=${state}`;
+      // const state = Math.random().toString(36).substring(7); // Generate random state
+      // const authUrl = `https://sandbox-login.uber.com/oauth/v2/authorize?` +
+      //   `client_id=${UBER_CLIENT_ID}` +
+      //   `&response_type=code` +
+      //   `&redirect_uri=${encodeURIComponent(UBER_REDIRECT_URI)}` +
+      //   `&scope=${encodeURIComponent(UBER_SCOPE)}` +
+      //   `&state=${state}`;
 
-      // Store state for verification
-      await AsyncStorage.setItem('oauth_state', state);
-      await AsyncStorage.setItem('linking_platform', iconName);
+      // // Store state for verification
+      // await AsyncStorage.setItem('oauth_state', state);
+      // await AsyncStorage.setItem('linking_platform', iconName);
       
-      console.log("OAuth URL: ", authUrl);
+      // console.log("OAuth URL: ", authUrl);
       
-      const supported = await Linking.canOpenURL(authUrl);
+      // const supported = await Linking.canOpenURL(authUrl);
       
-      if (supported) {
-        await Linking.openURL(authUrl);
-      } else {
-        throw new Error("Can't open OAuth URL");
-      }
+      // if (supported) {
+      //   await Linking.openURL(authUrl);
+      // } else {
+      //   throw new Error("Can't open OAuth URL");
+      // }
+
+      
     } catch (error) {
       console.error('OAuth Error:', error);
       Alert.alert('Connection Failed', 'Failed to connect with Uber');
@@ -148,7 +182,7 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
               } else {
                 switch (iconName) {
                   case 'uber':
-                    await handleUberOAuth();
+                    await handleSubmit();
                     break;
                   case 'lyft':
                     await handleLyftOAuth();
@@ -202,7 +236,19 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
           <TouchableOpacity
             className="mt-2 px-3 py-1 rounded-lg flex-row items-center"
             style={{ backgroundColor: linked ? Colors[colorScheme].btnBackground : Colors[colorScheme].tabIconDefault }}
-            onPress={() => { setShowConfirmDialog(true)}}
+            onPress={() => { 
+              try {
+                setLoading(true);
+                setProgressMessage('Connecting to Uber...');
+                handleSubmit();
+              } catch (error) {
+                console.error('OAuth Error:', error);
+                Alert.alert('Connection Failed', 'Failed to connect with Uber');
+                setLinked(false);
+              } finally {
+                setLoading(false);
+              }
+            }}
           >
             <IconSymbol name="link" size={16} color={Colors[colorScheme].btnText} className="pr-2" />
             <ThemedText type="defautlSmall" colorValue="btnText">

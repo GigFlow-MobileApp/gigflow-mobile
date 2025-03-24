@@ -16,6 +16,9 @@ export const loginApi = async (username: string, password: string) => {
       {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
+          "Accept": "application/json",
+          // Add origin header for development
+          "Origin": "exp://192.168.104.149:8081" // Replace with your Expo development server URL
         },
       }
     );
