@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from "expo-router";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Dimensions, Animated, Easing } from "react-native";
 import { Ionicons, Feather, MaterialIcons } from "@expo/vector-icons";
 import { IconSymbol } from "@/components/ui/IconSymbol";
@@ -9,10 +9,9 @@ import { ThemedText } from "@/components/ThemedText";
 import { useRouter } from "expo-router";
 import { textStyles } from "@/constants/TextStyles";
 import { Activity } from "@/constants/customTypes";
-// import ActionButton from 'react-native-action-button';
+import { SlideInView } from "@/components/FadeInView";
 
 type PlatformName = keyof typeof logoMap;
-
 
 const logoMap = {
   uber: require("@/assets/images/logos/uber.png"),
@@ -41,59 +40,44 @@ interface ActivityItemProps {
   i: number;
 }
 
-const ActivityItem:React.FC<ActivityItemProps> = ({a, i}) => {
+const ActivityItem: React.FC<ActivityItemProps> = ({ a, i }) => {
   const { colors } = useThemeColors();
 
-  const contentTranslateX = useRef(new Animated.Value(screenWidth)).current;
-  
-  useEffect(() => {
-    // Entrance animation with staggered delay based on index
-    const animationDelay = i * 100; // 100ms delay between items
-    
-    Animated.timing(contentTranslateX, {
-      toValue: 0,
-      duration: 500,
-      delay: animationDelay,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
   return (
-    <Animated.View
-      key={i}
-      className="rounded-xl border border-gray-200 p-1 mb-3 shadow-xs"
-      style={{ 
-        backgroundColor: colors.background,
-        transform: [{ translateX: contentTranslateX }]
-      }}
-    >
-      <View className="flex-row justify-between items-center my-2 pl-3">
-        <View className="flex-row items-start">
-          <IconSymbol
-            name="arrow"
-            size={24}
-            color={colors.primaryText}
-            style={{ transform: [{ rotate: a.type === "in" ? "-135deg" : "45deg" }] }}
-          />
-          <View className="flex-col pt-1 pl-2">
-            <ThemedText type="defautlSmall" style={{ fontWeight: 600 }} colorValue="cardText">
-              {a.title}
-            </ThemedText>
-            <ThemedText type="semiSmall" colorValue="textTertiary" className="pt-1">
-              {a.subtitle}
-            </ThemedText>
+    <SlideInView i={i}>
+      <View
+        key={i}
+        className="rounded-xl border border-gray-200 p-1 mb-3 shadow-xs"
+        style={{ backgroundColor: colors.background }}
+      >
+        <View className="flex-row justify-between items-center my-2 pl-3">
+          <View className="flex-row items-start">
+            <IconSymbol
+              name="arrow"
+              size={24}
+              color={colors.primaryText}
+              style={{ transform: [{ rotate: a.type === "in" ? "-135deg" : "45deg" }] }}
+            />
+            <View className="flex-col pt-1 pl-2">
+              <ThemedText type="defautlSmall" style={{ fontWeight: 600 }} colorValue="cardText">
+                {a.title}
+              </ThemedText>
+              <ThemedText type="semiSmall" colorValue="textTertiary" className="pt-1">
+                {a.subtitle}
+              </ThemedText>
+            </View>
+          </View>
+          <View className="flex-col pt-1 justify-between">
+            <Text className={`text-base font-semibold pr-2 ${a.type === "in" ? "text-green-600" : "text-red-500"}`}>
+              {a.amount}
+            </Text>
+            <IconSymbol className="self-end" name="detail" size={22} color={colors.primaryText} />
           </View>
         </View>
-        <View className="flex-col pt-1 justify-between">
-          <Text className={`text-base font-semibold pr-2 ${a.type === "in" ? "text-green-600" : "text-red-500"}`}>
-            {a.amount}
-          </Text>
-          <IconSymbol className="self-end" name="detail" size={22} color={colors.primaryText} />
-        </View>
       </View>
-    </Animated.View>
-  )
-}
+    </SlideInView>
+  );
+};
 
 export default function AccountBalancePage() {
   const { name } = useLocalSearchParams();
@@ -105,10 +89,10 @@ export default function AccountBalancePage() {
   const [date, setDate] = useState("");
   const [activities, setActivities] = useState<Activity[]>([]);
   const router = useRouter();
-  
+
   // Animation values
   const cardFlipAnimation = useState(new Animated.Value(0))[0];
-  const buttonsTranslateX  = useState(new Animated.Value(100))[0];
+  const buttonsTranslateX = useState(new Animated.Value(100))[0];
 
   // Start animations when component mounts
   useEffect(() => {
@@ -134,22 +118,22 @@ export default function AccountBalancePage() {
   // Calculate flip animation interpolations
   const frontFlipRotation = cardFlipAnimation.interpolate({
     inputRange: [0, 0.5, 0.501, 1],
-    outputRange: ['0deg', '90deg', '-90deg', '0deg'],
+    outputRange: ["0deg", "90deg", "-90deg", "0deg"],
   });
-  
+
   // Simplified approach - just use the animation value directly
   const frontSideVisibility = cardFlipAnimation.interpolate({
     inputRange: [0, 0.5, 0.501, 1],
     outputRange: [0, 0, 1, 1],
   });
-  
+
   const backSideVisibility = cardFlipAnimation.interpolate({
     inputRange: [0, 0.499, 0.5, 1],
     outputRange: [1, 1, 0, 0],
   });
 
   // Calculate scale animation interpolations
-  const buttonPos = buttonsTranslateX .interpolate({
+  const buttonPos = buttonsTranslateX.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 1],
   });
@@ -259,20 +243,32 @@ export default function AccountBalancePage() {
               }}
             >
               {/* Simple white rectangle decorations */}
-              <View className="absolute rounded-lg w-16 h-4 opacity-40" 
-                style={{ backgroundColor: 'white', top: 15, left: 20 }} />
-              <View className="absolute rounded-lg w-24 h-4 opacity-40" 
-                style={{ backgroundColor: 'white', top: 15, right: 20 }} />
-              <View className="absolute rounded-lg w-20 h-4 opacity-30" 
-                style={{ backgroundColor: 'white', top: 35, left: 30 }} />
-              <View className="absolute rounded-lg w-32 h-4 opacity-30" 
-                style={{ backgroundColor: 'white', top: 55, left: 20 }} />
-              <View className="absolute rounded-lg w-16 h-4 opacity-20" 
-                style={{ backgroundColor: 'white', top: 55, right: 30 }} />
-              <View className="absolute rounded-lg w-24 h-4 opacity-20" 
-                style={{ backgroundColor: 'white', bottom: 15, left: 40 }} />
+              <View
+                className="absolute rounded-lg w-16 h-4 opacity-40"
+                style={{ backgroundColor: "white", top: 15, left: 20 }}
+              />
+              <View
+                className="absolute rounded-lg w-24 h-4 opacity-40"
+                style={{ backgroundColor: "white", top: 15, right: 20 }}
+              />
+              <View
+                className="absolute rounded-lg w-20 h-4 opacity-30"
+                style={{ backgroundColor: "white", top: 35, left: 30 }}
+              />
+              <View
+                className="absolute rounded-lg w-32 h-4 opacity-30"
+                style={{ backgroundColor: "white", top: 55, left: 20 }}
+              />
+              <View
+                className="absolute rounded-lg w-16 h-4 opacity-20"
+                style={{ backgroundColor: "white", top: 55, right: 30 }}
+              />
+              <View
+                className="absolute rounded-lg w-24 h-4 opacity-20"
+                style={{ backgroundColor: "white", bottom: 15, left: 40 }}
+              />
             </Animated.View>
-            
+
             {/* Front side of the card (visible after flip) */}
             <Animated.View
               className="absolute w-full h-full rounded-xl flex-row justify-between items-center"
@@ -419,19 +415,22 @@ export default function AccountBalancePage() {
         </ThemedText>
 
         {activities.map((a, i) => (
-          <ActivityItem a={a} i={i} key={i}/>
+          <ActivityItem a={a} i={i} key={i} />
         ))}
       </ScrollView>
 
-      <Animated.View 
-        className="absolute bottom-7 right-5 mb-16 p-2.5 rounded-full" 
+      <Animated.View
+        className="absolute bottom-7 right-5 mb-16 p-2.5 rounded-full"
         style={{ backgroundColor: platformBgColor, transform: [{ translateX: buttonsTranslateX }] }}
       >
-        <TouchableOpacity onPress={() => {
-          router.push({
-          pathname: "/main/account/profile",
-          params: { name },
-        })}}>
+        <TouchableOpacity
+          onPress={() => {
+            router.push({
+              pathname: "/main/account/profile",
+              params: { name },
+            });
+          }}
+        >
           <IconSymbol name="wheel" size={34} color={colors.background} />
         </TouchableOpacity>
       </Animated.View>
