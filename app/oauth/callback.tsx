@@ -17,6 +17,7 @@ export default function OAuthCallback() {
   const { code, state, error } = useLocalSearchParams();
 
   useEffect(() => {
+    console.log("call back called")
     const handleOAuthCallback = async () => {
       try {
         if (error) {
