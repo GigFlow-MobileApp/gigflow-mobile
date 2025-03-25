@@ -16,16 +16,11 @@ interface AccountItemProps {
   balance: number;
   linked: boolean;
   onPress: () => void;
+  accounts: Account[];
+  setAccounts: React.Dispatch<React.SetStateAction<Account[]>>;
 }
 
 type Account = {
-  id: string; // unique identifier from backend
-  iconName: string;
-  balance: number;
-  linked: boolean;
-};
-
-type AccountResponse = {
   id: string;
   type: string;
   balance: number;
@@ -53,99 +48,51 @@ const LYFT_CLIENT_ID = 'your_lyft_client_id';
 const LYFT_REDIRECT_URI = 'exp://192.168.104.149:8081/--/oauth/callback';
 const LYFT_SCOPE = 'profile';
 
-const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: initialLinked, onPress }) => {
+const AccountItem: React.FC<AccountItemProps> = ({ 
+  iconName, 
+  balance, 
+  linked, 
+  onPress, 
+  accounts,  // Add these props to the component parameters
+  setAccounts 
+}) => {
   const { colorScheme } = useColorScheme();
-  const [linked, setLinked] = useState(initialLinked);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [progressMessage, setProgressMessage] = useState('');
-  const [email, setEmail] = useState("imkiddchina@gmail.com")
-  const [password, setPassword] = useState("imkidd1993621")
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  const handleSubmit = () => {
-    const payload = {
-      email,
-      password,
-    };
-    console.log("payload",payload);
-    fetch(`https://uber-u41r.onrender.com/drivers/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => {
-        console.log("",res)
-        if (res.ok) {
-          return res.json();
-        } else {
-          throw new Error("Failed to log in");
-        }
-      })
-      .then((res) => {
-        console.log(res);
-        localStorage.setItem("token", res.token);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
-
-  const handleUberOAuth = async () => {
+  const handlePlatformOAuth = async (platform: string) => {
     try {
       setLoading(true);
-      setProgressMessage('Connecting to Uber...');
-      
-      // const state = Math.random().toString(36).substring(7); // Generate random state
-      // const authUrl = `https://sandbox-login.uber.com/oauth/v2/authorize?` +
-      //   `client_id=${UBER_CLIENT_ID}` +
-      //   `&response_type=code` +
-      //   `&redirect_uri=${encodeURIComponent(UBER_REDIRECT_URI)}` +
-      //   `&scope=${encodeURIComponent(UBER_SCOPE)}` +
-      //   `&state=${state}`;
-
-      // // Store state for verification
-      // await AsyncStorage.setItem('oauth_state', state);
-      // await AsyncStorage.setItem('linking_platform', iconName);
-      
-      // console.log("OAuth URL: ", authUrl);
-      
-      // const supported = await Linking.canOpenURL(authUrl);
-      
-      // if (supported) {
-      //   await Linking.openURL(authUrl);
-      // } else {
-      //   throw new Error("Can't open OAuth URL");
-      // }
-
-      
-    } catch (error) {
-      console.error('OAuth Error:', error);
-      Alert.alert('Connection Failed', 'Failed to connect with Uber');
-      setLinked(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLyftOAuth = async () => {
-    try {
-      setLoading(true);
-      setProgressMessage('Connecting to Lyft...');
+      setProgressMessage(`Connecting to ${platform}...`);
       
       const state = Math.random().toString(36).substring(7);
-      const authUrl = `https://api.lyft.com/oauth/authorize?` +
-        `client_id=${LYFT_CLIENT_ID}` +
-        `&response_type=code` +
-        `&scope=${encodeURIComponent(LYFT_SCOPE)}` +
-        `&state=${state}` +
-        `&redirect_uri=${encodeURIComponent(LYFT_REDIRECT_URI)}`;
+      let authUrl = '';
+
+      switch (platform.toLowerCase()) {
+        case 'uber':
+          authUrl = `https://sandbox-login.uber.com/oauth/v2/authorize?` +
+            `client_id=${UBER_CLIENT_ID}` +
+            `&response_type=code` +
+            `&redirect_uri=${encodeURIComponent(UBER_REDIRECT_URI)}` +
+            `&scope=${encodeURIComponent(UBER_SCOPE)}` +
+            `&state=${state}`;
+          break;
+        case 'lyft':
+          authUrl = `https://api.lyft.com/oauth/authorize?` +
+            `client_id=${LYFT_CLIENT_ID}` +
+            `&response_type=code` +
+            `&scope=${encodeURIComponent(LYFT_SCOPE)}` +
+            `&state=${state}` +
+            `&redirect_uri=${encodeURIComponent(LYFT_REDIRECT_URI)}`;
+          break;
+        // Add other platforms here
+        default:
+          throw new Error(`Unsupported platform: ${platform}`);
+      }
 
       await AsyncStorage.setItem('oauth_state', state);
-      await AsyncStorage.setItem('linking_platform', 'lyft');
-      
-      console.log("Lyft OAuth URL: ", authUrl);
+      await AsyncStorage.setItem('linking_platform', platform.toLowerCase());
       
       const supported = await Linking.canOpenURL(authUrl);
       
@@ -155,9 +102,8 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
         throw new Error("Can't open OAuth URL");
       }
     } catch (error) {
-      console.error('Lyft OAuth Error:', error);
-      Alert.alert('Connection Failed', 'Failed to connect with Lyft');
-      setLinked(false);
+      console.error(`${platform} OAuth Error:`, error);
+      Alert.alert('Connection Failed', `Failed to connect with ${platform}`);
     } finally {
       setLoading(false);
     }
@@ -178,17 +124,30 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
             text: "Yes",
             onPress: async () => {
               if (linked) {
-                setLinked(false);
-              } else {
-                switch (iconName) {
-                  case 'uber':
-                    await handleSubmit();
-                    break;
-                  case 'lyft':
-                    await handleLyftOAuth();
-                    break;
-                  // Add other platforms here
+                try {
+                  // Call API to unlink the account
+                  await fetch(`${Config.apiBaseUrl}/api/v1/accounts/${iconName}/disconnect`, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${await AsyncStorage.getItem('userToken')}`,
+                      'Accept': 'application/json',
+                      'Content-Type': 'application/json',
+                    },
+                  });
+                  
+                  // Update the accounts state in the parent component
+                  const updatedAccounts = accounts.map(account => 
+                    account.type === iconName 
+                      ? { ...account, connection_status: false }
+                      : account
+                  );
+                  setAccounts(updatedAccounts);
+                } catch (error) {
+                  console.error('Failed to unlink account:', error);
+                  Alert.alert('Error', 'Failed to unlink account');
                 }
+              } else {
+                handlePlatformOAuth(iconName);
               }
               setShowConfirmDialog(false);
             },
@@ -226,7 +185,11 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
               </>
             ) : (
               <>
-                <View className="py-3" />
+                <View className="py-3">
+                  <ThemedText type="semiSmall" colorValue="menuItemText">
+                    Not Connected
+                  </ThemedText>
+                </View>
                 <View className="pt-3" />
               </>
             )}
@@ -236,18 +199,8 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
           <TouchableOpacity
             className="mt-2 px-3 py-1 rounded-lg flex-row items-center"
             style={{ backgroundColor: linked ? Colors[colorScheme].btnBackground : Colors[colorScheme].tabIconDefault }}
-            onPress={() => { 
-              try {
-                setLoading(true);
-                setProgressMessage('Connecting to Uber...');
-                handleSubmit();
-              } catch (error) {
-                console.error('OAuth Error:', error);
-                Alert.alert('Connection Failed', 'Failed to connect with Uber');
-                setLinked(false);
-              } finally {
-                setLoading(false);
-              }
+            onPress={() => {
+              setShowConfirmDialog(true);
             }}
           >
             <IconSymbol name="link" size={16} color={Colors[colorScheme].btnText} className="pr-2" />
@@ -257,7 +210,11 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onPress} disabled={!linked} className="flex-row justify-end p-3">
-            <IconSymbol name="gear" size={22} color="primaryText" />
+            <IconSymbol 
+              name="gear" 
+              size={22} 
+              color={linked ? "primaryText" : "tabIconDefault"} 
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -265,45 +222,73 @@ const AccountItem: React.FC<AccountItemProps> = ({ iconName, balance, linked: in
   );
 };
 
-const accountData: Account[] = [
-  { id: "1", iconName: "uber", balance: 0, linked: false },
-  { id: "2", iconName: "lyft", balance: 0, linked: false },
-  { id: "3", iconName: "doordash", balance: 0, linked: false },
-  { id: "4", iconName: "upwork", balance: 0, linked: false },
-  { id: "5", iconName: "fiverr", balance: 0, linked: false },
-];
-
 export default function AccountScreen() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
+  const [progressMessage, setProgressMessage] = useState(''); // Add this state
   const { colorScheme } = useColorScheme();
   const router = useRouter();
 
+  // Define all supported platforms
+  const supportedPlatforms = ['uber', 'lyft', 'doordash', 'upwork', 'fiverr'];
+
   useEffect(() => {
     const fetchAccounts = async () => {
+      setProgressMessage('Fetching your accounts...'); // Set message before fetching
       try {
-        // const res = await fetch("https://your-backend.com/api/accounts");
+        // First, create default accounts for all platforms
+        const defaultAccounts = supportedPlatforms.map(platform => ({
+          id: `default-${platform}`,
+          type: platform,
+          balance: 0,
+          token: "",
+          is_active: false,
+          connection_status: false,
+          description: `${platform.charAt(0).toUpperCase() + platform.slice(1)} account`,
+          user_id: "",
+          last_updated: new Date().toISOString()
+        }));
 
-        // if (!res.ok) {
-        //   const errorText = await res.text();
-        //   throw new Error(`HTTP ${res.status}: ${errorText}`);
-        // }
+        // Fetch connected accounts from API
+        const response = await fetch(`${Config.apiBaseUrl}/api/v1/accounts`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${await AsyncStorage.getItem('userToken')}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        });
 
-        // const text = await res.text(); // fetch as text first
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
 
-        // try {
-        //   const data: Account[] = JSON.parse(text);
-        //   setAccounts(data);
-        // } catch (jsonError) {
-        //   console.log("❌ Failed to parse JSON. Raw response:\n", text);
-        //   throw jsonError;
-        // }
-        throw Error("");
+        const connectedAccounts: Account[] = await response.json();
+        
+        // Update default accounts with connected account data
+        const finalAccounts = defaultAccounts.map(defaultAccount => {
+          const connectedAccount = connectedAccounts.find(
+            account => account.type === defaultAccount.type
+          );
+          return connectedAccount || defaultAccount;
+        });
+
+        setAccounts(finalAccounts);
       } catch (error) {
         console.log("Error fetching accounts:", error);
-        console.log("Using Mockdata...");
-        // Fall back to using accountData when API request fails
-        setAccounts(accountData);
+        // Fallback to default accounts if API fails
+        const defaultAccounts = supportedPlatforms.map(platform => ({
+          id: `default-${platform}`,
+          type: platform,
+          balance: 0,
+          token: "",
+          is_active: false,
+          connection_status: false,
+          description: `${platform.charAt(0).toUpperCase() + platform.slice(1)} account`,
+          user_id: "",
+          last_updated: new Date().toISOString()
+        }));
+        setAccounts(defaultAccounts);
       } finally {
         setLoading(false);
       }
@@ -314,27 +299,27 @@ export default function AccountScreen() {
 
   return (
     <View className="rounded-3xl" style={{ backgroundColor: Colors[colorScheme].background }}>
+      <ProgressDialog visible={loading} message={progressMessage} />
       <ThemedText type="title" className="self-center" style={{paddingTop: 20}}>
         Your Accounts
       </ThemedText>
-      {/* account list */}
       <ScrollView showsVerticalScrollIndicator={false} className="pt-4 h-full">
-        {accounts.map((account) => {
-          return (
-            <AccountItem
-              key={account.id}
-              iconName={account.iconName}
-              balance={account.balance}
-              linked={account.linked}
-              onPress={() =>
-                router.push({
-                  pathname: "/main/home/balance",
-                  params: { name: account.iconName },
-                })
-              }
-            />
-          );
-        })}
+        {accounts.map((account) => (
+          <AccountItem
+            key={account.id}
+            iconName={account.type}
+            balance={account.balance}
+            linked={account.connection_status}
+            accounts={accounts}
+            setAccounts={setAccounts}
+            onPress={() =>
+              router.push({
+                pathname: "/main/home/balance",
+                params: { name: account.type },
+              })
+            }
+          />
+        ))}
       </ScrollView>
     </View>
   );
