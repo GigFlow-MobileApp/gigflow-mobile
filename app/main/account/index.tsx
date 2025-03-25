@@ -1,6 +1,6 @@
 // app/(drawer)/setting.tsx
-import React, { useState, useEffect } from "react";
-import { View, Alert, ScrollView, TouchableOpacity, Image } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, Alert, ScrollView, TouchableOpacity, Image, Animated } from "react-native";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { Colors } from "@/constants/Colors";
@@ -18,6 +18,7 @@ interface AccountItemProps {
   onPress: () => void;
   accounts: Account[];
   setAccounts: React.Dispatch<React.SetStateAction<Account[]>>;
+  index?: number; // For staggered animation
 }
 
 type Account = {
@@ -60,6 +61,10 @@ const AccountItem: React.FC<AccountItemProps> = ({
   const [loading, setLoading] = useState(false);
   const [progressMessage, setProgressMessage] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  
+  // Animation values
+  const imageTranslateX = useRef(new Animated.Value(-200)).current;
+  const contentTranslateX = useRef(new Animated.Value(200)).current;
 
   const handlePlatformOAuth = async (platform: string) => {
     try {
@@ -110,6 +115,24 @@ const AccountItem: React.FC<AccountItemProps> = ({
   };
 
   useEffect(() => {
+    // Entrance animation with staggered delay based on index
+    const animationDelay = 100; // 100ms delay between items
+    
+    Animated.parallel([
+      Animated.timing(imageTranslateX, {
+        toValue: 0,
+        duration: 300,
+        delay: animationDelay,
+        useNativeDriver: true,
+      }),
+      Animated.timing(contentTranslateX, {
+        toValue: 0,
+        duration: 300,
+        delay: animationDelay,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    
     if (showConfirmDialog) {
       Alert.alert(
         "Connection",
@@ -228,11 +251,21 @@ export default function AccountScreen() {
   const [progressMessage, setProgressMessage] = useState(''); // Add this state
   const { colorScheme } = useColorScheme();
   const router = useRouter();
+  
+  // Animation value for title fade-in
+  const titleOpacity = useRef(new Animated.Value(0)).current;
 
   // Define all supported platforms
   const supportedPlatforms = ['uber', 'lyft', 'doordash', 'upwork', 'fiverr'];
 
   useEffect(() => {
+    // Title fade-in animation
+    Animated.timing(titleOpacity, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+    
     const fetchAccounts = async () => {
       setProgressMessage('Fetching your accounts...'); // Set message before fetching
       try {
