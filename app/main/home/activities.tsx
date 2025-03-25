@@ -1,14 +1,12 @@
 import { useLocalSearchParams } from "expo-router";
 import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Dimensions } from "react-native";
-import { Ionicons, Feather, MaterialIcons } from "@expo/vector-icons";
+import { View, Text, ScrollView,  Dimensions } from "react-native";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useThemeColors } from "@/components/ColorSchemeProvider";
-import { platformColor } from "@/constants/Colors";
 import { ThemedText } from "@/components/ThemedText";
 import { useRouter } from "expo-router";
 import { Activity } from "@/constants/customTypes";
-import { textStyles } from "@/constants/TextStyles";
+import FadeInView from "@/components/FadeInView";
 
 // Platform-specific interfaces
 interface UberEarning {
@@ -313,40 +311,45 @@ const formatDateRange = (startDate: string, endDate: string): string => {
   return `${formatDate(startDate, 'date')} - ${formatDate(endDate, 'date')}`;
 };
 
+// FadeInView wrapper component for animations
+
+
 // Generic Activity Item
 const ActivityItem: React.FC<{ activity: Activity; index: number }> = ({ activity, index }) => {
   const { colors } = useThemeColors();
   return (
-    <View
-      key={index}
-      className="rounded-xl border border-gray-200 p-1 mb-3 shadow-xs"
-      style={{ backgroundColor: colors.background }}
-    >
-      <View className="flex-row justify-between items-center my-2 pl-3">
-        <View className="flex-row items-start">
-          <IconSymbol
-            name="arrow"
-            size={24}
-            color={colors.primaryText}
-            style={{ transform: [{ rotate: activity.type === "in" ? "-135deg" : "45deg" }] }}
-          />
-          <View className="flex-col pt-1 pl-2">
-            <ThemedText type="defautlSmall" style={{ fontWeight: 600 }} colorValue="cardText">
-              {activity.title}
-            </ThemedText>
-            <ThemedText type="semiSmall" colorValue="textTertiary" className="pt-1">
-              {activity.subtitle}
-            </ThemedText>
+    <FadeInView index={index}>
+      <View
+        key={index}
+        className="rounded-xl border border-gray-200 p-1 mb-3 shadow-xs"
+        style={{ backgroundColor: colors.background }}
+      >
+        <View className="flex-row justify-between items-center my-2 pl-3">
+          <View className="flex-row items-start">
+            <IconSymbol
+              name="arrow"
+              size={24}
+              color={colors.primaryText}
+              style={{ transform: [{ rotate: activity.type === "in" ? "-135deg" : "45deg" }] }}
+            />
+            <View className="flex-col pt-1 pl-2">
+              <ThemedText type="defautlSmall" style={{ fontWeight: 600 }} colorValue="cardText">
+                {activity.title}
+              </ThemedText>
+              <ThemedText type="semiSmall" colorValue="textTertiary" className="pt-1">
+                {activity.subtitle}
+              </ThemedText>
+            </View>
+          </View>
+          <View className="flex-col pt-1 justify-between">
+            <Text className={`text-base font-semibold pr-2 ${activity.type === "in" ? "text-green-600" : "text-red-500"}`}>
+              {activity.amount}
+            </Text>
+            <IconSymbol className="self-end" name="detail" size={22} color={colors.primaryText} />
           </View>
         </View>
-        <View className="flex-col pt-1 justify-between">
-          <Text className={`text-base font-semibold pr-2 ${activity.type === "in" ? "text-green-600" : "text-red-500"}`}>
-            {activity.amount}
-          </Text>
-          <IconSymbol className="self-end" name="detail" size={22} color={colors.primaryText} />
-        </View>
       </View>
-    </View>
+    </FadeInView>
   );
 };
 
@@ -424,79 +427,81 @@ const UberActivityItem: React.FC<{ activity: UberEarning; index: number; currenc
     .reduce((sum, value) => sum + (value as number), 0);
   
   return (
-    <View
-      key={index}
-      className="rounded-xl border border-gray-200 p-3 mb-3 shadow-xs"
-      style={{ backgroundColor: colors.background }}
-    >
-      <View className="flex-row justify-between items-center mb-2">
-        <View className="flex-row items-start">
-          <IconSymbol
-            name="arrow"
-            size={24}
-            color={colors.primaryText}
-            style={{ transform: [{ rotate: "-135deg" }] }}
-          />
-          <View className="flex-col pl-2">
-            <ThemedText type="defautlSmall" style={{ fontWeight: 600 }} colorValue="cardText">
-              {title}
-            </ThemedText>
-            <ThemedText type="semiSmall" colorValue="textTertiary">
-              {subtitle}
-            </ThemedText>
-          </View>
-        </View>
-        <View className="flex-col items-end">
-          <Text className="text-base font-semibold text-green-600">
-            {formatCurrency(activity.amount, currency)}
-          </Text>
-          <ThemedText type="semiSmall" colorValue="textTertiary">
-            {formatDate(activity.time)}
-          </ThemedText>
-        </View>
-      </View>
-      
-      {/* Breakdown section */}
-      <View className="mt-2 pt-2 border-t border-gray-200">
-        <ThemedText type="semiSmall" style={{ fontWeight: 600 }} colorValue="cardText">
-          Payment Breakdown
-        </ThemedText>
-        
-        {isTrip ? (
-          <View className="mt-1">
-            {activity.breakdown.base_fare !== undefined && (
-              <View className="flex-row justify-between">
-                <ThemedText type="semiSmall" colorValue="textTertiary">Base Fare</ThemedText>
-                <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.breakdown.base_fare, currency)}</ThemedText>
-              </View>
-            )}
-            {activity.breakdown.surge !== undefined && activity.breakdown.surge > 0 && (
-              <View className="flex-row justify-between">
-                <ThemedText type="semiSmall" colorValue="textTertiary">Surge</ThemedText>
-                <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.breakdown.surge, currency)}</ThemedText>
-              </View>
-            )}
-            {activity.breakdown.tip !== undefined && activity.breakdown.tip > 0 && (
-              <View className="flex-row justify-between">
-                <ThemedText type="semiSmall" colorValue="textTertiary">Tip</ThemedText>
-                <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.breakdown.tip, currency)}</ThemedText>
-              </View>
-            )}
-          </View>
-        ) : (
-          <View className="mt-1">
-            <View className="flex-row justify-between">
-              <ThemedText type="semiSmall" colorValue="textTertiary">Bonus Amount</ThemedText>
-              <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.breakdown.bonus_amount || 0, currency)}</ThemedText>
+    <FadeInView index={index}>
+      <View
+        key={index}
+        className="rounded-xl border border-gray-200 p-3 mb-3 shadow-xs"
+        style={{ backgroundColor: colors.background }}
+      >
+        <View className="flex-row justify-between items-center mb-2">
+          <View className="flex-row items-start">
+            <IconSymbol
+              name="arrow"
+              size={24}
+              color={colors.primaryText}
+              style={{ transform: [{ rotate: "-135deg" }] }}
+            />
+            <View className="flex-col pl-2">
+              <ThemedText type="defautlSmall" style={{ fontWeight: 600 }} colorValue="cardText">
+                {title}
+              </ThemedText>
+              <ThemedText type="semiSmall" colorValue="textTertiary">
+                {subtitle}
+              </ThemedText>
             </View>
           </View>
-        )}
+          <View className="flex-col items-end">
+            <Text className="text-base font-semibold text-green-600">
+              {formatCurrency(activity.amount, currency)}
+            </Text>
+            <ThemedText type="semiSmall" colorValue="textTertiary">
+              {formatDate(activity.time)}
+            </ThemedText>
+          </View>
+        </View>
+        
+        {/* Breakdown section */}
+        <View className="mt-2 pt-2 border-t border-gray-200">
+          <ThemedText type="semiSmall" style={{ fontWeight: 600 }} colorValue="cardText">
+            Payment Breakdown
+          </ThemedText>
+          
+          {isTrip ? (
+            <View className="mt-1">
+              {activity.breakdown.base_fare !== undefined && (
+                <View className="flex-row justify-between">
+                  <ThemedText type="semiSmall" colorValue="textTertiary">Base Fare</ThemedText>
+                  <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.breakdown.base_fare, currency)}</ThemedText>
+                </View>
+              )}
+              {activity.breakdown.surge !== undefined && activity.breakdown.surge > 0 && (
+                <View className="flex-row justify-between">
+                  <ThemedText type="semiSmall" colorValue="textTertiary">Surge</ThemedText>
+                  <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.breakdown.surge, currency)}</ThemedText>
+                </View>
+              )}
+              {activity.breakdown.tip !== undefined && activity.breakdown.tip > 0 && (
+                <View className="flex-row justify-between">
+                  <ThemedText type="semiSmall" colorValue="textTertiary">Tip</ThemedText>
+                  <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.breakdown.tip, currency)}</ThemedText>
+                </View>
+              )}
+            </View>
+          ) : (
+            <View className="mt-1">
+              <View className="flex-row justify-between">
+                <ThemedText type="semiSmall" colorValue="textTertiary">Bonus Amount</ThemedText>
+                <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.breakdown.bonus_amount || 0, currency)}</ThemedText>
+              </View>
+            </View>
+          )}
+        </View>
+        
+        <View className="flex-row justify-end mt-2">
+          <IconSymbol name="detail" size={22} color={colors.primaryText} />
+        </View>
       </View>
-      
-      <View className="flex-row justify-end mt-2">
-        <IconSymbol name="detail" size={22} color={colors.primaryText} />
-      </View>
-    </View>
+    </FadeInView>
   );
 };
 
@@ -531,91 +536,93 @@ const LyftActivityItem: React.FC<{ activity: LyftEarning; index: number; currenc
   }
   
   return (
-    <View
-      key={index}
-      className="rounded-xl border border-gray-200 p-3 mb-3 shadow-xs"
-      style={{ backgroundColor: colors.background }}
-    >
-      <View className="flex-row justify-between items-center mb-2">
-        <View className="flex-row items-start">
-          <IconSymbol
-            name="arrow"
-            size={24}
-            color={colors.primaryText}
-            style={{ transform: [{ rotate: "-135deg" }] }}
-          />
-          <View className="flex-col pl-2">
-            <ThemedText type="defautlSmall" style={{ fontWeight: 600 }} colorValue="cardText">
-              {title}
-            </ThemedText>
-            <ThemedText type="semiSmall" colorValue="textTertiary">
-              {subtitle}
-            </ThemedText>
-          </View>
-        </View>
-        <View className="flex-col items-end">
-          <Text className="text-base font-semibold text-green-600">
-            {formatCurrency(totalAmount, currency)}
-          </Text>
-          <ThemedText type="semiSmall" colorValue="textTertiary">
-            {formatDate(activity.timestamp)}
-          </ThemedText>
-        </View>
-      </View>
-      
-      {/* Payment breakdown */}
-      <View className="mt-2 pt-2 border-t border-gray-200">
-        <ThemedText type="semiSmall" style={{ fontWeight: 600 }} colorValue="cardText">
-          Payment Breakdown
-        </ThemedText>
-        
-        {isRide ? (
-          <View className="mt-1">
-            {activity.amount.ride_fare !== undefined && activity.amount.ride_fare > 0 && (
-              <View className="flex-row justify-between">
-                <ThemedText type="semiSmall" colorValue="textTertiary">Ride Fare</ThemedText>
-                <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.amount.ride_fare, currency)}</ThemedText>
-              </View>
-            )}
-            {activity.amount.tip !== undefined && activity.amount.tip > 0 && (
-              <View className="flex-row justify-between">
-                <ThemedText type="semiSmall" colorValue="textTertiary">Tip</ThemedText>
-                <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.amount.tip, currency)}</ThemedText>
-              </View>
-            )}
-            {activity.amount.bonus !== undefined && activity.amount.bonus > 0 && (
-              <View className="flex-row justify-between">
-                <ThemedText type="semiSmall" colorValue="textTertiary">Bonus</ThemedText>
-                <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.amount.bonus, currency)}</ThemedText>
-              </View>
-            )}
-            {activity.amount.wait_time !== undefined && activity.amount.wait_time > 0 && (
-              <View className="flex-row justify-between">
-                <ThemedText type="semiSmall" colorValue="textTertiary">Wait Time</ThemedText>
-                <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.amount.wait_time, currency)}</ThemedText>
-              </View>
-            )}
-            {activity.amount.cancellation_fee !== undefined && activity.amount.cancellation_fee > 0 && (
-              <View className="flex-row justify-between">
-                <ThemedText type="semiSmall" colorValue="textTertiary">Cancellation Fee</ThemedText>
-                <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.amount.cancellation_fee, currency)}</ThemedText>
-              </View>
-            )}
-          </View>
-        ) : (
-          <View className="mt-1">
-            <View className="flex-row justify-between">
-              <ThemedText type="semiSmall" colorValue="textTertiary">Bonus</ThemedText>
-              <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.amount.bonus || 0, currency)}</ThemedText>
+    <FadeInView index={index}>
+      <View
+        key={index}
+        className="rounded-xl border border-gray-200 p-3 mb-3 shadow-xs"
+        style={{ backgroundColor: colors.background }}
+      >
+        <View className="flex-row justify-between items-center mb-2">
+          <View className="flex-row items-start">
+            <IconSymbol
+              name="arrow"
+              size={24}
+              color={colors.primaryText}
+              style={{ transform: [{ rotate: "-135deg" }] }}
+            />
+            <View className="flex-col pl-2">
+              <ThemedText type="defautlSmall" style={{ fontWeight: 600 }} colorValue="cardText">
+                {title}
+              </ThemedText>
+              <ThemedText type="semiSmall" colorValue="textTertiary">
+                {subtitle}
+              </ThemedText>
             </View>
           </View>
-        )}
+          <View className="flex-col items-end">
+            <Text className="text-base font-semibold text-green-600">
+              {formatCurrency(totalAmount, currency)}
+            </Text>
+            <ThemedText type="semiSmall" colorValue="textTertiary">
+              {formatDate(activity.timestamp)}
+            </ThemedText>
+          </View>
+        </View>
+        
+        {/* Payment breakdown */}
+        <View className="mt-2 pt-2 border-t border-gray-200">
+          <ThemedText type="semiSmall" style={{ fontWeight: 600 }} colorValue="cardText">
+            Payment Breakdown
+          </ThemedText>
+          
+          {isRide ? (
+            <View className="mt-1">
+              {activity.amount.ride_fare !== undefined && activity.amount.ride_fare > 0 && (
+                <View className="flex-row justify-between">
+                  <ThemedText type="semiSmall" colorValue="textTertiary">Ride Fare</ThemedText>
+                  <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.amount.ride_fare, currency)}</ThemedText>
+                </View>
+              )}
+              {activity.amount.tip !== undefined && activity.amount.tip > 0 && (
+                <View className="flex-row justify-between">
+                  <ThemedText type="semiSmall" colorValue="textTertiary">Tip</ThemedText>
+                  <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.amount.tip, currency)}</ThemedText>
+                </View>
+              )}
+              {activity.amount.bonus !== undefined && activity.amount.bonus > 0 && (
+                <View className="flex-row justify-between">
+                  <ThemedText type="semiSmall" colorValue="textTertiary">Bonus</ThemedText>
+                  <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.amount.bonus, currency)}</ThemedText>
+                </View>
+              )}
+              {activity.amount.wait_time !== undefined && activity.amount.wait_time > 0 && (
+                <View className="flex-row justify-between">
+                  <ThemedText type="semiSmall" colorValue="textTertiary">Wait Time</ThemedText>
+                  <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.amount.wait_time, currency)}</ThemedText>
+                </View>
+              )}
+              {activity.amount.cancellation_fee !== undefined && activity.amount.cancellation_fee > 0 && (
+                <View className="flex-row justify-between">
+                  <ThemedText type="semiSmall" colorValue="textTertiary">Cancellation Fee</ThemedText>
+                  <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.amount.cancellation_fee, currency)}</ThemedText>
+                </View>
+              )}
+            </View>
+          ) : (
+            <View className="mt-1">
+              <View className="flex-row justify-between">
+                <ThemedText type="semiSmall" colorValue="textTertiary">Bonus</ThemedText>
+                <ThemedText type="semiSmall" colorValue="textTertiary">{formatCurrency(activity.amount.bonus || 0, currency)}</ThemedText>
+              </View>
+            </View>
+          )}
+        </View>
+        
+        <View className="flex-row justify-end mt-2">
+          <IconSymbol name="detail" size={22} color={colors.primaryText} />
+        </View>
       </View>
-      
-      <View className="flex-row justify-end mt-2">
-        <IconSymbol name="detail" size={22} color={colors.primaryText} />
-      </View>
-    </View>
+    </FadeInView>
   );
 };
 
