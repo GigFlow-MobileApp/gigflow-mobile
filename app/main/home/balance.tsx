@@ -10,6 +10,8 @@ import { useRouter } from "expo-router";
 import { textStyles } from "@/constants/TextStyles";
 import { Activity } from "@/constants/customTypes";
 import { SlideInView } from "@/components/FadeInView";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Config from '@/constants/config';
 
 type PlatformName = keyof typeof logoMap;
 
@@ -142,19 +144,165 @@ export default function AccountBalancePage() {
   useEffect(() => {
     const fetchAccountData = async () => {
       try {
-        // Attempt to call the API function
-        // Replace this with your actual API call
-        // const response = await fetchAccountAPI(name);
+        // Get today's date and a date from 7 days ago for recent activities
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 7);
 
-        // If API call is successful, set the values from the response
-        // setAvailable(response.available);
-        // setPending(response.pending);
-        // setAccountId(response.accountId);
-        // setDate(response.date);
-        // setActivities(response.activities);
+        if (name === 'uber') {
+          // Fetch summary data
+          const summaryResponse = await fetch(
+            `${Config.apiBaseUrl}/api/v1/earnings/db/uber/summary?` + 
+            `start_date=${startDate.toISOString()}&` +
+            `end_date=${endDate.toISOString()}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${await AsyncStorage.getItem('userToken')}`,
+                'Accept': 'application/json',
+              }
+            }
+          );
 
-        // For demonstration, we'll simulate an API failure
-        throw new Error(`${name} API not working, Use Mock Data`);
+          if (!summaryResponse.ok) {
+            throw new Error(`Failed to fetch Uber summary: ${summaryResponse.statusText}`);
+          }
+
+          const summaryData = await summaryResponse.json();
+          
+          // Fetch detailed earnings data
+          const earningsResponse = await fetch(
+            `${Config.apiBaseUrl}/api/v1/earnings/db/uber?` + 
+            `start_date=${startDate.toISOString()}&` +
+            `end_date=${endDate.toISOString()}&` +
+            `limit=3`, // Only get last 3 records for activities
+            {
+              headers: {
+                'Authorization': `Bearer ${await AsyncStorage.getItem('userToken')}`,
+                'Accept': 'application/json',
+              }
+            }
+          );
+
+          if (!earningsResponse.ok) {
+            throw new Error(`Failed to fetch Uber earnings: ${earningsResponse.statusText}`);
+          }
+
+          const earningsData = await earningsResponse.json();
+
+          // Set the total earnings as available balance
+          setAvailable(summaryData.total_earnings);
+          
+          // Calculate pending amount from recent unprocessed payments
+          const pendingAmount = earningsData
+            .filter((earning: any) => 
+              // Assuming payments less than 24 hours old are pending
+              new Date(earning.payment_time).getTime() > Date.now() - 24 * 60 * 60 * 1000
+            )
+            .reduce((sum: number, earning: any) => sum + earning.amount, 0);
+          setPending(pendingAmount);
+
+          // Set account ID from summary response
+          setAccountId(summaryData.account_id);
+          setDate(new Date().toLocaleDateString());
+
+          // Transform the earnings into activities
+          const transformedActivities = earningsData.map((earning: any) => ({
+            title: earning.payment_type === 'trip' ? 'Uber Trip' : 'Uber Quest',
+            subtitle: earning.quest_name || 
+                     `Trip: $${earning.base_fare?.toFixed(2) || 0} + Surge: $${earning.surge?.toFixed(2) || 0} + Tip: $${earning.tip?.toFixed(2) || 0}`,
+            amount: `$${earning.amount.toFixed(2)}`,
+            type: 'in' as const
+          }));
+
+          setActivities(transformedActivities);
+        } else if (name === 'lyft') {
+          // Fetch summary data
+          const summaryResponse = await fetch(
+            `${Config.apiBaseUrl}/api/v1/earnings/db/lyft/summary?` + 
+            `start_date=${startDate.toISOString()}&` +
+            `end_date=${endDate.toISOString()}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${await AsyncStorage.getItem('userToken')}`,
+                'Accept': 'application/json',
+              }
+            }
+          );
+
+          if (!summaryResponse.ok) {
+            throw new Error(`Failed to fetch Lyft summary: ${summaryResponse.statusText}`);
+          }
+
+          const summaryData = await summaryResponse.json();
+          
+          // Fetch detailed earnings data
+          const earningsResponse = await fetch(
+            `${Config.apiBaseUrl}/api/v1/earnings/db/lyft?` + 
+            `start_date=${startDate.toISOString()}&` +
+            `end_date=${endDate.toISOString()}&` +
+            `limit=3`, // Only get last 3 records for activities
+            {
+              headers: {
+                'Authorization': `Bearer ${await AsyncStorage.getItem('userToken')}`,
+                'Accept': 'application/json',
+              }
+            }
+          );
+
+          if (!earningsResponse.ok) {
+            throw new Error(`Failed to fetch Lyft earnings: ${earningsResponse.statusText}`);
+          }
+
+          const earningsData = await earningsResponse.json();
+
+          // Set the total earnings from summary
+          setAvailable(summaryData.total_earnings);
+          
+          // Calculate pending amount from recent unprocessed payments (last 24 hours)
+          const pendingAmount = earningsData
+            .filter((earning: any) => 
+              new Date(earning.timestamp).getTime() > Date.now() - 24 * 60 * 60 * 1000
+            )
+            .reduce((sum : any, earning: any) => sum + earning.total_amount, 0);
+          setPending(pendingAmount);
+
+          // Set account ID from summary response
+          setAccountId(summaryData.account_id);
+          setDate(new Date().toLocaleDateString());
+
+          // Transform the earnings into activities
+          const transformedActivities = earningsData.map((earning: any) => {
+            if (earning.ride_id) {
+              // This is a ride
+              const fareBreakdown = [
+                `Fare: $${earning.ride_fare?.toFixed(2) || '0.00'}`,
+                earning.tip ? `Tip: $${earning.tip.toFixed(2)}` : null,
+                earning.wait_time ? `Wait: $${earning.wait_time.toFixed(2)}` : null,
+                earning.cancellation_fee ? `Cancel: $${earning.cancellation_fee.toFixed(2)}` : null
+              ].filter(Boolean).join(' + ');
+
+              return {
+                title: `Lyft ${earning.ride_type?.charAt(0).toUpperCase()}${earning.ride_type?.slice(1) || 'Ride'}`,
+                subtitle: `${earning.distance || ''} ${earning.duration ? `• ${earning.duration}` : ''}\n${fareBreakdown}`,
+                amount: `$${earning.total_amount.toFixed(2)}`,
+                type: 'in' as const
+              };
+            } else {
+              // This is a bonus
+              return {
+                title: `Lyft ${earning.bonus_type?.split('_').map((word: string) => 
+                  word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || 'Bonus'}`,
+                subtitle: earning.description || 'Bonus payment',
+                amount: `$${earning.total_amount.toFixed(2)}`,
+                type: 'in' as const
+              };
+            }
+          });
+
+          setActivities(transformedActivities);
+        } else {
+          throw new Error(`${name} API not implemented yet`);
+        }
       } catch (error) {
         console.log("Error fetching account data:", error);
 
@@ -164,7 +312,6 @@ export default function AccountBalancePage() {
         setAccountId("2412 7512 3412 3456");
         setDate("Monday 21/08/23");
 
-        // Set default activities
         setActivities([
           {
             title: "AI chatbot Development",
