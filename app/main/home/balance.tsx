@@ -200,8 +200,8 @@ export default function AccountBalancePage() {
   useEffect(() => {
     const fetchAccountData = async () => {
       try {
-        const endDate = new Date();
-        const startDate = new Date();
+        const endDate = new Date(2025, 12, 31);
+        const startDate = new Date(1990, 0, 1);
         startDate.setDate(startDate.getDate() - 7);
 
         const userToken = await AsyncStorage.getItem('userToken');
@@ -278,7 +278,7 @@ export default function AccountBalancePage() {
               };
             } else {
               return {
-                title: (earning.breakdown?.quest_name) || 'Uber Bonus',
+                title: (earning.breakdown?.quest_name) || 'Uber Payment',
                 subtitle: `Bonus payment: $${earning.breakdown?.bonus_amount?.toFixed(2) || earning.amount.toFixed(2)}`,
                 amount: `$${earning.amount.toFixed(2)}`,
                 type: 'in' as const
