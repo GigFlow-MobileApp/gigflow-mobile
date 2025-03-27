@@ -10,6 +10,8 @@ import { useRouter } from "expo-router";
 import { textStyles } from "@/constants/TextStyles";
 import { Activity } from "@/constants/customTypes";
 import { SlideInView } from "@/components/FadeInView";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Config from '@/constants/config';
 
 type PlatformName = keyof typeof logoMap;
 
@@ -79,6 +81,62 @@ const ActivityItem: React.FC<ActivityItemProps> = ({ a, i }) => {
   );
 };
 
+interface UberEarning {
+  payment_id: string;
+  amount: number;
+  type: string;
+  time: string;
+  breakdown: {
+    base_fare?: number;
+    surge?: number;
+    tip?: number;
+    other_fees?: number;
+    quest_name?: string;
+    bonus_amount?: number;
+  };
+}
+
+interface LyftEarning {
+  id: string;
+  account_id: string;
+  ride_id: string | null;
+  bonus_id: string | null;
+  timestamp: string;
+  ride_type: string | null;
+  distance: string | null;
+  duration: string | null;
+  status: string | null;
+  bonus_type: string | null;
+  description: string | null;
+  ride_fare: number | null;
+  tip: number | null;
+  bonus: number | null;
+  wait_time: number | null;
+  cancellation_fee: number | null;
+  total_amount: number;
+}
+
+interface UberSummary {
+  account_id: string;
+  total_earnings: number;
+  total_trips: number;
+  total_online_hours: number;
+  total_quests_completed: number;
+  currency: string;
+}
+
+interface LyftSummary {
+  account_id: string;
+  start_date: string;
+  end_date: string;
+  total_earnings: number;
+  total_tips: number;
+  total_bonuses: number;
+  total_ride_fares: number;
+  total_cancellation_fees: number;
+  currency: string;
+}
+
 export default function AccountBalancePage() {
   const { name } = useLocalSearchParams();
   const { colors } = useThemeColors();
@@ -142,48 +200,189 @@ export default function AccountBalancePage() {
   useEffect(() => {
     const fetchAccountData = async () => {
       try {
-        // Attempt to call the API function
-        // Replace this with your actual API call
-        // const response = await fetchAccountAPI(name);
+        const endDate = new Date(2025, 12, 31);
+        const startDate = new Date(1990, 0, 1);
+        startDate.setDate(startDate.getDate() - 7);
 
-        // If API call is successful, set the values from the response
-        // setAvailable(response.available);
-        // setPending(response.pending);
-        // setAccountId(response.accountId);
-        // setDate(response.date);
-        // setActivities(response.activities);
+        const userToken = await AsyncStorage.getItem('userToken');
+        const headers = {
+          'Authorization': `Bearer ${userToken}`,
+          'Accept': 'application/json',
+        };
 
-        // For demonstration, we'll simulate an API failure
-        throw new Error(`${name} API not working, Use Mock Data`);
+        if (name === 'uber') {
+          // Fetch Uber summary data
+          const summaryResponse = await fetch(
+            `${Config.apiBaseUrl}/api/v1/earnings/db/uber/summary?` + 
+            `start_date=${startDate.toISOString()}&` +
+            `end_date=${endDate.toISOString()}`,
+            { headers }
+          );
+
+          if (!summaryResponse.ok) {
+            throw new Error(`Failed to fetch Uber summary: ${summaryResponse.statusText}`);
+          }
+
+          const summaryData: UberSummary = await summaryResponse.json();
+          
+          // Fetch Uber earnings data
+          const earningsResponse = await fetch(
+            `${Config.apiBaseUrl}/api/v1/earnings/db/uber?` + 
+            `start_date=${startDate.toISOString()}&` +
+            `end_date=${endDate.toISOString()}&` +
+            `limit=3`, // Make sure this is set to 3
+            { headers }
+          );
+
+          if (!earningsResponse.ok) {
+            throw new Error(`Failed to fetch Uber earnings: ${earningsResponse.statusText}`);
+          }
+
+          const earningsData: UberEarning[] = await earningsResponse.json();
+
+          // Add console.log to debug the response
+          console.log('Uber earnings data:', earningsData);
+
+          // Set account data
+          setAvailable(summaryData.total_earnings);
+          
+          // Calculate pending from last 24h
+          const pendingAmount = earningsData
+            .filter(earning => 
+              new Date(earning.time).getTime() > Date.now() - 24 * 60 * 60 * 1000
+            )
+            .reduce((sum, earning) => sum + earning.amount, 0);
+          setPending(pendingAmount);
+
+          setAccountId(summaryData.account_id);
+          setDate(new Date().toLocaleDateString());
+
+          // Transform Uber activities with proper null checks
+          const transformedActivities = earningsData.map(earning => {
+            // Add console.log to debug each earning
+            console.log('Processing earning:', earning);
+
+            if (earning.type === 'trip') {
+              const breakdown = [
+                `Base: $${earning.breakdown?.base_fare?.toFixed(2) || '0.00'}`,
+                earning.breakdown?.surge ? `Surge: $${earning.breakdown.surge.toFixed(2)}` : null,
+                earning.breakdown?.tip ? `Tip: $${earning.breakdown.tip.toFixed(2)}` : null,
+                earning.breakdown?.other_fees ? `Other: $${earning.breakdown.other_fees.toFixed(2)}` : null,
+              ].filter(Boolean).join(' + ');
+
+              return {
+                title: 'Uber Trip',
+                subtitle: breakdown || 'Trip payment',
+                amount: `$${earning.amount.toFixed(2)}`,
+                type: 'in' as const
+              };
+            } else {
+              return {
+                title: (earning.breakdown?.quest_name) || 'Uber Payment',
+                subtitle: `Bonus payment: $${earning.breakdown?.bonus_amount?.toFixed(2) || earning.amount.toFixed(2)}`,
+                amount: `$${earning.amount.toFixed(2)}`,
+                type: 'in' as const
+              };
+            }
+          });
+
+          // Add console.log to debug transformed activities
+          console.log('Transformed activities:', transformedActivities);
+
+          // Make sure we're setting all activities
+          setActivities(transformedActivities);
+
+        } else if (name === 'lyft') {
+          // Fetch Lyft summary data
+          const summaryResponse = await fetch(
+            `${Config.apiBaseUrl}/api/v1/earnings/db/lyft/summary?` + 
+            `start_date=${startDate.toISOString()}&` +
+            `end_date=${endDate.toISOString()}`,
+            { headers }
+          );
+
+          if (!summaryResponse.ok) {
+            throw new Error(`Failed to fetch Lyft summary: ${summaryResponse.statusText}`);
+          }
+
+          const summaryData: LyftSummary = await summaryResponse.json();
+          
+          // Fetch Lyft earnings data
+          const earningsResponse = await fetch(
+            `${Config.apiBaseUrl}/api/v1/earnings/db/lyft?` + 
+            `start_date=${startDate.toISOString()}&` +
+            `end_date=${endDate.toISOString()}&` +
+            `limit=3`,
+            { headers }
+          );
+
+          if (!earningsResponse.ok) {
+            throw new Error(`Failed to fetch Lyft earnings: ${earningsResponse.statusText}`);
+          }
+
+          const earningsData: LyftEarning[] = await earningsResponse.json();
+
+          // Set account data
+          setAvailable(summaryData.total_earnings);
+          
+          // Calculate pending from last 24h
+          const pendingAmount = earningsData
+            .filter(earning => 
+              new Date(earning.timestamp).getTime() > Date.now() - 24 * 60 * 60 * 1000
+            )
+            .reduce((sum, earning) => sum + earning.total_amount, 0);
+          setPending(pendingAmount);
+
+          setAccountId(summaryData.account_id);
+          setDate(new Date().toLocaleDateString());
+
+          // Transform Lyft activities
+          const transformedActivities = earningsData.map(earning => {
+            if (earning.ride_id) {
+              const fareBreakdown = [
+                `Fare: $${earning.ride_fare?.toFixed(2) || '0.00'}`,
+                earning.tip ? `Tip: $${earning.tip.toFixed(2)}` : null,
+                earning.wait_time ? `Wait: $${earning.wait_time.toFixed(2)}` : null,
+                earning.cancellation_fee ? `Cancel: $${earning.cancellation_fee.toFixed(2)}` : null
+              ].filter(Boolean).join(' + ');
+
+              return {
+                title: `Lyft ${earning.ride_type?.charAt(0).toUpperCase()}${earning.ride_type?.slice(1) || 'Ride'}`,
+                subtitle: `${earning.distance || ''} ${earning.duration ? `• ${earning.duration}` : ''}\n${fareBreakdown}`,
+                amount: `$${earning.total_amount.toFixed(2)}`,
+                type: 'in' as const
+              };
+            } else {
+              return {
+                title: `Lyft ${earning.bonus_type?.split('_').map(word => 
+                  word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || 'Bonus'}`,
+                subtitle: earning.description || 'Bonus payment',
+                amount: `$${earning.total_amount.toFixed(2)}`,
+                type: 'in' as const
+              };
+            }
+          });
+
+          setActivities(transformedActivities);
+        } else {
+          throw new Error(`${name} API not implemented yet`);
+        }
       } catch (error) {
-        console.log("Error fetching account data:", error);
+        console.error("Error fetching account data:", error);
 
-        // Set default values if API fails
+        // Fallback values
         setAvailable(850);
         setPending(350);
         setAccountId("2412 7512 3412 3456");
-        setDate("Monday 21/08/23");
+        setDate(new Date().toLocaleDateString());
 
-        // Set default activities
         setActivities([
           {
-            title: "AI chatbot Development",
-            subtitle: "Project bonus",
-            amount: "+$300.00",
+            title: "Recent Activity",
+            subtitle: "No recent activities",
+            amount: "$0.00",
             type: "in",
-          },
-          {
-            title: "AI chatbot Development",
-            subtitle: "Movie tickets",
-            amount: "-$13.00",
-            type: "out",
-          },
-          {
-            title: "Uber fee",
-            subtitle: "Payments",
-            amount: "-$25.00",
-            type: "out",
-          },
+          }
         ]);
       }
     };
