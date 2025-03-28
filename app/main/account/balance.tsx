@@ -247,7 +247,7 @@ export default function AccountBalancePage() {
           const earningsData: UberEarning[] = await earningsResponse.json();
 
           // Add console.log to debug the response
-          console.log('Uber earnings data:', earningsData);
+          // console.log('Uber earnings data:', earningsData);
 
           // Set account data
           setAvailable(summaryData.total_earnings);
@@ -266,7 +266,7 @@ export default function AccountBalancePage() {
           // Transform Uber activities with proper null checks
           const transformedActivities = earningsData.map(earning => {
             // Add console.log to debug each earning
-            console.log('Processing earning:', earning);
+            // console.log('Processing earning:', earning);
 
             if (earning.type === 'trip') {
               const breakdown = [
@@ -293,7 +293,7 @@ export default function AccountBalancePage() {
           });
 
           // Add console.log to debug transformed activities
-          console.log('Transformed activities:', transformedActivities);
+          // console.log('Transformed activities:', transformedActivities);
 
           // Make sure we're setting all activities
           setActivities(transformedActivities);
@@ -417,7 +417,9 @@ export default function AccountBalancePage() {
           <View className="w-14 h-10 p-2"/>
           <ThemedText type="title" className="ml-3 pt-0.5">Your Balance</ThemedText>
         </View>
-        <TouchableOpacity onPress={() => router.push("/main/notifications")} className="self-end">
+        <TouchableOpacity onPress={() => router.push({
+          pathname: "/main/notifications", params: {name}
+        })} className="self-end">
           <IconSymbol name="notifications" size={24} color={colors.primaryText} />
         </TouchableOpacity>
       </View>
