@@ -11,7 +11,6 @@ import {
   Dimensions,
   Animated,
   SafeAreaView,
-  PanResponder,
   Platform,
   StatusBar,
 } from "react-native";
@@ -100,59 +99,17 @@ export default function DrawerLayout() {
     extrapolate: "clamp",
   });
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Don't capture gestures on specific screens where we want native back gesture
-        // or where we need horizontal scrolling
-        if (pathname.includes('/settings/info')) {
-          return false;
-        }
-        
-        // Activate on horizontal swipe only for other screens
-        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
-      },
-      onPanResponderMove: (_, gestureState) => {
-        if (gestureState.dx > 0 && !isSidebarOpen) {
-          // Swiping right to open
-          setIsSidebarOpen(true);
-          Animated.timing(slideAnim, {
-            toValue: 1,
-            duration: 250,
-            useNativeDriver: false,
-          }).start();
-        } else if (gestureState.dx < -50 && isSidebarOpen) {
-          // Swiping left to close
-          setIsSidebarOpen(false);
-          Animated.timing(slideAnim, {
-            toValue: 0,
-            duration: 250,
-            useNativeDriver: false,
-          }).start();
-        } else {
-          // Snap back to current state
-          setIsSidebarOpen(false);
-          Animated.timing(slideAnim, {
-            toValue: isSidebarOpen ? 1 : 0,
-            duration: 200,
-            useNativeDriver: false,
-          }).start();
-        }
-      },
-    })
-  ).current;
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       {/* TOP SAFE AREA FIX cyan bg color*/}
-      <View
+      {/* <View
         className="absolute left-0 right-0 z-0"
         style={{
           top: 0,
           height: STATUS_BAR_HEIGHT,
           backgroundColor: Colors[colorScheme].brandColor,
         }}
-      />
+      /> */}
       {/* BOTTOM SAFE AREA FIX white bg color*/}
       <View
         className="absolute left-0 right-0 z-0"
