@@ -73,7 +73,7 @@ const NotificationItem = ({ notification }: { notification: Notification }) => {
       </View>
       {/* Read/Unread Indicator */}
       <View className="rounded-full w-2 h-2 ml-4" style={{
-        backgroundColor: notification.read ? colors.brandColor : undefined
+        backgroundColor: !notification.read ? colors.brandColor : undefined
       }}/>
     </View>
   )
@@ -234,6 +234,7 @@ export default function NotificationScreen() {
   
   // Handle marking all notifications as read
   const markAllAsRead = () => {
+    console.log("Marking all notifications as read");
     const updatedNotifications = notifications.map(notification => ({
       ...notification,
       read: true
@@ -248,12 +249,17 @@ export default function NotificationScreen() {
       {/* Header */}
       <View className="flex-row justify-between items-center p-4" style={{backgroundColor: colors.background}}>
         <View className="flex-row justify-start">
-          <TouchableOpacity onPress={() => router.back()} className="self-start">
+          {/* <TouchableOpacity onPress={() => router.back()} className="self-start">
             <IconSymbol name="back" size={22} color={colors.textTertiary} className="p-2" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
+          <View className="w-14 h-10 p-2"/>
           <ThemedText type="title" className="ml-3 pt-0.5">Notifications</ThemedText>
         </View>
-        <TouchableOpacity onPress={markAllAsRead} className="self-end flex-row py-2">
+        <TouchableOpacity 
+          onPress={() => markAllAsRead()} 
+          className="self-end flex-row py-2"
+          activeOpacity={0.7}
+        >
           <IconSymbol name="check" size={12} color={colors.brandColor} className="py-1 mr-2"/>
           <ThemedText type="semiSmall" colorValue="brandColor" className="">Mark as read</ThemedText>
         </TouchableOpacity>

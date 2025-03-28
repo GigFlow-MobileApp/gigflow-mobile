@@ -140,9 +140,10 @@ export default function ProfilePage() {
       {/* Page Title */}
       <View className="flex-row items-center justify-between p-4" style={{backgroundColor: colors.background}}>
         <View className="flex-row justify-start">
-          <TouchableOpacity onPress={() => router.back()} className="self-start">
+          {/* <TouchableOpacity onPress={() => router.back()} className="self-start">
             <IconSymbol name="back" size={22} color={colors.textTertiary} className="p-2" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
+          <View className="w-14 h-10 p-2"/>
         </View>
         <ThemedText
           colorValue="primaryText"
