@@ -136,12 +136,14 @@ export default function ProfilePage() {
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1}}>
       {/* Page Title */}
-      <View className="flex-row items-center justify-between">
-        <TouchableOpacity onPress={() => router.back()} className="self-start">
-          <IconSymbol name="back" size={24} color={colors.primaryText} className="p-4" />
-        </TouchableOpacity>
+      <View className="flex-row items-center justify-between p-4" style={{backgroundColor: colors.background}}>
+        <View className="flex-row justify-start">
+          <TouchableOpacity onPress={() => router.back()} className="self-start">
+            <IconSymbol name="back" size={22} color={colors.textTertiary} className="p-2" />
+          </TouchableOpacity>
+        </View>
         <ThemedText
           colorValue="primaryText"
           type="title"

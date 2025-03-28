@@ -407,23 +407,21 @@ export default function AccountBalancePage() {
     platformName in platformColor ? platformColor[platformName as keyof typeof platformColor] : platformColor.uber;
 
   return (
-    <View className="flex-1 pt-4" style={{ backgroundColor: colors.background }}>
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
       {/* Header */}
-      <View className="flex-row justify-between items-center mb-6 px-4">
-        <View className="flex-row items-center">
-          <TouchableOpacity onPress={() => router.push("/main/account")} className="mr-3">
-            <IconSymbol name="back" size={24} color={colors.primaryText} />
+      <View className="flex-row justify-between items-center p-4" style={{backgroundColor: colors.background}}>
+        <View className="flex-row justify-start">
+          <TouchableOpacity onPress={() => router.back()} className="self-start">
+            <IconSymbol name="back" size={22} color={colors.textTertiary} className="p-2" />
           </TouchableOpacity>
-          <ThemedText type="title" className="self-center" style={{ fontWeight: 700 }}>
-            Your Balance
-          </ThemedText>
+          <ThemedText type="title" className="ml-3 pt-0.5">Your Balance</ThemedText>
         </View>
-        <TouchableOpacity onPress={() => ""}>
+        <TouchableOpacity onPress={() => ""} className="self-end">
           <IconSymbol name="notifications" size={24} color={colors.primaryText} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} className="h-auto px-4">
+      <ScrollView showsVerticalScrollIndicator={false} className="h-auto px-4 mt-2">
         {/* Balance Card */}
         <View className="flex-col mb-6" style={{ height: cardHeight }}>
           <Image
@@ -605,7 +603,7 @@ export default function AccountBalancePage() {
           <TouchableOpacity
             onPress={() =>
               router.push({
-                pathname: "/main/home/activities",
+                pathname: "/main/account/activities",
                 params: { name, available},
               })
             }
