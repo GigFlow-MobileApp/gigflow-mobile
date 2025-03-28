@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
-import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Dimensions, Animated, Easing } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Dimensions, Animated, Easing, Platform } from "react-native";
 import { Ionicons, Feather, MaterialIcons } from "@expo/vector-icons";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useThemeColors } from "@/components/ColorSchemeProvider";
@@ -151,26 +151,32 @@ export default function AccountBalancePage() {
   // Animation values
   const cardFlipAnimation = useState(new Animated.Value(0))[0];
   const buttonsTranslateX = useState(new Animated.Value(100))[0];
+  const animatedElevation = useRef(new Animated.Value(0)).current;
 
   // Start animations when component mounts
   useEffect(() => {
     // Run all animations simultaneously
-    Animated.sequence([
-      // Card flip animation
-      Animated.timing(cardFlipAnimation, {
-        toValue: 1,
-        duration: 800,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      }),
-      // Buttons scale animation
+    Animated.timing(cardFlipAnimation, {
+      toValue: 1,
+      duration: 800,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: false,
+    }).start(() => {
+      // Gradually restore elevation (fake animation)
+      Animated.timing(animatedElevation, {
+        toValue: 8,
+        duration: 500,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: false, // must be false for style props like elevation
+      }).start();
+  
       Animated.spring(buttonsTranslateX, {
         toValue: 0,
         friction: 5,
         tension: 40,
-        useNativeDriver: true,
-      }),
-    ]).start();
+        useNativeDriver: false,
+      }).start();
+    });
   }, []);
 
   // Calculate flip animation interpolations
@@ -401,9 +407,9 @@ export default function AccountBalancePage() {
     platformName in platformColor ? platformColor[platformName as keyof typeof platformColor] : platformColor.uber;
 
   return (
-    <View className="flex-1 px-4 pt-4" style={{ backgroundColor: colors.background }}>
+    <View className="flex-1 pt-4" style={{ backgroundColor: colors.background }}>
       {/* Header */}
-      <View className="flex-row justify-between items-center mb-6">
+      <View className="flex-row justify-between items-center mb-6 px-4">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={() => router.push("/main/account")} className="mr-3">
             <IconSymbol name="back" size={24} color={colors.primaryText} />
@@ -417,7 +423,7 @@ export default function AccountBalancePage() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} className="h-auto">
+      <ScrollView showsVerticalScrollIndicator={false} className="h-auto px-4">
         {/* Balance Card */}
         <View className="flex-col mb-6" style={{ height: cardHeight }}>
           <Image
@@ -431,7 +437,7 @@ export default function AccountBalancePage() {
               className="absolute w-full h-full rounded-xl"
               style={{
                 backgroundColor: platformBgColor,
-                elevation: 8,
+                elevation: 0,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
@@ -473,7 +479,7 @@ export default function AccountBalancePage() {
               className="absolute w-full h-full rounded-xl flex-row justify-between items-center"
               style={{
                 backgroundColor: colors.background,
-                elevation: 8,
+                elevation: Platform.OS === 'android' ? animatedElevation : undefined,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
@@ -600,7 +606,7 @@ export default function AccountBalancePage() {
             onPress={() =>
               router.push({
                 pathname: "/main/home/activities",
-                params: { name },
+                params: { name, available},
               })
             }
           >
