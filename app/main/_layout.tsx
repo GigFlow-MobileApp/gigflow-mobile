@@ -56,9 +56,12 @@ export default function DrawerLayout() {
   const { colorScheme } = useColorScheme();
   const router = useRouter();
   const pathname = usePathname();
-  const pathDepth = pathname.startsWith('/main')
-  ? pathname.replace('/main', '').split('/').filter(Boolean).length
-  : 0;
+  const pathDepth =
+  pathname.includes('/notifications')
+    ? 9
+    : pathname.startsWith('/main')
+      ? pathname.replace('/main', '').split('/').filter(Boolean).length
+      : 0;
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const slideAnim = useState(new Animated.Value(0))[0];

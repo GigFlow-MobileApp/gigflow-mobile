@@ -45,9 +45,14 @@ function formatDateToLabel(date: Date): string {
 const renderActivity = (activity: any, index: number, platform: string, platformColor: string) => {
   // Default values in case fields are undefined
   const { colors } = useThemeColors();
-  const amount = activity.amount || activity.total || 0;
+  const name = (activity.quest_name || "A").charAt(0).toUpperCase();
+  const amount = activity.amount || activity.total || activity.total_amount || 0;
   const timestamp = activity.timestamp || activity.created_at || activity.time || new Date().toISOString();
-  const type = activity.type || activity.ride_type || "trip";
+  const type = capitalizeFirst(activity.payment_type || activity.ride_type || "")
+  const bonus = activity.bonus_amount || activity.bonus
+  const id = activity.payment_id || activity.ride_id || "N/A";
+  const tip = activity.tip;
+  const surge = platform === 'uber' ? `Surge: ${activity.surge}` : `Distance: ${activity.distance}`;
 
   const date = new Date(timestamp.split('.')[0]); // Remove microseconds
 
@@ -78,7 +83,7 @@ const renderActivity = (activity: any, index: number, platform: string, platform
           {/* Name Icon*/}
           <View className="flex-col p-2 self-start">
             <View className="w-10 h-10 rounded-full items-center justify-center mr-3" style={{ backgroundColor: platformColor}}>
-              <ThemedText type="btnText" colorValue="btnText">{activity.quest_name.charAt(0).toUpperCase()}</ThemedText>
+              <ThemedText type="btnText" colorValue="btnText">{name}</ThemedText>
             </View>
           </View>
           
@@ -106,20 +111,20 @@ const renderActivity = (activity: any, index: number, platform: string, platform
                   type="defautlSmall" className="rounded-2xl px-3 py-1 mr-3" 
                   style={{ backgroundColor: "#FEF6F1", color: "#EC7735", fontWeight: 700 }}
                 >
-                  {capitalizeFirst(activity.payment_type)}
+                  {type}
                 </ThemedText>
                 <ThemedText 
                   type="defautlSmall" className="rounded-2xl px-3 py-1" 
                   style={{ backgroundColor: "#FEF6F1", color: "#EC7735"}}
                 >
-                  Bonus: ${activity.bonus_amount}
+                  Bonus: ${bonus}
                 </ThemedText>
               </View>
               <ThemedText 
                 type="defautlSmall" className="rounded-2xl px-3 py-1" 
                 style={{ backgroundColor: "#DEE1E6", color: "#379AE6", fontWeight: 700 }}
               >
-                Tips: ${activity.tip}
+                Tips: ${tip}
               </ThemedText>
             </View>
           </View>
@@ -127,13 +132,13 @@ const renderActivity = (activity: any, index: number, platform: string, platform
         {/* id */}
         <View className="flex-row justify-between items-center">
           <ThemedText type="semiSmall" colorValue="cardText" style={{ fontSize: 11 }}>
-            Payment id: {activity.payment_id}
+            Payment id: {id}
           </ThemedText>
           <ThemedText 
             type="defautlSmall" className="rounded-2xl px-3 py-1" 
             style={{ backgroundColor: "#DEE1E6", color: "#379AE6", fontWeight: 700 }}
           >
-            Surge: ${activity.surge}
+            {surge}
           </ThemedText>
         </View>
       </View>
@@ -158,8 +163,6 @@ export default function ActivitiesPage() {
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<Array<string>>([]);
   const groupedActivities: Record<string, any[]> = {};
-
-  
 
   const displayName = typeof name === "string" ? capitalizeFirst(name) : "";
   const platform = typeof name === "string" ? name.toLowerCase() : "";

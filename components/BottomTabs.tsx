@@ -37,13 +37,7 @@ export const BottomTabs = ({ items }: TabProps) => {
         shadowOffset: { width: 0, height: -3 }, // shadow above
         shadowOpacity: 0.06,
         shadowRadius: 1,
-        elevation: 0,
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        height: 64,
-      }}
+        elevation: 0,}}
     >
       {items.map((tab, idx) => (
         <TouchableOpacity
