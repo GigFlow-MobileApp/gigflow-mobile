@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { DrawerItemsType, TabItemsType } from "@/constants/customTypes";
 import { Sidebar } from "@/components/SideBar";
 import { BottomTabs } from "@/components/BottomTabs";
+import { IconSymbol } from "@/components/ui/IconSymbol";
 
 const screenWdith = Dimensions.get("window").width;
 const menuWidth = screenWdith * (216 / 390);
@@ -148,8 +149,8 @@ export default function DrawerLayout() {
               <View
                 style={{
                   position: "absolute",
-                  top: 10,
-                  left: 10,
+                  top: 4,
+                  left: 5,
                   zIndex: 20,
                   // backgroundColor: Colors[colorScheme].background,
                   alignItems: "center",
@@ -157,13 +158,17 @@ export default function DrawerLayout() {
                   // opacity: 0.8
                 }}
               >
-                {pathDepth <= 1 && (
+                {pathDepth <= 1 ? (
                   <TouchableOpacity onPress={() => setIsSidebarOpen((prev) => !prev)}>
                     <Ionicons
                       name={isSidebarOpen ? "close" : "menu"}
                       size={28}
                       color={Colors[colorScheme].menuItemText}
                     />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity onPress={() => router.back()} className="self-start">
+                    <IconSymbol name="back" size={22} color={Colors[colorScheme].textTertiary} className="p-2" />
                   </TouchableOpacity>
                 )}
               </View>
