@@ -350,7 +350,7 @@ export default function AccountScreen() {
             setAccounts={setAccounts}
             onPress={() =>
               router.push({
-                pathname: "/main/home/balance",
+                pathname: "/main/account/balance",
                 params: { name: account.type },
               })
             }

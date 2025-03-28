@@ -277,7 +277,7 @@ export default function ActivitiesPage() {
   return (
     <ScrollView className="flex-1">
       {/* Header */}
-      <View className="flex-row justify-between items-center p-4 mb-2" style={{backgroundColor: colors.background}}>
+      <View className="flex-row justify-between items-center p-4" style={{backgroundColor: colors.background}}>
         <View className="flex-row justify-start">
           <TouchableOpacity onPress={() => router.back()} className="self-start">
             <IconSymbol name="back" size={22} color={colors.textTertiary} className="p-2" />
@@ -292,78 +292,78 @@ export default function ActivitiesPage() {
       </View>
       
       {/* Card */}
-        {/* Front side of the card (visible after flip) */}
-        <Animated.View
-          className="relative flex-1 h-[141px] rounded-xl flex-row justify-between items-center mx-2"
-          style={{
-            backgroundColor: colors.background,
-            elevation: Platform.OS === 'android' ? animatedElevation : undefined,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.2,
-            shadowRadius: 6,
-            zIndex: 2,
-          }}
-        >
-          <View className="flex-1 h-full flex-col p-4 pt-6 justify-between">
-            <View className="flex-row items-center w-full justify-between pl-2">
-              <ThemedText 
-                type="defautlSmall" colorValue="cardText" className="text-center" 
-                style={{ fontWeight: 700 }}
-              >
-                {"Total\nEarning"}
-              </ThemedText>
-              <ThemedText type="title" colorValue="primaryText">
-                ${Number(available).toFixed(2)}
-              </ThemedText>
-            </View>
-            <View className="flex-row items-center px-4">
-              <IconSymbol name="clock" size={18} color={colors.textTertiary} className="" />
-              <ThemedText type="defautlSmall" colorValue="primaryText" className="ml-2" style={{ fontWeight: 600 }}>
-                {dateRange.length === 1 ? dateRange[0] : `${dateRange[0]} ~ ${dateRange[dateRange.length - 1]}`}
-              </ThemedText>
-            </View>
+      {/* Front side of the card (visible after flip) */}
+      <Animated.View
+        className="relative flex-1 h-[141px] rounded-xl flex-row justify-between items-center mx-2 mt-2"
+        style={{
+          backgroundColor: colors.background,
+          elevation: Platform.OS === 'android' ? animatedElevation : undefined,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.2,
+          shadowRadius: 6,
+          zIndex: 2,
+        }}
+      >
+        <View className="flex-1 h-full flex-col p-4 pt-6 justify-between">
+          <View className="flex-row items-center w-full justify-between pl-2">
+            <ThemedText 
+              type="defautlSmall" colorValue="cardText" className="text-center" 
+              style={{ fontWeight: 700 }}
+            >
+              {"Total\nEarning"}
+            </ThemedText>
+            <ThemedText type="title" colorValue="primaryText">
+              ${Number(available).toFixed(2)}
+            </ThemedText>
           </View>
+          <View className="flex-row items-center px-4">
+            <IconSymbol name="clock" size={18} color={colors.textTertiary} className="" />
+            <ThemedText type="defautlSmall" colorValue="primaryText" className="ml-2" style={{ fontWeight: 600 }}>
+              {dateRange.length === 1 ? dateRange[0] : `${dateRange[0]} ~ ${dateRange[dateRange.length - 1]}`}
+            </ThemedText>
+          </View>
+        </View>
 
+        <View
+          style={{
+            width: 1,
+            height: "80%",
+            backgroundColor: "rgba(0,0,0,0.1)",
+            marginVertical: "10%",
+            borderRadius: 1,
+          }}
+        />
+        <View
+          className="h-full rounded-r-xl relative overflow-hidden"
+          style={{ width: blackWidth, backgroundColor: platformBgColor }}
+        >
           <View
-            style={{
-              width: 1,
-              height: "80%",
-              backgroundColor: "rgba(0,0,0,0.1)",
-              marginVertical: "10%",
-              borderRadius: 1,
-            }}
+            className="absolute rounded-full w-6 h-6 opacity-70"
+            style={{ backgroundColor: colors.background, top: 24 * bcrhc, left: 25 * bcrwc }}
           />
           <View
-            className="h-full rounded-r-xl relative overflow-hidden"
-            style={{ width: blackWidth, backgroundColor: platformBgColor }}
-          >
-            <View
-              className="absolute rounded-full w-6 h-6 opacity-70"
-              style={{ backgroundColor: colors.background, top: 24 * bcrhc, left: 25 * bcrwc }}
-            />
-            <View
-              className="absolute rounded-full w-6 h-6 opacity-70"
-              style={{ backgroundColor: colors.background, top: 24 * bcrhc, left: 40 * bcrwc }}
-            />
-            <View
-              className="absolute rounded-lg w-[69px] h-6 opacity-40"
-              style={{ backgroundColor: colors.background, top: 55 * bcrhc, left: -29 * bcrwc }}
-            />
-            <View
-              className="absolute rounded-lg w-14 h-6 opacity-40"
-              style={{ backgroundColor: colors.background, top: 82 * bcrhc, left: 50 * bcrwc }}
-            />
-            <View
-              className="absolute rounded-lg w-[69px] h-8 opacity-20"
-              style={{ backgroundColor: colors.background, top: 115 * bcrhc, left: -29 * bcrwc }}
-            />
-            <View
-              className="absolute rounded-lg w-[69px] h-8 opacity-20"
-              style={{ backgroundColor: colors.background, top: 124 * bcrhc, left: 30 * bcrwc }}
-            />
-          </View>
-        </Animated.View>
+            className="absolute rounded-full w-6 h-6 opacity-70"
+            style={{ backgroundColor: colors.background, top: 24 * bcrhc, left: 40 * bcrwc }}
+          />
+          <View
+            className="absolute rounded-lg w-[69px] h-6 opacity-40"
+            style={{ backgroundColor: colors.background, top: 55 * bcrhc, left: -29 * bcrwc }}
+          />
+          <View
+            className="absolute rounded-lg w-14 h-6 opacity-40"
+            style={{ backgroundColor: colors.background, top: 82 * bcrhc, left: 50 * bcrwc }}
+          />
+          <View
+            className="absolute rounded-lg w-[69px] h-8 opacity-20"
+            style={{ backgroundColor: colors.background, top: 115 * bcrhc, left: -29 * bcrwc }}
+          />
+          <View
+            className="absolute rounded-lg w-[69px] h-8 opacity-20"
+            style={{ backgroundColor: colors.background, top: 124 * bcrhc, left: 30 * bcrwc }}
+          />
+        </View>
+      </Animated.View>
       
       {/* Activities Lists */}
       <View className="mx-2">
