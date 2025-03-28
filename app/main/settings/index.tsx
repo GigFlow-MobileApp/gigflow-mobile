@@ -60,7 +60,7 @@ export default function SettingScreen() {
 
       const data: SignupResponse = parsed.data;
       setName(data?.full_name);
-      setPhoneNumber(data?.zipcode);
+      setPhoneNumber(data?.phone_number);
     } catch (error) {
       console.error("Failed to fetch info:", error);
     }
