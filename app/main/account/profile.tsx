@@ -11,6 +11,7 @@ import { VictoryLine } from "victory-native";
 import { Icon } from "react-native-vector-icons/Icon";
 import { NumberProp } from "react-native-svg";
 import FadeInView, { SlideInView } from "@/components/FadeInView";
+import { usePlatformStore } from "@/store/platformStore";
 
 const screenWidth = Dimensions.get("window").width;
 const screenHeight = Dimensions.get("window").height;
@@ -50,8 +51,8 @@ const InfoItem = ({ icon, text, value, index }: { icon: string; text: string; va
 );
 
 export default function ProfilePage() {
-  const { name } = useLocalSearchParams();
-  const router = useRouter();
+  // const { name } = useLocalSearchParams();
+  const name = usePlatformStore(state => state.platform);
   const { colors } = useThemeColors();
 
   // Function to convert rating to hearts/stars

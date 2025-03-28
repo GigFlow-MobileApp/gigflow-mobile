@@ -8,6 +8,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { ThemedText } from "@/components/ThemedText";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Logo from "@/assets/images/logo.svg";
+import { usePlatformStore } from "@/store/platformStore";
 
 const screenWdith = Dimensions.get("window").width;
 const menuWidth = screenWdith * (216 / 390);
@@ -16,6 +17,7 @@ export const Sidebar = ({ items }: SidebarProps) => {
   const { colorScheme } = useColorScheme();
   const router = useRouter();
   const pathname = usePathname();
+  const setLastPagetoNotification = usePlatformStore((state) => state.setLastPagetoNotification);
 
   const renderItems = (items: DrawerItemsType[]) => {
     return (
@@ -28,9 +30,17 @@ export const Sidebar = ({ items }: SidebarProps) => {
         {items!.map((item, idx) => (
           <Pressable
             key={idx}
-            onPress={() =>
-              item.onPress ? item.onPress() : pathname !== item.route ? router.push(item.route as never) : ""
-            }
+            onPress={() => {
+              const goingToNotifications = item.route.includes("notifications");
+              const isDifferentRoute = pathname !== item.route;
+          
+              if (goingToNotifications && isDifferentRoute) {
+                setLastPagetoNotification(pathname);
+                router.replace(item.route as never);
+              } else if (isDifferentRoute) {
+                item.onPress ? item.onPress() : router.push(item.route as never);
+              }
+            }}
             style={{
               borderRadius: 9999,
               backgroundColor: pathname === item.route ? `${Colors[colorScheme].onPressBg}1a` : "",
@@ -90,7 +100,7 @@ export const Sidebar = ({ items }: SidebarProps) => {
         },
       ]}
     >
-      <ScrollView style={{ padding: 0 }}>
+      <ScrollView style={{ padding: 0 }} showsVerticalScrollIndicator={false}>
         <View className="py-10 h-full" style={{ backgroundColor: Colors[colorScheme].background }}>
           <View className={"items-center justify-start pb-5"} style={{ marginTop: 0 }}>
             <Logo className={"w-25 h-25"} />

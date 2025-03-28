@@ -667,6 +667,7 @@ export default function HomeScreen() {
         backgroundColor: Colors[colorScheme].background,
       }}
       className="p-4"
+      showsVerticalScrollIndicator={false}
     >
       {/* Balance Cards */}
       <View style={{ marginBottom: 24 }}>

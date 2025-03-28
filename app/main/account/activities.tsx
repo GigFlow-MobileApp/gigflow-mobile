@@ -9,6 +9,7 @@ import { useThemeColors } from "@/components/ColorSchemeProvider";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { platformColor } from "@/constants/Colors";
 import {SlideInView} from "@/components/FadeInView";
+import { usePlatformStore } from "@/store/platformStore";
 
 
 type PlatformName = keyof typeof platformColor;
@@ -42,8 +43,13 @@ function formatDateToLabel(date: Date): string {
   return `${year} ${month} ${day}`;
 }
 
-const renderActivity = (activity: any, index: number, platform: string, platformColor: string) => {
-  // Default values in case fields are undefined
+// Extracted to a separate component to avoid hook order issues
+const ActivityItem = React.memo(({ activity, index, platform, platformColor }: {
+  activity: any;
+  index: number;
+  platform: string;
+  platformColor: string;
+}) => {
   const { colors } = useThemeColors();
   const name = (activity.quest_name || "A").charAt(0).toUpperCase();
   const amount = activity.amount || activity.total || activity.total_amount || 0;
@@ -64,12 +70,11 @@ const renderActivity = (activity: any, index: number, platform: string, platform
   hours = hours === 0 ? 12 : hours;
 
   const formattedTime = `${hours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
-  // console.log(formattedTime);
 
   return (
     <SlideInView i={index} direction="left" key={index}>
       <View 
-        key={index} className="mb-2 px-4 py-2 rounded-lg " 
+        className="mb-2 px-4 py-2 rounded-lg " 
         style={{ 
           backgroundColor: colors.backgroundCard,
           shadowColor: colors.shadow,
@@ -144,7 +149,7 @@ const renderActivity = (activity: any, index: number, platform: string, platform
       </View>
     </SlideInView>
   );
-};
+});
 
 function formatDateToDots(date: Date): string {
   const year = date.getFullYear();
@@ -154,7 +159,9 @@ function formatDateToDots(date: Date): string {
 }
 
 export default function ActivitiesPage() {
-  const { name, available } = useLocalSearchParams();
+  // const { name, available } = useLocalSearchParams();
+  const name = usePlatformStore(state => state.platform);
+  const available = usePlatformStore(state => state.totalAmount);
   const router = useRouter();
   const { colors } = useThemeColors();
 
@@ -391,9 +398,15 @@ export default function ActivitiesPage() {
               </ThemedText>
 
               {/* Activities under this date */}
-              {activities.map((activity, index) =>
-                renderActivity(activity, index, platform, platformBgColor)
-              )}
+              {activities.map((activity, index) => (
+                <ActivityItem 
+                  key={`${date}-${index}`}
+                  activity={activity} 
+                  index={index} 
+                  platform={platform} 
+                  platformColor={platformBgColor} 
+                />
+              ))}
             </View>
           )})
         )}

@@ -12,6 +12,7 @@ import { Activity } from "@/constants/customTypes";
 import { SlideInView } from "@/components/FadeInView";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from '@/constants/config';
+import { usePlatformStore } from "@/store/platformStore";
 
 type PlatformName = keyof typeof logoMap;
 
@@ -138,7 +139,10 @@ interface LyftSummary {
 }
 
 export default function AccountBalancePage() {
-  const { name } = useLocalSearchParams();
+  // const { name } = useLocalSearchParams();
+  const name = usePlatformStore(state => state.platform);
+  const setTotalAmount = usePlatformStore(state => state.setTotalAmount);
+  const setLastPagetoNotification = usePlatformStore(state => state.setLastPagetoNotification);
   const { colors } = useThemeColors();
   const [secureId, setSecureId] = useState(true);
   const [available, setAvailable] = useState(0);
@@ -178,6 +182,10 @@ export default function AccountBalancePage() {
       }).start();
     });
   }, []);
+
+  useEffect(() => {
+    setTotalAmount(available);
+  }, [available]);
 
   // Calculate flip animation interpolations
   const frontFlipRotation = cardFlipAnimation.interpolate({
@@ -417,9 +425,10 @@ export default function AccountBalancePage() {
           <View className="w-14 h-10 p-2"/>
           <ThemedText type="title" className="ml-3 pt-0.5">Your Balance</ThemedText>
         </View>
-        <TouchableOpacity onPress={() => router.push({
-          pathname: "/main/notifications", params: {name}
-        })} className="self-end">
+        <TouchableOpacity onPress={() => {
+          setLastPagetoNotification("/main/account/balance");
+          router.replace("/main/notifications")
+        }} className="self-end">
           <IconSymbol name="notifications" size={24} color={colors.primaryText} />
         </TouchableOpacity>
       </View>
@@ -605,10 +614,7 @@ export default function AccountBalancePage() {
           </ThemedText>
           <TouchableOpacity
             onPress={() =>
-              router.push({
-                pathname: "/main/account/activities",
-                params: { name, available},
-              })
+              router.push("/main/account/activities")
             }
           >
             <ThemedText type="semiSmall" colorValue="textTertiary">
@@ -632,10 +638,7 @@ export default function AccountBalancePage() {
       >
         <TouchableOpacity
           onPress={() => {
-            router.push({
-              pathname: "/main/account/profile",
-              params: { name },
-            });
+            router.push("/main/account/profile");
           }}
         >
           <IconSymbol name="wheel" size={34} color={colors.background} />
