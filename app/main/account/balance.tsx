@@ -13,6 +13,7 @@ import { SlideInView } from "@/components/FadeInView";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from '@/constants/config';
 import { usePlatformStore } from "@/store/platformStore";
+import { FloatingActionButton } from "@/components/FloatingActionButton";
 
 type PlatformName = keyof typeof logoMap;
 
@@ -632,18 +633,20 @@ export default function AccountBalancePage() {
         {/* <View className="h-16" /> */}
       </ScrollView>
 
-      <Animated.View
-        className="absolute bottom-7 right-5 mb-16 p-2.5 rounded-full"
-        style={{ backgroundColor: platformBgColor, transform: [{ translateX: buttonsTranslateX }] }}
-      >
-        <TouchableOpacity
-          onPress={() => {
-            router.push("/main/account/profile");
-          }}
-        >
-          <IconSymbol name="wheel" size={34} color={colors.background} />
-        </TouchableOpacity>
-      </Animated.View>
+      {/* Floating Action Button */}
+      <FloatingActionButton 
+        iconName="wheel"
+        backgroundColor={platformBgColor}
+        onPress={() => router.push("/main/account/profile")}
+        customAnimation={(animatedValue) => {
+          Animated.spring(animatedValue, {
+            toValue: 0,
+            friction: 5,
+            tension: 40,
+            useNativeDriver: false
+          }).start();
+        }}
+      />
     </View>
   );
 }
