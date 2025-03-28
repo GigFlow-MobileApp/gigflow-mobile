@@ -29,7 +29,7 @@ export const Sidebar = ({ items }: SidebarProps) => {
           <Pressable
             key={idx}
             onPress={() =>
-              item.onPress ? item.onPress() : pathname !== item.route ? router.replace(item.route as never) : ""
+              item.onPress ? item.onPress() : pathname !== item.route ? router.push(item.route as never) : ""
             }
             style={{
               borderRadius: 9999,

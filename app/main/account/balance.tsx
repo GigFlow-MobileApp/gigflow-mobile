@@ -416,7 +416,7 @@ export default function AccountBalancePage() {
           </TouchableOpacity>
           <ThemedText type="title" className="ml-3 pt-0.5">Your Balance</ThemedText>
         </View>
-        <TouchableOpacity onPress={() => ""} className="self-end">
+        <TouchableOpacity onPress={() => router.push("/main/notifications")} className="self-end">
           <IconSymbol name="notifications" size={24} color={colors.primaryText} />
         </TouchableOpacity>
       </View>
@@ -620,6 +620,7 @@ export default function AccountBalancePage() {
         {activities.map((a, i) => (
           <ActivityItem a={a} i={i} key={i} />
         ))}
+        {/* <View className="h-16" /> */}
       </ScrollView>
 
       <Animated.View
