@@ -88,6 +88,7 @@ export default function DrawerLayout() {
 
   // close side bar when change route
   useEffect(() => {
+    console.log(pathname);
     setIsSidebarOpen(false);
   }, [pathname]);
 

@@ -97,7 +97,7 @@ const SectionHeader = ({ title }: { title: string }) => {
  * @param count Number of notifications to generate
  * @returns Array of Notification objects
  */
-const generateNotifications = (count = 15): Notification[] => {
+const generateNotifications = (name?: string, count = 15): Notification[] => {
   // Define platforms with their names, icons, and related verbs for message generation
   const platforms = [
     { name: "Uber", key: "uber", verbs: ["ride", "trip", "payment"] },
@@ -117,9 +117,9 @@ const generateNotifications = (count = 15): Notification[] => {
   ];
   
   // Generate random notifications
-  return Array.from({ length: count }).map((_, i) => {
+  return Array.from({ length: count}).map((_, i) => {
     // Select random platform
-    const platform = platforms[Math.floor(Math.random() * platforms.length)];
+    const platform = name ? platforms.find(p => p.key === name)! : platforms[Math.floor(Math.random() * platforms.length)];
     
     // Generate random time within last 7 days (in milliseconds)
     const now = new Date();
@@ -221,13 +221,20 @@ const groupNotificationsByDate = (notifications: Notification[]): NotificationGr
 
 export default function NotificationScreen() {
   const router = useRouter();
+  const { name } = useLocalSearchParams();
   const {colors} = useThemeColors();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notificationGroups, setNotificationGroups] = useState<NotificationGroup[]>([]);
   
   // Generate notifications on component mount
   useEffect(() => {
-    const generatedNotifications = generateNotifications();
+    // console.log(name);
+    let generatedNotifications;
+    if (name) {
+      generatedNotifications = generateNotifications(name as string);
+    } else {
+      generatedNotifications = generateNotifications();
+    }
     setNotifications(generatedNotifications);
     setNotificationGroups(groupNotificationsByDate(generatedNotifications));
   }, []);
