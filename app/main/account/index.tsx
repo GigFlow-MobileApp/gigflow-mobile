@@ -10,6 +10,7 @@ import Config from "@/constants/config";
 import { Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ProgressDialog } from '@/components/ProgressDialog';
+import { usePlatformStore } from "@/store/platformStore";
 
 interface AccountItemProps {
   iconName: string;
@@ -253,6 +254,7 @@ export default function AccountScreen() {
   const [loading, setLoading] = useState(true);
   const [progressMessage, setProgressMessage] = useState(''); // Add this state
   const { colorScheme } = useColorScheme();
+  const setPlatform = usePlatformStore((state) => state.setPlatform);
   const router = useRouter();
   
   // Animation value for title fade-in
@@ -348,12 +350,10 @@ export default function AccountScreen() {
             linked={account.connection_status}
             accounts={accounts}
             setAccounts={setAccounts}
-            onPress={() =>
-              router.push({
-                pathname: "/main/account/balance",
-                params: { name: account.type },
-              })
-            }
+            onPress={() =>{
+              setPlatform(account.type as string);
+              router.push("/main/account/balance")
+            }}
           />
         ))}
       </ScrollView>

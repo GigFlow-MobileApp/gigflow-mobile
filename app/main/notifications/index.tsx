@@ -1,18 +1,14 @@
 // app/(drawer)/setting.tsx
-import { useLocalSearchParams } from "expo-router";
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Dimensions, Animated, Easing, Platform } from "react-native";
-import { Ionicons, Feather, MaterialIcons } from "@expo/vector-icons";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useThemeColors } from "@/components/ColorSchemeProvider";
 import { platformColor } from "@/constants/Colors";
 import { ThemedText } from "@/components/ThemedText";
-import { useRouter } from "expo-router";
-import { textStyles } from "@/constants/TextStyles";
-import { Activity } from "@/constants/customTypes";
-import { SlideInView } from "@/components/FadeInView";
+import FadeInView from "@/components/FadeInView";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from '@/constants/config';
+import { usePlatformStore } from "@/store/platformStore";
 
 const logoMap = {
   uber: require("@/assets/images/logos/uber.png"),
@@ -39,43 +35,45 @@ interface NotificationGroup {
   data: Notification[];
 }
 
-const NotificationItem = ({ notification }: { notification: Notification }) => {
+const NotificationItem = ({ notification, index }: { notification: Notification, index: number }) => {
   const { colors } = useThemeColors();
 
   return (
-    <View className="flex-row items-center justify-start px-4 pt-4 border-b border-gray-200">
-      {/* Logo */}
-      <View className="flex-col h-16 overflow-hidden justify-center items-center mr-4 mb-4">
-        <Image
-          source={notification.icon}
-          style={{ width: 89, height: 89, borderRadius: 89/2}}
-          resizeMode="contain"
-        />
-      </View>
-      {/* detail */}
-      <View className="flex-1 flex-col item-start">
-        <ThemedText type="smallBold" colorValue="primaryText">{notification.title}</ThemedText>
-        <ThemedText type="semiSmall" colorValue="cardText">
-          {`Notification Description\n${notification.description}`}
-        </ThemedText>
-        <View className="flex-row self-end mt-1 ">
-          <IconSymbol 
-            name="clock" size={8} color={colors.btnText} 
-            style={{backgroundColor: colors.primaryText, paddingLeft: 0.8, paddingTop: 0.75}} 
-            className="rounded-full h-4 w-4 justify-center items-center"
+    <FadeInView index={index}>
+      <View className="flex-row items-center justify-start px-4 pt-4 border-b border-gray-200">
+        {/* Logo */}
+        <View className="flex-col h-16 overflow-hidden justify-center items-center mr-4 mb-4">
+          <Image
+            source={notification.icon}
+            style={{ width: 89, height: 89, borderRadius: 89/2}}
+            resizeMode="contain"
           />
-          <ThemedText 
-            type="small" colorValue="menuItemText"
-            className="ml-2"
-            style={{fontWeight: 400}}
-          >{notification.date}</ThemedText>
         </View>
+        {/* detail */}
+        <View className="flex-1 flex-col item-start">
+          <ThemedText type="smallBold" colorValue="primaryText">{notification.title}</ThemedText>
+          <ThemedText type="semiSmall" colorValue="cardText">
+            {`Notification Description\n${notification.description}`}
+          </ThemedText>
+          <View className="flex-row self-end mt-1 ">
+            <IconSymbol 
+              name="clock" size={8} color={colors.btnText} 
+              style={{backgroundColor: colors.primaryText, paddingLeft: 0.8, paddingTop: 0.75}} 
+              className="rounded-full h-4 w-4 justify-center items-center"
+            />
+            <ThemedText 
+              type="small" colorValue="menuItemText"
+              className="ml-2"
+              style={{fontWeight: 400}}
+            >{notification.date}</ThemedText>
+          </View>
+        </View>
+        {/* Read/Unread Indicator */}
+        <View className="rounded-full w-2 h-2 ml-4" style={{
+          backgroundColor: !notification.read ? colors.brandColor : undefined
+        }}/>
       </View>
-      {/* Read/Unread Indicator */}
-      <View className="rounded-full w-2 h-2 ml-4" style={{
-        backgroundColor: !notification.read ? colors.brandColor : undefined
-      }}/>
-    </View>
+    </FadeInView>
   )
 }
 
@@ -220,8 +218,9 @@ const groupNotificationsByDate = (notifications: Notification[]): NotificationGr
 };
 
 export default function NotificationScreen() {
-  const router = useRouter();
-  const { name } = useLocalSearchParams();
+  // const router = useRouter();
+  // const { name } = useLocalSearchParams();
+  const name = usePlatformStore(state => state.platform);
   const {colors} = useThemeColors();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notificationGroups, setNotificationGroups] = useState<NotificationGroup[]>([]);
@@ -274,15 +273,23 @@ export default function NotificationScreen() {
 
       {/* Notification List */}
       <ScrollView className="flex-1">
-        {notificationGroups.length > 0 ? (
-          notificationGroups.map((group, groupIndex) => (
-            <View key={`group-${groupIndex}`}>
-              <SectionHeader title={group.title} />
-              {group.data.map(notification => (
-                <NotificationItem key={notification.id} notification={notification} />
-              ))}
-            </View>
-          ))
+      {notificationGroups.length > 0 ? (
+    (() => {
+      let globalIndex = 0;
+
+      return notificationGroups.map((group, groupIndex) => (
+        <View key={`group-${groupIndex}`}>
+          <SectionHeader title={group.title} />
+          {group.data.map((notification) => {
+            const item = (
+              <NotificationItem key={notification.id} notification={notification} index={globalIndex}/>
+            );
+            globalIndex++;
+            return item;
+          })}
+        </View>
+      ));
+    })()
         ) : (
           <View className="flex-1 items-center justify-center p-8">
             <ThemedText type="medium" className="text-center text-gray-500">

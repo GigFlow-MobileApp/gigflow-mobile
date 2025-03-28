@@ -1,4 +1,4 @@
-import { Slot, usePathname, useRouter } from "expo-router";
+import { Slot, usePathname, useRouter, useRootNavigationState } from "expo-router";
 import { useEffect, useState, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
@@ -19,6 +19,7 @@ import { DrawerItemsType, TabItemsType } from "@/constants/customTypes";
 import { Sidebar } from "@/components/SideBar";
 import { BottomTabs } from "@/components/BottomTabs";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { usePlatformStore } from "@/store/platformStore";
 
 const screenWdith = Dimensions.get("window").width;
 const menuWidth = screenWdith * (216 / 390);
@@ -55,17 +56,17 @@ const tabItems: TabItemsType[] = [
 
 export default function DrawerLayout() {
   const { colorScheme } = useColorScheme();
+  const lastPagetoNotification = usePlatformStore(state => state.lastPagetoNotification);
   const router = useRouter();
   const pathname = usePathname();
-  const pathDepth =
-  pathname.includes('/notifications')
-    ? 9
+  const pathDepth = pathname.includes('/notifications') ? 9
     : pathname.startsWith('/main')
       ? pathname.replace('/main', '').split('/').filter(Boolean).length
       : 0;
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const slideAnim = useState(new Animated.Value(0))[0];
+
 
   // check user token exists
   useEffect(() => {
@@ -168,7 +169,12 @@ export default function DrawerLayout() {
                     />
                   </TouchableOpacity>
                 ) : (
-                  <TouchableOpacity onPress={() => router.back()} className="self-start">
+                  <TouchableOpacity
+                    onPress={() => pathname.includes('notifications') ?
+                        router.replace(lastPagetoNotification) : router.back()
+                    }
+                    className="self-start"
+                  >
                     <IconSymbol name="back" size={22} color={Colors[colorScheme].textTertiary} className="p-2" />
                   </TouchableOpacity>
                 )}
