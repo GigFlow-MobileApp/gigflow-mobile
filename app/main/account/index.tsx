@@ -232,7 +232,10 @@ const AccountItem: React.FC<AccountItemProps> = ({
             </ThemedText>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={onPress} disabled={!linked} className="flex-row justify-end p-3">
+          <TouchableOpacity 
+            onPress={onPress} 
+            // disabled={!linked} 
+            className="flex-row justify-end p-3">
             <IconSymbol 
               name="gear" 
               size={22} 

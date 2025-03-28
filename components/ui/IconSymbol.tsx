@@ -70,6 +70,7 @@ const iconPairs: { [key: string]: string } = {
   halfHeart: "heart-half",
   heart: "heart",
   back: "arrow-back",
+  funnel: "funnel",
 }
 
 function createIconMap(pairs: Record<string, string>): Record<string, string> {
