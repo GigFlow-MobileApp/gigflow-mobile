@@ -334,7 +334,7 @@ export default function AccountScreen() {
   }, []);
 
   return (
-    <View className="rounded-3xl" style={{ backgroundColor: Colors[colorScheme].background }}>
+    <View style={{ backgroundColor: Colors[colorScheme].background }}>
       <ProgressDialog visible={loading} message={progressMessage} />
       <ThemedText type="title" className="self-center" style={{paddingTop: 20}}>
         Your Accounts
