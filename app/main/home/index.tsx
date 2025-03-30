@@ -339,11 +339,13 @@ export default function HomeScreen() {
     card: {
       padding: 24,
       borderRadius: 16,
-      marginTop: 20,
+      // marginTop: 20,
     },
     container: {
       flex: 1,
       backgroundColor: Colors[colorScheme as keyof typeof Colors].background,
+      marginTop: 20,
+      padding: 0,
     },
     section: {
       marginBottom: 24,
@@ -667,6 +669,7 @@ export default function HomeScreen() {
         backgroundColor: Colors[colorScheme].background,
       }}
       className="p-4"
+      showsVerticalScrollIndicator={false}
     >
       {/* Balance Cards */}
       <View style={{ marginBottom: 24 }}>
@@ -938,6 +941,7 @@ export default function HomeScreen() {
           ))}
         </Animated.View>
       </Card>
+      <View className="h-16"/>
     </ScrollView>
   );
 }

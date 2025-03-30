@@ -1,4 +1,4 @@
-import { Slot, usePathname, useRouter } from "expo-router";
+import { Slot, usePathname, useRouter, useRootNavigationState } from "expo-router";
 import { useEffect, useState, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
@@ -11,7 +11,6 @@ import {
   Dimensions,
   Animated,
   SafeAreaView,
-  PanResponder,
   Platform,
   StatusBar,
 } from "react-native";
@@ -19,6 +18,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { DrawerItemsType, TabItemsType } from "@/constants/customTypes";
 import { Sidebar } from "@/components/SideBar";
 import { BottomTabs } from "@/components/BottomTabs";
+import { IconSymbol } from "@/components/ui/IconSymbol";
+import { usePlatformStore } from "@/store/platformStore";
 
 const screenWdith = Dimensions.get("window").width;
 const menuWidth = screenWdith * (216 / 390);
@@ -55,14 +56,17 @@ const tabItems: TabItemsType[] = [
 
 export default function DrawerLayout() {
   const { colorScheme } = useColorScheme();
+  const lastPagetoNotification = usePlatformStore(state => state.lastPagetoNotification);
   const router = useRouter();
   const pathname = usePathname();
-  const pathDepth = pathname.startsWith('/main')
-  ? pathname.replace('/main', '').split('/').filter(Boolean).length
-  : 0;
+  const pathDepth = pathname.includes('/notifications') ? 9
+    : pathname.startsWith('/main')
+      ? pathname.replace('/main', '').split('/').filter(Boolean).length
+      : 0;
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const slideAnim = useState(new Animated.Value(0))[0];
+
 
   // check user token exists
   useEffect(() => {
@@ -85,6 +89,7 @@ export default function DrawerLayout() {
 
   // close side bar when change route
   useEffect(() => {
+    console.log(pathname);
     setIsSidebarOpen(false);
   }, [pathname]);
 
@@ -100,59 +105,17 @@ export default function DrawerLayout() {
     extrapolate: "clamp",
   });
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Don't capture gestures on specific screens where we want native back gesture
-        // or where we need horizontal scrolling
-        if (pathname.includes('/settings/info')) {
-          return false;
-        }
-        
-        // Activate on horizontal swipe only for other screens
-        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
-      },
-      onPanResponderMove: (_, gestureState) => {
-        if (gestureState.dx > 0 && !isSidebarOpen) {
-          // Swiping right to open
-          setIsSidebarOpen(true);
-          Animated.timing(slideAnim, {
-            toValue: 1,
-            duration: 250,
-            useNativeDriver: false,
-          }).start();
-        } else if (gestureState.dx < -50 && isSidebarOpen) {
-          // Swiping left to close
-          setIsSidebarOpen(false);
-          Animated.timing(slideAnim, {
-            toValue: 0,
-            duration: 250,
-            useNativeDriver: false,
-          }).start();
-        } else {
-          // Snap back to current state
-          setIsSidebarOpen(false);
-          Animated.timing(slideAnim, {
-            toValue: isSidebarOpen ? 1 : 0,
-            duration: 200,
-            useNativeDriver: false,
-          }).start();
-        }
-      },
-    })
-  ).current;
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       {/* TOP SAFE AREA FIX cyan bg color*/}
-      <View
+      {/* <View
         className="absolute left-0 right-0 z-0"
         style={{
           top: 0,
           height: STATUS_BAR_HEIGHT,
           backgroundColor: Colors[colorScheme].brandColor,
         }}
-      />
+      /> */}
       {/* BOTTOM SAFE AREA FIX white bg color*/}
       <View
         className="absolute left-0 right-0 z-0"
@@ -188,8 +151,8 @@ export default function DrawerLayout() {
               <View
                 style={{
                   position: "absolute",
-                  top: 10,
-                  left: 10,
+                  top: 4,
+                  left: 5,
                   zIndex: 20,
                   // backgroundColor: Colors[colorScheme].background,
                   alignItems: "center",
@@ -197,13 +160,22 @@ export default function DrawerLayout() {
                   // opacity: 0.8
                 }}
               >
-                {pathDepth <= 1 && (
+                {pathDepth <= 1 ? (
                   <TouchableOpacity onPress={() => setIsSidebarOpen((prev) => !prev)}>
                     <Ionicons
                       name={isSidebarOpen ? "close" : "menu"}
                       size={28}
                       color={Colors[colorScheme].menuItemText}
                     />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => pathname.includes('notifications') ?
+                        router.replace(lastPagetoNotification) : router.back()
+                    }
+                    className="self-start"
+                  >
+                    <IconSymbol name="back" size={22} color={Colors[colorScheme].textTertiary} className="p-2" />
                   </TouchableOpacity>
                 )}
               </View>

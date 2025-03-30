@@ -69,7 +69,9 @@ const iconPairs: { [key: string]: string } = {
   briefcase: "briefcase",
   halfHeart: "heart-half",
   heart: "heart",
-  back: "arrow-back",
+  back: "chevron-back",
+  funnel: "funnel",
+  check: "checkmark-done",
 }
 
 function createIconMap(pairs: Record<string, string>): Record<string, string> {
