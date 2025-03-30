@@ -69,7 +69,7 @@ const iconPairs: { [key: string]: string } = {
   briefcase: "briefcase",
   halfHeart: "heart-half",
   heart: "heart",
-  back: "chevron-back",
+  back: "arrow-back",
   funnel: "funnel",
   check: "checkmark-done",
   alert: "alert-circle",
