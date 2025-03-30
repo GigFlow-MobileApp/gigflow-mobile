@@ -169,7 +169,7 @@ export default function DrawerLayout() {
                     }
                     className="self-start"
                   >
-                    <IconSymbol name="back" size={22} color={Colors[colorScheme].textTertiary} className="p-2" />
+                    <IconSymbol name="left-arrow" size={22} color={Colors[colorScheme].textTertiary} className="p-2" />
                   </TouchableOpacity>
                 )}
               </View>
