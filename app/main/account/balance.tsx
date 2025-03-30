@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
-import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Dimensions, Animated, Easing } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Dimensions, Animated, Easing, Platform } from "react-native";
 import { Ionicons, Feather, MaterialIcons } from "@expo/vector-icons";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useThemeColors } from "@/components/ColorSchemeProvider";
@@ -12,6 +12,8 @@ import { Activity } from "@/constants/customTypes";
 import { SlideInView } from "@/components/FadeInView";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from '@/constants/config';
+import { usePlatformStore } from "@/store/platformStore";
+import { FloatingActionButton } from "@/components/FloatingActionButton";
 
 type PlatformName = keyof typeof logoMap;
 
@@ -138,7 +140,10 @@ interface LyftSummary {
 }
 
 export default function AccountBalancePage() {
-  const { name } = useLocalSearchParams();
+  // const { name } = useLocalSearchParams();
+  const name = usePlatformStore(state => state.platform);
+  const setTotalAmount = usePlatformStore(state => state.setTotalAmount);
+  const setLastPagetoNotification = usePlatformStore(state => state.setLastPagetoNotification);
   const { colors } = useThemeColors();
   const [secureId, setSecureId] = useState(true);
   const [available, setAvailable] = useState(0);
@@ -151,27 +156,37 @@ export default function AccountBalancePage() {
   // Animation values
   const cardFlipAnimation = useState(new Animated.Value(0))[0];
   const buttonsTranslateX = useState(new Animated.Value(100))[0];
+  const animatedElevation = useRef(new Animated.Value(0)).current;
 
   // Start animations when component mounts
   useEffect(() => {
     // Run all animations simultaneously
-    Animated.sequence([
-      // Card flip animation
-      Animated.timing(cardFlipAnimation, {
-        toValue: 1,
-        duration: 800,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      }),
-      // Buttons scale animation
+    Animated.timing(cardFlipAnimation, {
+      toValue: 1,
+      duration: 800,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: false,
+    }).start(() => {
+      // Gradually restore elevation (fake animation)
+      Animated.timing(animatedElevation, {
+        toValue: 8,
+        duration: 500,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: false, // must be false for style props like elevation
+      }).start();
+  
       Animated.spring(buttonsTranslateX, {
         toValue: 0,
         friction: 5,
         tension: 40,
-        useNativeDriver: true,
-      }),
-    ]).start();
+        useNativeDriver: false,
+      }).start();
+    });
   }, []);
+
+  useEffect(() => {
+    setTotalAmount(available);
+  }, [available]);
 
   // Calculate flip animation interpolations
   const frontFlipRotation = cardFlipAnimation.interpolate({
@@ -241,7 +256,7 @@ export default function AccountBalancePage() {
           const earningsData: UberEarning[] = await earningsResponse.json();
 
           // Add console.log to debug the response
-          console.log('Uber earnings data:', earningsData);
+          // console.log('Uber earnings data:', earningsData);
 
           // Set account data
           setAvailable(summaryData.total_earnings);
@@ -260,7 +275,7 @@ export default function AccountBalancePage() {
           // Transform Uber activities with proper null checks
           const transformedActivities = earningsData.map(earning => {
             // Add console.log to debug each earning
-            console.log('Processing earning:', earning);
+            // console.log('Processing earning:', earning);
 
             if (earning.type === 'trip') {
               const breakdown = [
@@ -287,7 +302,7 @@ export default function AccountBalancePage() {
           });
 
           // Add console.log to debug transformed activities
-          console.log('Transformed activities:', transformedActivities);
+          // console.log('Transformed activities:', transformedActivities);
 
           // Make sure we're setting all activities
           setActivities(transformedActivities);
@@ -401,23 +416,25 @@ export default function AccountBalancePage() {
     platformName in platformColor ? platformColor[platformName as keyof typeof platformColor] : platformColor.uber;
 
   return (
-    <View className="flex-1 px-4 pt-4" style={{ backgroundColor: colors.background }}>
+    <View className="flex-1" style={{ backgroundColor: colors.background }}>
       {/* Header */}
-      <View className="flex-row justify-between items-center mb-6">
-        <View className="flex-row items-center">
-          <TouchableOpacity onPress={() => router.push("/main/account")} className="mr-3">
-            <IconSymbol name="back" size={24} color={colors.primaryText} />
-          </TouchableOpacity>
-          <ThemedText type="title" className="self-center" style={{ fontWeight: 700 }}>
-            Your Balance
-          </ThemedText>
+      <View className="flex-row justify-between items-center p-4" style={{backgroundColor: colors.background}}>
+        <View className="flex-row justify-start">
+          {/* <TouchableOpacity onPress={() => router.back()} className="self-start">
+            <IconSymbol name="back" size={22} color={colors.textTertiary} className="p-2" />
+          </TouchableOpacity> */}
+          <View className="w-14 h-10 p-2"/>
+          <ThemedText type="title" className="ml-3 pt-0.5">Your Balance</ThemedText>
         </View>
-        <TouchableOpacity onPress={() => ""}>
+        <TouchableOpacity onPress={() => {
+          setLastPagetoNotification("/main/account/balance");
+          router.replace("/main/notifications")
+        }} className="self-end">
           <IconSymbol name="notifications" size={24} color={colors.primaryText} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} className="h-auto">
+      <ScrollView showsVerticalScrollIndicator={false} className="h-auto px-4 mt-2">
         {/* Balance Card */}
         <View className="flex-col mb-6" style={{ height: cardHeight }}>
           <Image
@@ -431,7 +448,7 @@ export default function AccountBalancePage() {
               className="absolute w-full h-full rounded-xl"
               style={{
                 backgroundColor: platformBgColor,
-                elevation: 8,
+                elevation: 0,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
@@ -473,7 +490,7 @@ export default function AccountBalancePage() {
               className="absolute w-full h-full rounded-xl flex-row justify-between items-center"
               style={{
                 backgroundColor: colors.background,
-                elevation: 8,
+                elevation: Platform.OS === 'android' ? animatedElevation : undefined,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.2,
@@ -598,10 +615,7 @@ export default function AccountBalancePage() {
           </ThemedText>
           <TouchableOpacity
             onPress={() =>
-              router.push({
-                pathname: "/main/home/activities",
-                params: { name },
-              })
+              router.push("/main/account/activities")
             }
           >
             <ThemedText type="semiSmall" colorValue="textTertiary">
@@ -616,23 +630,23 @@ export default function AccountBalancePage() {
         {activities.map((a, i) => (
           <ActivityItem a={a} i={i} key={i} />
         ))}
+        {/* <View className="h-16" /> */}
       </ScrollView>
 
-      <Animated.View
-        className="absolute bottom-7 right-5 mb-16 p-2.5 rounded-full"
-        style={{ backgroundColor: platformBgColor, transform: [{ translateX: buttonsTranslateX }] }}
-      >
-        <TouchableOpacity
-          onPress={() => {
-            router.push({
-              pathname: "/main/account/profile",
-              params: { name },
-            });
-          }}
-        >
-          <IconSymbol name="wheel" size={34} color={colors.background} />
-        </TouchableOpacity>
-      </Animated.View>
+      {/* Floating Action Button */}
+      <FloatingActionButton 
+        iconName="wheel"
+        backgroundColor={platformBgColor}
+        onPress={() => router.push("/main/account/profile")}
+        customAnimation={(animatedValue) => {
+          Animated.spring(animatedValue, {
+            toValue: 0,
+            friction: 5,
+            tension: 40,
+            useNativeDriver: false
+          }).start();
+        }}
+      />
     </View>
   );
 }

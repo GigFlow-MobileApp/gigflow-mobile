@@ -66,6 +66,11 @@ export const textStyles: Record<string, TextStyle> = {
     fontFamily: "Montserrat",
     fontWeight: weight(400),
   },
+  smallBold: {
+    fontSize: 12,
+    fontFamily: "Montserrat",
+    fontWeight: weight(600),
+  },
   small: {
     fontSize: 10,
     fontFamily: "Montserrat",

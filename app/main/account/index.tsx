@@ -10,6 +10,7 @@ import Config from "@/constants/config";
 import { Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ProgressDialog } from '@/components/ProgressDialog';
+import { usePlatformStore } from "@/store/platformStore";
 
 interface AccountItemProps {
   iconName: string;
@@ -232,7 +233,10 @@ const AccountItem: React.FC<AccountItemProps> = ({
             </ThemedText>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={onPress} disabled={!linked} className="flex-row justify-end p-3">
+          <TouchableOpacity 
+            onPress={onPress} 
+            // disabled={!linked} 
+            className="flex-row justify-end p-3">
             <IconSymbol 
               name="gear" 
               size={22} 
@@ -250,6 +254,7 @@ export default function AccountScreen() {
   const [loading, setLoading] = useState(true);
   const [progressMessage, setProgressMessage] = useState(''); // Add this state
   const { colorScheme } = useColorScheme();
+  const setPlatform = usePlatformStore((state) => state.setPlatform);
   const router = useRouter();
   
   // Animation value for title fade-in
@@ -331,7 +336,7 @@ export default function AccountScreen() {
   }, []);
 
   return (
-    <View className="rounded-3xl" style={{ backgroundColor: Colors[colorScheme].background }}>
+    <View style={{ backgroundColor: Colors[colorScheme].background }}>
       <ProgressDialog visible={loading} message={progressMessage} />
       <ThemedText type="title" className="self-center" style={{paddingTop: 20}}>
         Your Accounts
@@ -345,12 +350,10 @@ export default function AccountScreen() {
             linked={account.connection_status}
             accounts={accounts}
             setAccounts={setAccounts}
-            onPress={() =>
-              router.push({
-                pathname: "/main/home/balance",
-                params: { name: account.type },
-              })
-            }
+            onPress={() =>{
+              setPlatform(account.type as string);
+              router.push("/main/account/balance")
+            }}
           />
         ))}
       </ScrollView>

@@ -11,6 +11,7 @@ import { VictoryLine } from "victory-native";
 import { Icon } from "react-native-vector-icons/Icon";
 import { NumberProp } from "react-native-svg";
 import FadeInView, { SlideInView } from "@/components/FadeInView";
+import { usePlatformStore } from "@/store/platformStore";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Config from '@/constants/config';
 
@@ -108,8 +109,8 @@ interface LyftProfile {
 }
 
 export default function ProfilePage() {
-  const { name } = useLocalSearchParams();
-  const router = useRouter();
+  // const { name } = useLocalSearchParams();
+  const name = usePlatformStore(state => state.platform);
   const { colors } = useThemeColors();
 
   // State for profile data
@@ -236,12 +237,15 @@ export default function ProfilePage() {
   }, []);
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1}}>
       {/* Page Title */}
-      <View className="flex-row items-center justify-between">
-        <TouchableOpacity onPress={() => router.back()} className="self-start">
-          <IconSymbol name="back" size={24} color={colors.primaryText} className="p-4" />
-        </TouchableOpacity>
+      <View className="flex-row items-center justify-between p-4" style={{backgroundColor: colors.background}}>
+        <View className="flex-row justify-start">
+          {/* <TouchableOpacity onPress={() => router.back()} className="self-start">
+            <IconSymbol name="back" size={22} color={colors.textTertiary} className="p-2" />
+          </TouchableOpacity> */}
+          <View className="w-14 h-10 p-2"/>
+        </View>
         <ThemedText
           colorValue="primaryText"
           type="title"

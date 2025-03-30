@@ -12,6 +12,7 @@ import {
   KeyboardEvent,
 } from "react-native";
 import { NativeSyntheticEvent, TextInputFocusEventData } from "react-native";
+import { useRouter } from "expo-router";
 
 import QRCode from "react-native-qrcode-svg";
 import { ThemedText } from "@/components/ThemedText";
@@ -241,6 +242,7 @@ const useErrorHandling = () => {
 };
 
 export default function InfoScreen() {
+  const router = useRouter();
   const { colorScheme } = useColorScheme();
   const scrollViewRef = useRef<ScrollView>(null);
   
@@ -364,8 +366,8 @@ export default function InfoScreen() {
         name: data?.full_name,
         recipientName: data?.recipient_name,
         email: data?.email,
-        phone: data?.zipcode,
-        country: data?.state,
+        phone: data?.phone_number,
+        country: data?.country,
         state: data?.state,
         city: data?.city,
         zipcode: data?.zipcode,
@@ -477,9 +479,12 @@ export default function InfoScreen() {
                 backgroundColor: Colors[colorScheme].brandColor,
               }}
             >
-              {/* Top banner */}
-              <View className="flex-row items-start justify-center" style={{ height: topHeight - 6 }}>
-                <ThemedText className="mt-8" type="mainSection" colorValue="logoText">
+              {/* Header */}
+              <View className="flex-row items-start justify-start" style={{ height: topHeight - 6 }}>
+                <TouchableOpacity onPress={() => router.back()} className="self-start p-4 my-2">
+                  <IconSymbol name="back" size={22} color={Colors[colorScheme].logoText} className="p-2" />
+                </TouchableOpacity>
+                <ThemedText className="absolute left-1/2 -translate-x-1/2 mt-8" type="mainSection" colorValue="logoText">
                   My Info
                 </ThemedText>
                 {/* Optional edit icon */}
