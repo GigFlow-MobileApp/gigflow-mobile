@@ -72,6 +72,7 @@ const iconPairs: { [key: string]: string } = {
   back: "chevron-back",
   funnel: "funnel",
   check: "checkmark-done",
+  alert: "alert-circle",
 }
 
 function createIconMap(pairs: Record<string, string>): Record<string, string> {
