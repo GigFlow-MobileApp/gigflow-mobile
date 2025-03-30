@@ -199,17 +199,18 @@ export default function SettingScreen() {
       </View>
       <BottomSheet visible={showSheet} onClose={() => setShowSheet(false)}>
         {/* Header */}
-        <View className="relative h-12 mt-3 mb-2 justify-center items-center">
+        <View className="h-12 mt-3 mb-2 relative justify-center items-center">
           <TouchableOpacity
             onPress={() => setShowSheet(false)}
-            className="absolute left-5"
+            className="absolute left-4 h-10 w-10 justify-center items-center"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <IconSymbol name="back" size={24} color={colors.primaryText} />
           </TouchableOpacity>
           <ThemedText
             colorValue="primaryText"
             type="title"
-            className="absolute inset-x-0 text-center"
+            className="text-center"
           >
             Settings
           </ThemedText>
