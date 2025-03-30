@@ -13,6 +13,8 @@ import { useState, useEffect } from "react";
 import { getMyInfo } from "@/apis/infoAPI";
 import BottomSheet from "@/components/Dialog";
 import { SignupResponse, SignupResponseSchema } from "@/constants/customTypes";
+import Feedback from "@/components/Feedback";
+import ConnectAccount from "@/components/ConnectAccount";
 
 const screenHeight = Dimensions.get("window").height;
 const topHeight = screenHeight * (269 / 844);
@@ -114,6 +116,8 @@ export default function SettingScreen() {
   const [name, setName] = useState<string | null>("");
   const [phoneNumber, setPhoneNumber] = useState<string | null>("");
   const [showSheet, setShowSheet] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [showConnectAccount, setShowConnectAccount] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -181,7 +185,7 @@ export default function SettingScreen() {
             iconName="coins"
             size={iconSize}
             text="Payment history"
-            onPress={() => router.push("/main/payment")}
+            onPress={() => setShowFeedback(true)}
           />
           <MenuItem
             iconName="notifications"
@@ -235,7 +239,7 @@ export default function SettingScreen() {
             <View className="flex-row justify-between mt-4">
               {/* Accounts */}
               <View className="flex-1">
-                <PressableCard>
+                <PressableCard onPress={() => setShowConnectAccount(true)}>
                   <View className="flex-row justify-between items-center">
                     <IconSymbol name="grid" size={32} color={colors.cardText} />
                     <View className="flex-col">
@@ -379,6 +383,12 @@ export default function SettingScreen() {
             </View>
           </View>
         </ScrollView>
+      </BottomSheet>
+      <BottomSheet visible={showFeedback} onClose={() => setShowFeedback(false)}>
+        <Feedback onSubmit={() => ""} onClose={() => setShowFeedback(false)}/>
+      </BottomSheet>
+      <BottomSheet visible={showConnectAccount} onClose={() => setShowConnectAccount(false)} height={0.95}>
+        <ConnectAccount onSubmit={() => ""} onClose={() => setShowConnectAccount(false)}/>
       </BottomSheet>
     </View>
   );
