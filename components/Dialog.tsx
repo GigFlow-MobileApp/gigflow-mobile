@@ -1,4 +1,10 @@
-import { View, Pressable, Animated, Dimensions, StyleSheet } from "react-native";
+import {
+  View,
+  Pressable,
+  Animated,
+  Dimensions,
+  StyleSheet,
+} from "react-native";
 import { useEffect, useRef, useState } from "react";
 import { useThemeColors } from "@/components/ColorSchemeProvider";
 
@@ -6,12 +12,16 @@ const screenHeight = Dimensions.get("window").height;
 const SHEET_HEIGHT = screenHeight * 0.6;
 
 type BottomSheetProps = {
-    visible: boolean;
-    onClose: () => void;
-    children: React.ReactNode;
-  };
+  visible: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+};
 
-export default function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
+export default function BottomSheet({
+  visible,
+  onClose,
+  children,
+}: BottomSheetProps) {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const [isSheetVisible, setIsSheetVisible] = useState(visible);
   const { colors } = useThemeColors();
@@ -45,8 +55,9 @@ export default function BottomSheet({ visible, onClose, children }: BottomSheetP
       {/* Sheet */}
       <Animated.View
         style={[
-          styles.animatedSheet, { transform: [{ translateY }] }, 
-          {backgroundColor: colors.backgroundCard}
+          styles.animatedSheet,
+          { transform: [{ translateY }] },
+          { backgroundColor: colors.backgroundCard },
         ]}
         className="absolute bottom-0 left-0 right-0 rounded-t-2xl"
       >
@@ -57,7 +68,7 @@ export default function BottomSheet({ visible, onClose, children }: BottomSheetP
 }
 
 const styles = StyleSheet.create({
-    animatedSheet: {
-      height: SHEET_HEIGHT,
-    },
+  animatedSheet: {
+    height: SHEET_HEIGHT,
+  },
 });
