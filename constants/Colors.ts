@@ -38,6 +38,7 @@ export const Colors = {
     badBanner: "#FF0000",
     bullish: "#1DD75B",
     burish: "#ef4444",
+    divider: "#DEE1E6",
   },
   dark: {
     brandColor: brandColorDark,
@@ -73,6 +74,7 @@ export const Colors = {
     badBanner: "#FF0000",
     bullish: "#1DD75B",
     burish: "#ef4444",
+    divider: "#DEE1E6",
   },
 } as const;
 
