@@ -9,19 +9,23 @@ import { useEffect, useRef, useState } from "react";
 import { useThemeColors } from "@/components/ColorSchemeProvider";
 
 const screenHeight = Dimensions.get("window").height;
-const SHEET_HEIGHT = screenHeight * 0.6;
+
+const getSheetHeight = (height: number = 0.6) => screenHeight * height;
 
 type BottomSheetProps = {
   visible: boolean;
   onClose: () => void;
+  height?: number;
   children: React.ReactNode;
 };
 
 export default function BottomSheet({
   visible,
   onClose,
+  height,
   children,
 }: BottomSheetProps) {
+  const SHEET_HEIGHT = getSheetHeight(height);
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const [isSheetVisible, setIsSheetVisible] = useState(visible);
   const { colors } = useThemeColors();
@@ -55,7 +59,7 @@ export default function BottomSheet({
       {/* Sheet */}
       <Animated.View
         style={[
-          styles.animatedSheet,
+          { height: SHEET_HEIGHT },
           { transform: [{ translateY }] },
           { backgroundColor: colors.backgroundCard },
         ]}
@@ -66,9 +70,3 @@ export default function BottomSheet({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  animatedSheet: {
-    height: SHEET_HEIGHT,
-  },
-});
