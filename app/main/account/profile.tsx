@@ -12,6 +12,8 @@ import { Icon } from "react-native-vector-icons/Icon";
 import { NumberProp } from "react-native-svg";
 import FadeInView, { SlideInView } from "@/components/FadeInView";
 import { usePlatformStore } from "@/store/platformStore";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Config from '@/constants/config';
 
 const screenWidth = Dimensions.get("window").width;
 const screenHeight = Dimensions.get("window").height;
@@ -50,10 +52,108 @@ const InfoItem = ({ icon, text, value, index }: { icon: string; text: string; va
   </FadeInView>
 );
 
+interface UberProfile {
+  account_id: string;
+  driver_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  rating: number;
+  total_trips: number;
+  activation_status: string;
+  partner_type: string;
+  driver_status: string;
+  onboarding_status: string;
+  last_updated: string;
+  documents: Array<{
+    document_id: string;
+    type: string;
+    status: string;
+    expiration_date: string;
+  }>;
+  vehicles: Array<{
+    vehicle_id: string;
+    make: string;
+    model: string;
+    year: number;
+    license_plate: string;
+    status: string;
+  }>;
+}
+
+interface LyftProfile {
+  account_id: string;
+  driver_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  rating: number;
+  total_rides: number;
+  driver_status: string;
+  approval_status: string;
+  vehicles: Array<{
+    vehicle_id: string;
+    make: string;
+    model: string;
+    year: number;
+    license_plate: string;
+    status: string;
+    color: string;
+  }>;
+  region: string;
+  driver_mode: string;
+  account_status: string;
+  last_updated: string;
+}
+
 export default function ProfilePage() {
   // const { name } = useLocalSearchParams();
   const name = usePlatformStore(state => state.platform);
   const { colors } = useThemeColors();
+
+  // State for profile data
+  const [profileData, setProfileData] = useState<UberProfile | LyftProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch profile data
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const userToken = await AsyncStorage.getItem('userToken');
+        if (!userToken) {
+          throw new Error('Authentication token not found');
+        }
+
+        const headers = {
+          'Authorization': `Bearer ${userToken}`,
+          'Accept': 'application/json',
+        };
+
+        const platform = name as string;
+        const response = await fetch(
+          `${Config.apiBaseUrl}/api/v1/profiles/${platform}/me`,
+          { headers }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${platform} profile`);
+        }
+
+        const data = await response.json();
+        setProfileData(data);
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch profile');
+        setLoading(false);
+      }
+    };
+
+    fetchProfileData();
+  }, [name]);
 
   // Function to convert rating to hearts/stars
   const ratingToHearts = (ratingValue: string): JSX.Element[] => {
@@ -174,20 +274,32 @@ export default function ProfilePage() {
               {/* Info Header */}
               <View className="flex-col justify-between items-start pl-3">
                 <ThemedText colorValue="primaryText" style={{ fontWeight: 700 }}>
-                  Driver Name
+                  {profileData ? `${profileData.first_name} ${profileData.last_name}` : 'Loading...'}
                 </ThemedText>
-                <ThemedText colorValue="textTertiary">driver</ThemedText>
+                <ThemedText colorValue="textTertiary">
+                  {profileData && 'partner_type' in profileData ? profileData.partner_type : 'driver'}
+                </ThemedText>
                 <View className="flex-row items-center justify-between" style={{ width: cardWidth }}>
                   <View className="flex-row">
                     <IconSymbol name="location" size={24} color={colors.brandColor} />
-                    <ThemedText colorValue="textTertiary">Onboarding_status</ThemedText>
+                    <ThemedText colorValue="textTertiary">
+                      {profileData ? (
+                        'onboarding_status' in profileData 
+                          ? profileData.onboarding_status 
+                          : 'approval_status' in profileData 
+                            ? profileData.approval_status 
+                            : 'Loading...'
+                      ) : 'Loading...'}
+                    </ThemedText>
                   </View>
                   <TouchableOpacity
                     onPress={() => ""}
                     className="mr-4 px-3 py-1 rounded-2xl"
                     style={{ backgroundColor: colors.btnBackground }}
                   >
-                    <ThemedText colorValue="btnText">online</ThemedText>
+                    <ThemedText colorValue="btnText">
+                      {profileData?.driver_status || 'offline'}
+                    </ThemedText>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -200,8 +312,18 @@ export default function ProfilePage() {
             <ThemedText type="defaultSemiBold" colorValue="menuItemText" className="mb-2">
               General Information
             </ThemedText>
-            <InfoItem icon="email" text="Email" value={email} index={1} />
-            <InfoItem icon="app" text="Phone Number" value={phoneNumber} index={2} />
+            <InfoItem 
+              icon="email" 
+              text="Email" 
+              value={profileData?.email || 'Loading...'} 
+              index={1} 
+            />
+            <InfoItem 
+              icon="app" 
+              text="Phone Number" 
+              value={profileData?.phone || 'Loading...'} 
+              index={2} 
+            />
             <FadeInView index={3}>
               <View className="flex-row items-center my-2">
                 <IconSymbol name="star" size={24} color="#000" className="flex-col self-start pt-1" />
@@ -210,17 +332,34 @@ export default function ProfilePage() {
                     Rating
                   </ThemedText>
                   <View className="flex-row p-1">
-                    {ratingToHearts(rating)}
+                    {ratingToHearts(profileData?.rating?.toString() || "0")}
                     <ThemedText colorValue="textTertiary" type="defautlSmall" className="ml-2">
-                      ({rating})
+                      ({profileData?.rating || '0'})
                     </ThemedText>
                   </View>
                 </View>
               </View>
             </FadeInView>
-            <InfoItem icon="people" text="Partner Type" value={partnerType} index={4} />
-            <InfoItem icon="briefcase" text="Available Time" value={availableTime} index={5} />
-            <InfoItem icon="calendar" text="Joined" value={joined} index={6} />
+            <InfoItem 
+              icon="people" 
+              text="Partner Type" 
+              value={profileData && 'partner_type' in profileData ? profileData.partner_type : 'driver'} 
+              index={4} 
+            />
+            <InfoItem 
+              icon="briefcase" 
+              text="Vehicle Info" 
+              value={profileData?.vehicles?.[0] ? 
+                `${profileData.vehicles[0].year} ${profileData.vehicles[0].make} ${profileData.vehicles[0].model}` : 
+                'No vehicle information'} 
+              index={5} 
+            />
+            <InfoItem 
+              icon="calendar" 
+              text="Last Updated" 
+              value={new Date(profileData?.last_updated || '').toLocaleDateString()} 
+              index={6} 
+            />
           </View>
           {/* Graph Section */}
           <FadeInView index={7}>
@@ -230,10 +369,15 @@ export default function ProfilePage() {
             >
               <View className="flex-col justify-between">
                 <ThemedText colorValue="primaryText" type="defautlSmall">
-                  Total Trips
+                  Total {name === 'uber' ? 'Trips' : 'Rides'}
                 </ThemedText>
                 <ThemedText colorValue="brandColor" type="defautlSmall">
-                  + 1250 Km
+                  {profileData 
+                    ? (name === 'uber' 
+                        ? ('total_trips' in profileData ? profileData.total_trips : 0)
+                        : ('total_rides' in profileData ? profileData.total_rides : 0)
+                      )
+                    : 0}
                 </ThemedText>
               </View>
               <View className="self-end">
