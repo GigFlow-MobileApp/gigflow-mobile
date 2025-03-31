@@ -317,3 +317,14 @@ export default function Feedback({ onSubmit, onClose }: FeedbackProps) {
     </View>
   );
 }
+
+// How to use
+
+// import Feedback from "@/components/model/Feedback";
+// import BottomSheet from "@/components/Dialog";
+
+// const [showFeedback, setShowFeedback] = useState(false);
+
+// <BottomSheet visible={showFeedback} onClose={() => setShowFeedback(false)}>
+//   <Feedback onSubmit={() => ""} onClose={() => setShowFeedback(false)}/>
+// </BottomSheet>

@@ -130,3 +130,13 @@ export default function ConnectAccount({ onSubmit, onClose }: ConnectAccountProp
     </View>
   );
 }
+
+// How to use
+
+// import ConnectAccount from "@/components/model/ConnectAccount";
+// import BottomSheet from "@/components/Dialog";
+// const [showConnectAccount, setShowConnectAccount] = useState(false);
+
+// <BottomSheet visible={showConnectAccount} onClose={() => setShowConnectAccount(false)} height={0.95}>
+//   <ConnectAccount onSubmit={() => ""} onClose={() => setShowConnectAccount(false)}/>
+// </BottomSheet>

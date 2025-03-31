@@ -481,9 +481,9 @@ export default function InfoScreen() {
             >
               {/* Header */}
               <View className="flex-row items-start justify-start" style={{ height: topHeight - 6 }}>
-                <TouchableOpacity onPress={() => router.back()} className="self-start p-4 my-2">
+                {/* <TouchableOpacity onPress={() => router.back()} className="self-start p-4 my-2">
                   <IconSymbol name="left-arrow" size={22} color={Colors[colorScheme].logoText} className="p-2" />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
                 <ThemedText className="absolute left-1/2 -translate-x-1/2 mt-8" type="mainSection" colorValue="logoText">
                   My Info
                 </ThemedText>
