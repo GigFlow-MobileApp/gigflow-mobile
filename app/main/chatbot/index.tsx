@@ -32,6 +32,7 @@ import Animated, {
     useSharedValue,
 } from 'react-native-reanimated';
 import * as FileSystem from 'expo-file-system';
+import { fromByteArray } from 'base64-js';
 
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { ThemedText } from '@/components/ThemedText';
@@ -41,11 +42,6 @@ interface Message {
     text: string;
     isUser: boolean;
     timestamp: Date;
-}
-
-interface SoundObject {
-  sound: Audio.Sound;
-  status: Audio.PlaybackStatus;
 }
 
 const getMessage = async (message: string, history: Message[]) => {
@@ -291,62 +287,140 @@ export default function ChatbotScreen() {
     };
   }, []);
 
+  const sanitizeText = (text: string): string => {
+    return text
+      .replace(/[^\w\s.,!?-]/g, '') // Remove special characters except basic punctuation
+      .replace(/\s+/g, ' ')         // Replace multiple spaces with single space
+      .trim();                      // Remove leading/trailing whitespace
+  };
+
   const playTextToSpeech = async (text: string) => {
     try {
-      const response = await axios.post(
-        'https://api.elevenlabs.io/v1/text-to-speech/9BWtsMINqrJLrRacOk9x', // Default voice ID
-        {
-          text: text,
-          model_id: "eleven_monolingual_v1",
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.5,
+      const MAX_CHUNK_SIZE = 1000;
+      const sanitizedText = sanitizeText(text);
+      const textChunks = sanitizedText.match(new RegExp(`.{1,${MAX_CHUNK_SIZE}}(\s|$)`, 'g')) || [];
+
+      for (const chunk of textChunks) {
+        const sanitizedChunk = chunk.trim();
+        if (!sanitizedChunk) continue;
+
+        // First, ensure we get a valid response
+        let audioData;
+        try {
+          const response = await axios.post(
+            'https://api.elevenlabs.io/v1/text-to-speech/9BWtsMINqrJLrRacOk9x',
+            {
+              text: sanitizedChunk,
+              model_id: "eleven_monolingual_v1",
+              voice_settings: {
+                stability: 0.5,
+                similarity_boost: 0.5,
+              }
+            },
+            {
+              headers: {
+                'Accept': 'audio/mpeg',
+                'xi-api-key': Config.elevenlabsApiKey,
+                'Content-Type': 'application/json',
+              },
+              responseType: 'arraybuffer',
+            }
+          );
+
+          if (!response.data) {
+            throw new Error('Empty response from TTS API');
           }
-        },
-        {
-          headers: {
-            'Accept': 'audio/mpeg',
-            'xi-api-key': Config.elevenlabsApiKey,
-            'Content-Type': 'application/json',
-          },
-          responseType: 'arraybuffer',
+
+          audioData = response.data;
+        } catch (error) {
+          console.error('TTS API Error:', error);
+          continue; // Skip this chunk and try the next one
         }
-      );
 
-      // Create a temporary file using expo-file-system
-      const tempFilePath = FileSystem.cacheDirectory + 'temp_audio.mp3';
-      
-      // Convert array buffer to base64
-      const base64Data = btoa(
-        String.fromCharCode(...new Uint8Array(response.data))
-      );
-      
-      // Write the base64 data to the temporary file
-      await FileSystem.writeAsStringAsync(tempFilePath, base64Data, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
+        // Create a unique temp file path
+        const tempFilePath = `${FileSystem.cacheDirectory}temp_audio_${Date.now()}.mp3`;
 
-      // Play the audio from the temporary file
-      const { sound }: SoundObject = await Audio.Sound.createAsync(
-        { uri: tempFilePath },
-        { shouldPlay: true }
-      );
+        try {
+          // Convert array buffer to base64 string
+          const uint8Array = new Uint8Array(audioData);
+          const base64String = fromByteArray(uint8Array);
 
-      // Clean up after playback finishes
-      sound.setOnPlaybackStatusUpdate(async (status) => {
-        if (status.didJustFinish) {
-          await sound.unloadAsync();
-          // Delete the temporary file
+          // Write the audio file
+          await FileSystem.writeAsStringAsync(
+            tempFilePath,
+            base64String,
+            { encoding: FileSystem.EncodingType.Base64 }
+          );
+
+          // Verify the file exists and has content
+          const fileInfo = await FileSystem.getInfoAsync(tempFilePath);
+          if (!fileInfo.exists || fileInfo.size === 0) {
+            throw new Error('Failed to write audio file');
+          }
+
+          // Load and play the audio
+          const { sound } = await Audio.Sound.createAsync(
+            { uri: tempFilePath },
+            { shouldPlay: true },
+            (status) => {
+              // Only log if there's an actual error
+              if (status instanceof Error) {
+                console.error('Sound loading error:', status);
+              }
+            }
+          );
+
+          // Add better status tracking
+          sound.setOnPlaybackStatusUpdate(async (status) => {
+            if ('isLoaded' in status && status.isLoaded) {
+              if (status.didJustFinish) {
+                await sound.unloadAsync();
+                // Clean up temp file after playback
+                try {
+                  await FileSystem.deleteAsync(tempFilePath, { idempotent: true });
+                } catch (e) {
+                  // Ignore cleanup errors
+                }
+              } else if ('error' in status) {
+                console.error('Playback error:', status.error);
+              }
+            }
+          });
+
+          // Wait for playback to complete
+          await new Promise((resolve) => {
+            sound.setOnPlaybackStatusUpdate((status) => {
+              if ('isLoaded' in status && status.isLoaded && status.didJustFinish) {
+                resolve(true);
+              }
+            });
+          });
+
+        } catch (error) {
+          console.error('Audio processing error:', error);
+          // Try to clean up the temp file if it exists
           try {
-            await FileSystem.deleteAsync(tempFilePath);
+            const fileInfo = await FileSystem.getInfoAsync(tempFilePath);
+            if (fileInfo.exists) {
+              await FileSystem.deleteAsync(tempFilePath);
+            }
+          } catch (cleanupError) {
+            console.warn('Failed to cleanup temp file:', cleanupError);
+          }
+        } finally {
+          // Final cleanup attempt
+          try {
+            await FileSystem.deleteAsync(tempFilePath, { idempotent: true });
           } catch (e) {
-            console.warn('Failed to delete temporary audio file:', e);
+            // Ignore cleanup errors in finally block
           }
         }
-      });
-
+      }
     } catch (error) {
       console.error('TTS Error:', error);
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+      }
       Alert.alert('Error', 'Failed to play audio response');
     }
   };
