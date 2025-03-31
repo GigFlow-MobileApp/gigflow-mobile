@@ -38,6 +38,7 @@ export const Colors = {
     badBanner: "#FF0000",
     bullish: "#1DD75B",
     burish: "#ef4444",
+    inputBackground: "#1A1A1A12"
   },
   dark: {
     brandColor: brandColorDark,
@@ -55,6 +56,7 @@ export const Colors = {
 
     // background
     background: "#000000",
+    inputBackground: "#1A1A1A12",
     backgroundCard: "#1C1C1C",
     btnBackground: brandColorDark,
     onPressBg: "#007aff",
