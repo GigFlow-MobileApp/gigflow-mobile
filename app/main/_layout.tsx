@@ -60,6 +60,7 @@ export default function DrawerLayout() {
   const router = useRouter();
   const pathname = usePathname();
   const pathDepth = pathname.includes('/notifications') ? 9
+    : pathname.includes('/chatbot') ? 2
     : pathname.startsWith('/main')
       ? pathname.replace('/main', '').split('/').filter(Boolean).length
       : 0;
@@ -171,7 +172,7 @@ export default function DrawerLayout() {
                 ) : (
                   <TouchableOpacity
                     onPress={() => pathname.includes('notifications') ?
-                        router.replace(lastPagetoNotification) : router.back()
+                        router.replace(lastPagetoNotification || '/main/home') : router.back()
                     }
                     className="self-start"
                   >

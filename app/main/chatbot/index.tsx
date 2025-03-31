@@ -1,0 +1,627 @@
+import React, { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
+import Config from "@/constants/config";
+import { Audio } from 'expo-av';
+import { Alert } from 'react-native';
+// Remove ElevenLabs import and replace with direct API calls
+
+import { FloatingActionButton } from "@/components/FloatingActionButton";
+import { useThemeColors } from "@/components/ColorSchemeProvider";
+import { useRouter } from "expo-router";
+import { getMyInfo } from "@/apis/infoAPI";
+import { SignupResponseSchema } from "@/constants/customTypes";
+import {
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    ScrollView,
+    KeyboardAvoidingView,
+    Platform,
+    Image,
+    Keyboard,
+} from 'react-native';
+
+import Animated, {
+    useAnimatedStyle,
+    withSequence,
+    withTiming,
+    withRepeat,
+    withDelay,
+    Easing,
+    useSharedValue,
+} from 'react-native-reanimated';
+import * as FileSystem from 'expo-file-system';
+
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import { ThemedText } from '@/components/ThemedText';
+
+interface Message {
+    id: string;
+    text: string;
+    isUser: boolean;
+    timestamp: Date;
+}
+
+interface SoundObject {
+  sound: Audio.Sound;
+  status: Audio.PlaybackStatus;
+}
+
+const getMessage = async (message: string, history: Message[]) => {
+    try {
+        const response = await axios.post(
+            `${Config.apiBaseUrl}/api/v1/chat/get_text_response`,
+            {
+                message,
+                history: history.map(msg => ({
+                    text: msg.text,
+                    sender: msg.isUser ? 'user' : 'ai'
+                }))
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+        
+        if (!response.data) {
+            throw new Error('Empty response from server');
+        }
+        
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            console.error("API Error:", error.response?.data);
+            throw new Error(error.response?.data?.detail || 'Failed to get response');
+        }
+        throw error;
+    }
+};
+
+const TypingIndicator = () => {
+    const { colors } = useThemeColors();
+    const bubbleRefs = [...Array(3)].map(() => useSharedValue(0));
+  
+    const bubbleStyle = (index: number) => useAnimatedStyle(() => {
+      const opacity = bubbleRefs[index].value;
+      return {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: colors.textTertiary,
+        marginHorizontal: 2,
+        opacity: opacity,
+        transform: [
+          {
+            scale: opacity * 1.2,
+          },
+        ],
+      };
+    });
+
+    // Start the animations in useEffect
+    useEffect(() => {
+      bubbleRefs.forEach((ref, index) => {
+        ref.value = withRepeat(
+          withSequence(
+            withDelay(
+              index * 200,
+              withTiming(1, {
+                duration: 300,
+                easing: Easing.ease,
+              })
+            ),
+            withTiming(0.3, {
+              duration: 300,
+              easing: Easing.ease,
+            })
+          ),
+          -1,
+          true
+        );
+      });
+    }, []);
+  
+    return (
+      <View className="absolute bottom-20 left-4 flex-row items-center bg-gray-100 rounded-2xl px-4 py-3">
+        <Image
+          source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' }}
+          className="w-8 h-8 rounded-full mr-2"
+        />
+        <View className="flex-row items-center">
+          {[0, 1, 2].map((i) => (
+            <Animated.View key={i} style={bubbleStyle(i)} />
+          ))}
+        </View>
+      </View>
+    );
+  };
+  
+
+export default function ChatbotScreen() {
+  const { colors } = useThemeColors();
+  const router = useRouter();
+  const [userName, setUserName] = useState('there');
+  const [isRecording, setIsRecording] = useState(false);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+
+  const convertSpeechToText = async (audioUri: string) => {
+    try {
+      if (!audioUri) {
+        throw new Error('Audio URI is required');
+      }
+
+      console.log('Audio URI:', audioUri);
+
+      // Get file info
+      const fileInfo = await FileSystem.getInfoAsync(audioUri);
+      console.log('File info:', fileInfo);
+
+      if (!fileInfo.exists) {
+        throw new Error('Audio file does not exist');
+      }
+
+      // Create FormData and append the file with correct field name "file"
+      const formData = new FormData();
+      formData.append('file', {
+        uri: Platform.OS === 'ios' ? audioUri.replace('file://', '') : audioUri,
+        type: 'audio/wav',
+        name: 'audio.wav',
+      } as any);
+      
+      formData.append('model_id', 'scribe_v1');
+
+      console.log('FormData created:', formData);
+      console.log('Sending request to ElevenLabs...'); 
+
+      const apiResponse = await axios.post<{ text: string }>(
+        'https://api.elevenlabs.io/v1/speech-to-text',
+        formData,
+        {
+          headers: {
+            'Accept': 'application/json',
+            'xi-api-key': Config.elevenlabsApiKey,
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: 30000,
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+        }
+      );
+
+      console.log('ElevenLabs Response:', {
+        status: apiResponse.status,
+        headers: apiResponse.headers,
+        data: apiResponse.data
+      });
+
+      if (!apiResponse.data?.text) {
+        throw new Error('Invalid response: missing text field');
+      }
+
+      return apiResponse.data.text;
+    } catch (error) {
+      console.error('Full error:', error);
+      
+      if (axios.isAxiosError(error)) {
+        console.error('Axios error details:', {
+          message: error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          headers: error.response?.headers,
+          config: {
+            url: error.config?.url,
+            method: error.config?.method,
+            headers: error.config?.headers,
+          }
+        });
+
+        if (error.response?.status === 422) {
+          throw new Error(`Invalid request: ${JSON.stringify(error.response.data)}`);
+        }
+      }
+      
+      throw new Error(`Failed to convert speech to text: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  useEffect(() => {
+    const getPermissions = async () => {
+      const permission = await Audio.requestPermissionsAsync();
+      if (permission.status !== 'granted') {
+        Alert.alert('Permission required', 'Please grant microphone access to use voice input');
+      }
+    };
+
+    getPermissions();
+  }, []);
+
+  // Add this useEffect to fetch user info when component mounts
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const raw = await getMyInfo();
+        if (!raw) throw new Error("User info not found");
+        const parsed = SignupResponseSchema.safeParse(raw);
+        if (!parsed.success) {
+          console.error(parsed.error);
+          throw new Error("Invalid user info format");
+        }
+        const firstName = parsed.data.full_name?.split(' ')[0];
+        setUserName(firstName || "");
+      } catch (error) {
+        console.error("Failed to fetch user info:", error);
+        setUserName('there'); // fallback to generic greeting
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
+  const [message, setMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      text: `Hi ${userName}. I'm here to help you to know about Payment processing. How can I help you?`,
+      isUser: false,
+      timestamp: new Date(),
+    },
+  ]);
+
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => setKeyboardHeight(e.endCoordinates.height)
+    );
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardHeight(0)
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, []);
+
+  const playTextToSpeech = async (text: string) => {
+    try {
+      const response = await axios.post(
+        'https://api.elevenlabs.io/v1/text-to-speech/9BWtsMINqrJLrRacOk9x', // Default voice ID
+        {
+          text: text,
+          model_id: "eleven_monolingual_v1",
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.5,
+          }
+        },
+        {
+          headers: {
+            'Accept': 'audio/mpeg',
+            'xi-api-key': Config.elevenlabsApiKey,
+            'Content-Type': 'application/json',
+          },
+          responseType: 'arraybuffer',
+        }
+      );
+
+      // Create a temporary file using expo-file-system
+      const tempFilePath = FileSystem.cacheDirectory + 'temp_audio.mp3';
+      
+      // Convert array buffer to base64
+      const base64Data = btoa(
+        String.fromCharCode(...new Uint8Array(response.data))
+      );
+      
+      // Write the base64 data to the temporary file
+      await FileSystem.writeAsStringAsync(tempFilePath, base64Data, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      // Play the audio from the temporary file
+      const { sound }: SoundObject = await Audio.Sound.createAsync(
+        { uri: tempFilePath },
+        { shouldPlay: true }
+      );
+
+      // Clean up after playback finishes
+      sound.setOnPlaybackStatusUpdate(async (status) => {
+        if (status.didJustFinish) {
+          await sound.unloadAsync();
+          // Delete the temporary file
+          try {
+            await FileSystem.deleteAsync(tempFilePath);
+          } catch (e) {
+            console.warn('Failed to delete temporary audio file:', e);
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('TTS Error:', error);
+      Alert.alert('Error', 'Failed to play audio response');
+    }
+  };
+
+  const handleSend = async () => {
+    if (!message.trim()) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      text: message.trim(),
+      isUser: true,
+      timestamp: new Date(),
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setMessage('');
+    setIsTyping(true);
+
+    try {
+      const response = await getMessage(userMessage.text, messages);
+      
+      const aiMessage: Message = {
+        id: Date.now().toString(),
+        text: response.message,
+        isUser: false,
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+      
+      // Play the AI response using TTS
+      await playTextToSpeech(response.message);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        text: "Sorry, I couldn't process your request. Please try again.",
+        isUser: false,
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+      });
+
+      const recordingOptions: Audio.RecordingOptions = {
+        android: {
+          extension: '.wav',
+          outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+          audioEncoder: Audio.AndroidAudioEncoder.AAC,
+          sampleRate: 16000,
+          numberOfChannels: 1,
+          bitRate: 128000,
+        },
+        ios: {
+          extension: '.wav',
+          audioQuality: Audio.IOSAudioQuality.HIGH,
+          sampleRate: 16000,
+          numberOfChannels: 1,
+          bitRate: 128000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {
+          mimeType: 'audio/wav',
+          bitsPerSecond: 128000,
+        },
+      };
+
+      console.log('Starting recording with options:', recordingOptions);
+      const { recording } = await Audio.Recording.createAsync(recordingOptions);
+      setRecording(recording);
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Failed to start recording:', err);
+      Alert.alert('Error', 'Failed to start recording');
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recording) return;
+
+    try {
+      setIsRecording(false);
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      
+      if (!uri) {
+        throw new Error('No recording URI available');
+      }
+
+      // Show loading indicator
+      Alert.alert('Processing', 'Converting speech to text...');
+
+      const transcribedText = await convertSpeechToText(uri);
+      if (transcribedText) {
+        setMessage(transcribedText);
+      }
+    } catch (err) {
+      console.error('Failed to process recording:', err);
+      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to process recording');
+    } finally {
+      setRecording(null);
+    }
+  };
+
+  const handleVoiceInput = async () => {
+    if (isRecording) {
+      await stopRecording();
+    } else {
+      await startRecording();
+    }
+  };
+
+  useEffect(() => {
+    let recordingTimeout: NodeJS.Timeout;
+
+    if (isRecording) {
+      // Stop recording after 30 seconds
+      recordingTimeout = setTimeout(() => {
+        stopRecording();
+        Alert.alert('Recording limit reached', 'Maximum recording duration is 30 seconds');
+      }, 30000);
+    }
+
+    return () => {
+      if (recordingTimeout) {
+        clearTimeout(recordingTimeout);
+      }
+    };
+  }, [isRecording]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollViewRef.current?.scrollToEnd({ animated: true });
+  }, [messages]);
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1, backgroundColor: colors.background }}
+    >
+      {/* Header */}
+      <View className="flex-row justify-between items-center p-4" style={{backgroundColor: colors.background}}>
+        <View className="flex-row justify-start">
+          <TouchableOpacity onPress={() => router.back()} className="self-start">
+            <IconSymbol name="back" size={22} color={colors.textTertiary} className="p-2" />
+          </TouchableOpacity>
+          <ThemedText type="title" className="ml-3 pt-0.5">Assistant</ThemedText>
+        </View>
+      </View>
+
+      {/* Messages */}
+      <ScrollView
+        ref={scrollViewRef}
+        className="flex-1 px-4"
+        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+      >
+        {messages.map((msg) => (
+          <View
+            key={msg.id}
+            className={`flex-row ${msg.isUser ? 'justify-end' : 'justify-start'} mb-4`}
+          >
+            {!msg.isUser && (
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' }}
+                className="w-8 h-8 rounded-full mr-2"
+              />
+            )}
+            <View
+              className={`rounded-2xl px-4 py-3 max-w-[80%] ${
+                msg.isUser ? 'bg-blue-500' : 'bg-gray-100'
+              }`}
+            >
+              <Text
+                className={msg.isUser ? 'text-white' : 'text-gray-800'}
+                style={{ fontSize: 16, lineHeight: 22 }}
+              >
+                {msg.text}
+              </Text>
+            </View>
+            {msg.isUser && (
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100' }}
+                className="w-8 h-8 rounded-full ml-2"
+              />
+            )}
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* Typing Indicator */}
+      {isTyping && <TypingIndicator />}
+
+      {/* Input Area */}
+      <View
+        className="p-4 border-t flex-row items-center"
+        style={{
+          borderTopColor: colors.border,
+          paddingBottom: Platform.OS === 'ios' ? keyboardHeight > 0 ? 5 : 34 : 16,
+        }}
+      >
+        <TouchableOpacity 
+          className="mr-2"
+          onPress={handleVoiceInput}
+        >
+          <IconSymbol 
+            name={isRecording ? "voiceStop" : "voice"} 
+            size={24} 
+            color={isRecording ? colors.brandColor : colors.textTertiary} 
+          />
+        </TouchableOpacity>
+        <View
+          className="flex-1 flex-row items-center rounded-full px-4 py-2 mr-2"
+          style={{ backgroundColor: colors.inputBackground }}
+        >
+          <TextInput
+            value={message}
+            onChangeText={setMessage}
+            placeholder="Type a message"
+            placeholderTextColor={colors.textTertiary}
+            style={{
+              flex: 1,
+              color: colors.primaryText,
+              fontSize: 16,
+              paddingVertical: 8,
+            }}
+            multiline
+            onSubmitEditing={handleSend}
+          />
+        </View>
+        <TouchableOpacity
+          onPress={handleSend}
+          disabled={!message.trim() || isTyping}
+          style={{ opacity: message.trim() && !isTyping ? 1 : 0.5 }}
+        >
+          <IconSymbol
+            name="send"
+            size={24}
+            color={message.trim() && !isTyping ? colors.primaryText : colors.textTertiary}
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Listening indicator */}
+      {isRecording && (
+        <View 
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/70 rounded-2xl p-6 z-50"
+          style={{ transform: [{ translateX: -50 }, { translateY: -50 }] }}
+        >
+          <View className="items-center">
+            <IconSymbol 
+              name="voiceStop" 
+              size={40} 
+              color="white" 
+            />
+            <ThemedText className="mt-2 text-white">
+              Recording... Tap to stop
+            </ThemedText>
+          </View>
+        </View>
+      )}
+    </KeyboardAvoidingView>
+  );
+}
