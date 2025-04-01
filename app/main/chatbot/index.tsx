@@ -47,7 +47,7 @@ interface Message {
 const getMessage = async (message: string, history: Message[]) => {
     try {
         const response = await axios.post(
-            `${Config.apiBaseUrl}/api/v1/chat/get_text_response`,
+            `${Config.apiBaseUrl}/api/v1/chat/get_text_response_rag`,
             {
                 message,
                 history: history.map(msg => ({
@@ -295,133 +295,117 @@ export default function ChatbotScreen() {
   };
 
   const playTextToSpeech = async (text: string) => {
+    let tempFilePath = '';
+    let sound: Audio.Sound | null = null;
+
     try {
-      const MAX_CHUNK_SIZE = 1000;
-      const sanitizedText = sanitizeText(text);
-      const textChunks = sanitizedText.match(new RegExp(`.{1,${MAX_CHUNK_SIZE}}(\s|$)`, 'g')) || [];
+      // Configure audio mode first
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+        shouldDuckAndroid: true,
+      });
 
-      for (const chunk of textChunks) {
-        const sanitizedChunk = chunk.trim();
-        if (!sanitizedChunk) continue;
-
-        // First, ensure we get a valid response
-        let audioData;
-        try {
-          const response = await axios.post(
-            'https://api.elevenlabs.io/v1/text-to-speech/9BWtsMINqrJLrRacOk9x',
-            {
-              text: sanitizedChunk,
-              model_id: "eleven_monolingual_v1",
-              voice_settings: {
-                stability: 0.5,
-                similarity_boost: 0.5,
-              }
-            },
-            {
-              headers: {
-                'Accept': 'audio/mpeg',
-                'xi-api-key': Config.elevenlabsApiKey,
-                'Content-Type': 'application/json',
-              },
-              responseType: 'arraybuffer',
-            }
-          );
-
-          if (!response.data) {
-            throw new Error('Empty response from TTS API');
+      const response = await axios.post(
+        'https://api.elevenlabs.io/v1/text-to-speech/9BWtsMINqrJLrRacOk9x',
+        {
+          text: text.trim(),
+          model_id: "eleven_monolingual_v1",
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.5,
           }
-
-          audioData = response.data;
-        } catch (error) {
-          console.error('TTS API Error:', error);
-          continue; // Skip this chunk and try the next one
+        },
+        {
+          headers: {
+            'Accept': 'audio/mpeg',
+            'xi-api-key': Config.elevenlabsApiKey,
+            'Content-Type': 'application/json',
+          },
+          responseType: 'arraybuffer',
         }
+      );
 
-        // Create a unique temp file path
-        const tempFilePath = `${FileSystem.cacheDirectory}temp_audio_${Date.now()}.mp3`;
-
-        try {
-          // Convert array buffer to base64 string
-          const uint8Array = new Uint8Array(audioData);
-          const base64String = fromByteArray(uint8Array);
-
-          // Write the audio file
-          await FileSystem.writeAsStringAsync(
-            tempFilePath,
-            base64String,
-            { encoding: FileSystem.EncodingType.Base64 }
-          );
-
-          // Verify the file exists and has content
-          const fileInfo = await FileSystem.getInfoAsync(tempFilePath);
-          if (!fileInfo.exists || fileInfo.size === 0) {
-            throw new Error('Failed to write audio file');
-          }
-
-          // Load and play the audio
-          const { sound } = await Audio.Sound.createAsync(
-            { uri: tempFilePath },
-            { shouldPlay: true },
-            (status) => {
-              // Only log if there's an actual error
-              if (status instanceof Error) {
-                console.error('Sound loading error:', status);
-              }
-            }
-          );
-
-          // Add better status tracking
-          sound.setOnPlaybackStatusUpdate(async (status) => {
-            if ('isLoaded' in status && status.isLoaded) {
-              if (status.didJustFinish) {
-                await sound.unloadAsync();
-                // Clean up temp file after playback
-                try {
-                  await FileSystem.deleteAsync(tempFilePath, { idempotent: true });
-                } catch (e) {
-                  // Ignore cleanup errors
-                }
-              } else if ('error' in status) {
-                console.error('Playback error:', status.error);
-              }
-            }
-          });
-
-          // Wait for playback to complete
-          await new Promise((resolve) => {
-            sound.setOnPlaybackStatusUpdate((status) => {
-              if ('isLoaded' in status && status.isLoaded && status.didJustFinish) {
-                resolve(true);
-              }
-            });
-          });
-
-        } catch (error) {
-          console.error('Audio processing error:', error);
-          // Try to clean up the temp file if it exists
-          try {
-            const fileInfo = await FileSystem.getInfoAsync(tempFilePath);
-            if (fileInfo.exists) {
-              await FileSystem.deleteAsync(tempFilePath);
-            }
-          } catch (cleanupError) {
-            console.warn('Failed to cleanup temp file:', cleanupError);
-          }
-        } finally {
-          // Final cleanup attempt
-          try {
-            await FileSystem.deleteAsync(tempFilePath, { idempotent: true });
-          } catch (e) {
-            // Ignore cleanup errors in finally block
-          }
-        }
+      if (!response.data) {
+        throw new Error('Empty response from TTS API');
       }
+
+      // Ensure cache directory exists
+      const cacheDir = FileSystem.cacheDirectory;
+      if (!cacheDir) {
+        throw new Error('Cache directory not available');
+      }
+
+      // Create temp file with .mp3 extension
+      tempFilePath = `${cacheDir}tts_${Date.now()}.mp3`;
+
+      // Convert array buffer to base64
+      const uint8Array = new Uint8Array(response.data);
+      const base64String = fromByteArray(uint8Array);
+
+      // Write audio file
+      await FileSystem.writeAsStringAsync(
+        tempFilePath,
+        base64String,
+        { encoding: FileSystem.EncodingType.Base64 }
+      );
+
+      // Verify file exists and has content
+      const fileInfo = await FileSystem.getInfoAsync(tempFilePath);
+      if (!fileInfo.exists || fileInfo.size === 0) {
+        throw new Error('Failed to write audio file');
+      }
+
+      // Load and play audio
+      const soundObject = await Audio.Sound.createAsync(
+        { uri: tempFilePath },
+        { shouldPlay: false, progressUpdateIntervalMillis: 100 }
+      );
+      
+      sound = soundObject.sound;
+
+      // Play the sound
+      await sound.playAsync();
+
+      // Wait for playback to complete
+      await new Promise((resolve, reject) => {
+        sound?.setOnPlaybackStatusUpdate((status) => {
+          if ('isLoaded' in status && status.isLoaded) {
+            if (status.didJustFinish) {
+              resolve(true);
+            }
+          } else if ('error' in status) {
+            reject(new Error('Playback error'));
+          }
+        });
+      });
+
     } catch (error) {
       console.error('TTS Error:', error);
       if (error instanceof Error) {
-        console.error('Error details:', error.message);
+        // Handle specific error cases
+        if (error.message.includes('extractors')) {
+          Alert.alert('Error', 'Audio format not supported. Please try again.');
+        } else {
+          Alert.alert('Error', 'Failed to play audio response');
+        }
       }
-      Alert.alert('Error', 'Failed to play audio response');
+    } finally {
+      // Cleanup
+      try {
+        if (sound) {
+          await sound.unloadAsync();
+        }
+        if (tempFilePath) {
+          const fileInfo = await FileSystem.getInfoAsync(tempFilePath);
+          if (fileInfo.exists) {
+            await FileSystem.deleteAsync(tempFilePath, { idempotent: true });
+          }
+        }
+      } catch (cleanupError) {
+        console.warn('Cleanup error:', cleanupError);
+      }
     }
   };
 
@@ -599,7 +583,7 @@ export default function ChatbotScreen() {
           >
             {!msg.isUser && (
               <Image
-                source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' }}
+                source={{ uri: './assets/images/bot.png' }}
                 className="w-8 h-8 rounded-full mr-2"
               />
             )}
@@ -617,7 +601,7 @@ export default function ChatbotScreen() {
             </View>
             {msg.isUser && (
               <Image
-                source={{ uri: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=100' }}
+                source={{ uri: './assets/images/Avatar.png' }}
                 className="w-8 h-8 rounded-full ml-2"
               />
             )}
