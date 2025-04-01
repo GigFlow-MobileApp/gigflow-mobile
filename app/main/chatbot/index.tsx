@@ -136,7 +136,7 @@ const TypingIndicator = () => {
   };
   
 
-export default function ChatbotScreen() {
+export default function Chatbot() {
   const { colors } = useThemeColors();
   const router = useRouter();
   const [userName, setUserName] = useState('there');
