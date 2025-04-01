@@ -100,7 +100,7 @@ const transformDataForVictory = (data: number[], labels: string[]) => {
   return result;
 };
 
-export default function HomeScreen() {
+export default function Home() {
   const { colorScheme } = useColorScheme();
   const [selectedDuration, setSelectedDuration] = useState("1M");
   const [selectedPlatform, setSelectedPlatform] = useState("all");

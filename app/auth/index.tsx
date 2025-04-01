@@ -38,7 +38,7 @@ type FormErrors = {
   password?: string;
 };
 
-export default function AuthScreen() {
+export default function Auth() {
   const { colorScheme } = useColorScheme();
   const bottomSheetRef = useRef<BottomSheet>(null);
   const navigation = useNavigation();
