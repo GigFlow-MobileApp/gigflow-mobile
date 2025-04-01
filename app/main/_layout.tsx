@@ -34,16 +34,10 @@ const drawerItems: DrawerItemsType[] = [
     route: "/sync",
     onPress: () => console.log("Sync Data"),
   },
-  {
-    icon: "notifications",
-    label: "Notifications",
-    route: "/main/notifications",
-  },
-  { icon: "gift", label: "Invite Friends", route: "/main/inviteFriends" },
-  { icon: "creditcard", label: "Payments", route: "/main/payment" },
-  { icon: "tools", label: "Menu Item1", route: "/main/item1" },
-  { icon: "tools", label: "Menu Item2", route: "/main/about" },
-  { icon: "tools", label: "Menu Item3", route: "/main/history" },
+  { icon: "person", label: "My Info", route: "/main/settings/info" },
+  {icon: "alert", label: "Notifications", route: "/main/notifications"},
+  { icon: "creditcard", label: "Tax", route: "/main/item1" },
+  { icon: "notifications", label: "Payments", route: "/main/payment" },
   { icon: "help", label: "Help", route: "/main/help" },
 ];
 
@@ -176,7 +170,7 @@ export default function DrawerLayout() {
                     }
                     className="self-start"
                   >
-                    <IconSymbol name="back" size={22} color={Colors[colorScheme].textTertiary} className="p-2" />
+                    <IconSymbol name="left-arrow" size={22} color={Colors[colorScheme].textTertiary} className="p-2" />
                   </TouchableOpacity>
                 )}
               </View>
