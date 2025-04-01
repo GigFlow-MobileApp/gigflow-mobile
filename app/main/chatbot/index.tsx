@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import Config from "@/constants/config";
 import { Audio } from 'expo-av';
@@ -63,14 +63,14 @@ const getMessage = async (message: string, history: Message[]) => {
         );
         
         if (!response.data) {
-            throw new Error('Empty response from server');
+            console.log('Empty response from server');
         }
         
         return response.data;
     } catch (error) {
         if (axios.isAxiosError(error)) {
             console.error("API Error:", error.response?.data);
-            throw new Error(error.response?.data?.detail || 'Failed to get response');
+            console.log(error.response?.data?.detail || 'Failed to get response');
         }
         throw error;
     }
@@ -123,7 +123,7 @@ const TypingIndicator = () => {
     return (
       <View className="absolute bottom-20 left-4 flex-row items-center bg-gray-100 rounded-2xl px-4 py-3">
         <Image
-          source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' }}
+          source={require('@/assets/images/bot.png')}
           className="w-8 h-8 rounded-full mr-2"
         />
         <View className="flex-row items-center">
@@ -136,17 +136,153 @@ const TypingIndicator = () => {
   };
   
 
+const RecordingDialog = ({ 
+  isVisible, 
+  onClose, 
+  isRecording, 
+  onRecordPress 
+}: { 
+  isVisible: boolean;
+  onClose: () => void;
+  isRecording: boolean;
+  onRecordPress: () => void;
+}) => {
+  const { colors } = useThemeColors();
+  const waveformAnimations = [...Array(8)].map(() => useSharedValue(0));
+  
+  useEffect(() => {
+    if (isRecording) {
+      waveformAnimations.forEach((animation, index) => {
+        animation.value = withRepeat(
+          withSequence(
+            withDelay(
+              index * 100,
+              withTiming(-15, { duration: 500 })
+            ),
+            withTiming(0, { duration: 500 })
+          ),
+          -1,
+          true
+        );
+      });
+    } else {
+      waveformAnimations.forEach(animation => {
+        animation.value = withTiming(0);
+      });
+    }
+  }, [isRecording]);
+
+  const waveformStyle = {
+    width: 3,
+    height: 20,
+    backgroundColor: 'white',
+    borderRadius: 1.5,
+  };
+  
+  if (!isVisible) return null;
+
+  return (
+    <View 
+      className="absolute inset-0 flex items-center justify-center bg-black/40"
+      style={{ 
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+      }}
+    >
+      <View className="bg-black/70 rounded-2xl p-6 items-center" style={{ width: 280 }}>
+        <View className="items-center justify-center" style={{ height: 120 }}>
+          {isRecording ? (
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              height: 40,
+            }}>
+              {[...Array(8)].map((_, index) => (
+                <Animated.View
+                  key={index}
+                  style={[
+                    waveformStyle,
+                    {
+                      marginHorizontal: 2,
+                      transform: [{
+                        translateY: waveformAnimations[index],
+                      }],
+                    },
+                  ]}
+                />
+              ))}
+            </View>
+          ) : (
+            <IconSymbol 
+              name="voice"
+              size={40} 
+              color="white" 
+            />
+          )}
+        </View>
+        
+        <ThemedText className="text-white text-center mb-6">
+          {isRecording ? "Recording... Tap to stop" : "Tap to start recording"}
+        </ThemedText>
+
+        <View className="w-full">
+          <TouchableOpacity 
+            onPress={onClose}
+            className="bg-gray-600 rounded-full py-3 items-center"
+          >
+            <ThemedText className="text-white">Close</ThemedText>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Recording Button outside the dialog */}
+      <TouchableOpacity 
+        onPress={onRecordPress}
+        style={{
+          position: 'absolute',
+          bottom: 80,
+          alignSelf: 'center',
+          width: 60,
+          height: 60,
+          borderRadius: 30,
+          backgroundColor: isRecording ? '#ef4444' : '#22c55e',
+          justifyContent: 'center',
+          alignItems: 'center',
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 2,
+          },
+          shadowOpacity: 0.25,
+          shadowRadius: 3.84,
+          elevation: 5,
+        }}
+      >
+        <IconSymbol 
+          name={isRecording ? "voiceStop" : "voice"}
+          size={30} 
+          color="white" 
+        />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 export default function Chatbot() {
   const { colors } = useThemeColors();
   const router = useRouter();
   const [userName, setUserName] = useState('there');
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [isDialogVisible, setIsDialogVisible] = useState(false);
 
   const convertSpeechToText = async (audioUri: string) => {
     try {
       if (!audioUri) {
-        throw new Error('Audio URI is required');
+        console.log('Audio URI is required');
       }
 
       console.log('Audio URI:', audioUri);
@@ -156,7 +292,7 @@ export default function Chatbot() {
       console.log('File info:', fileInfo);
 
       if (!fileInfo.exists) {
-        throw new Error('Audio file does not exist');
+        console.log('Audio file does not exist');
       }
 
       // Create FormData and append the file with correct field name "file"
@@ -194,33 +330,12 @@ export default function Chatbot() {
       });
 
       if (!apiResponse.data?.text) {
-        throw new Error('Invalid response: missing text field');
+        console.log('Invalid response: missing text field');
       }
 
       return apiResponse.data.text;
     } catch (error) {
       console.error('Full error:', error);
-      
-      if (axios.isAxiosError(error)) {
-        console.error('Axios error details:', {
-          message: error.message,
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-          data: error.response?.data,
-          headers: error.response?.headers,
-          config: {
-            url: error.config?.url,
-            method: error.config?.method,
-            headers: error.config?.headers,
-          }
-        });
-
-        if (error.response?.status === 422) {
-          throw new Error(`Invalid request: ${JSON.stringify(error.response.data)}`);
-        }
-      }
-      
-      throw new Error(`Failed to convert speech to text: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -228,7 +343,7 @@ export default function Chatbot() {
     const getPermissions = async () => {
       const permission = await Audio.requestPermissionsAsync();
       if (permission.status !== 'granted') {
-        Alert.alert('Permission required', 'Please grant microphone access to use voice input');
+        console.log('Permission required', 'Please grant microphone access to use voice input');
       }
     };
 
@@ -240,13 +355,13 @@ export default function Chatbot() {
     const fetchUserInfo = async () => {
       try {
         const raw = await getMyInfo();
-        if (!raw) throw new Error("User info not found");
+        if (!raw) console.log("User info not found");
         const parsed = SignupResponseSchema.safeParse(raw);
         if (!parsed.success) {
           console.error(parsed.error);
-          throw new Error("Invalid user info format");
+          console.log("Invalid user info format");
         }
-        const firstName = parsed.data.full_name?.split(' ')[0];
+        const firstName = parsed.data?.full_name?.split(' ')[0];
         setUserName(firstName || "");
       } catch (error) {
         console.error("Failed to fetch user info:", error);
@@ -262,7 +377,7 @@ export default function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: `Hi ${userName}. I'm here to help you to know about Payment processing. How can I help you?`,
+      text: `Hi ${userName}. I'm here to help you to know about Gig Platform. How can I help you?`,
       isUser: false,
       timestamp: new Date(),
     },
@@ -328,13 +443,13 @@ export default function Chatbot() {
       );
 
       if (!response.data) {
-        throw new Error('Empty response from TTS API');
+        console.log('Empty response from TTS API');
       }
 
       // Ensure cache directory exists
       const cacheDir = FileSystem.cacheDirectory;
       if (!cacheDir) {
-        throw new Error('Cache directory not available');
+        console.log('Cache directory not available');
       }
 
       // Create temp file with .mp3 extension
@@ -354,7 +469,7 @@ export default function Chatbot() {
       // Verify file exists and has content
       const fileInfo = await FileSystem.getInfoAsync(tempFilePath);
       if (!fileInfo.exists || fileInfo.size === 0) {
-        throw new Error('Failed to write audio file');
+        console.log('Failed to write audio file');
       }
 
       // Load and play audio
@@ -383,14 +498,14 @@ export default function Chatbot() {
 
     } catch (error) {
       console.error('TTS Error:', error);
-      if (error instanceof Error) {
-        // Handle specific error cases
-        if (error.message.includes('extractors')) {
-          Alert.alert('Error', 'Audio format not supported. Please try again.');
-        } else {
-          Alert.alert('Error', 'Failed to play audio response');
-        }
-      }
+      // if (error instanceof Error) {
+      //   // Handle specific error cases
+      //   if (error.message.includes('extractors')) {
+      //     console.log('Error', 'Audio format not supported. Please try again.');
+      //   } else {
+      //     console.log('Error', 'Failed to play audio response');
+      //   }
+      // }
     } finally {
       // Cleanup
       try {
@@ -453,83 +568,71 @@ export default function Chatbot() {
     }
   };
 
-  const startRecording = async () => {
-    try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
-        shouldDuckAndroid: true,
-      });
-
-      const recordingOptions: Audio.RecordingOptions = {
-        android: {
-          extension: '.wav',
-          outputFormat: Audio.AndroidOutputFormat.MPEG_4,
-          audioEncoder: Audio.AndroidAudioEncoder.AAC,
-          sampleRate: 16000,
-          numberOfChannels: 1,
-          bitRate: 128000,
-        },
-        ios: {
-          extension: '.wav',
-          audioQuality: Audio.IOSAudioQuality.HIGH,
-          sampleRate: 16000,
-          numberOfChannels: 1,
-          bitRate: 128000,
-          linearPCMBitDepth: 16,
-          linearPCMIsBigEndian: false,
-          linearPCMIsFloat: false,
-        },
-        web: {
-          mimeType: 'audio/wav',
-          bitsPerSecond: 128000,
-        },
-      };
-
-      console.log('Starting recording with options:', recordingOptions);
-      const { recording } = await Audio.Recording.createAsync(recordingOptions);
-      setRecording(recording);
-      setIsRecording(true);
-    } catch (err) {
-      console.error('Failed to start recording:', err);
-      Alert.alert('Error', 'Failed to start recording');
-    }
-  };
-
-  const stopRecording = async () => {
-    if (!recording) return;
-
-    try {
-      setIsRecording(false);
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
-      
-      if (!uri) {
-        throw new Error('No recording URI available');
-      }
-
-      // Show loading indicator
-      Alert.alert('Processing', 'Converting speech to text...');
-
-      const transcribedText = await convertSpeechToText(uri);
-      if (transcribedText) {
-        setMessage(transcribedText);
-      }
-    } catch (err) {
-      console.error('Failed to process recording:', err);
-      Alert.alert('Error', err instanceof Error ? err.message : 'Failed to process recording');
-    } finally {
-      setRecording(null);
-    }
-  };
-
-  const handleVoiceInput = async () => {
+  const handleRecordPress = async () => {
     if (isRecording) {
-      await stopRecording();
+      try {
+        setIsRecording(false);
+        await recording?.stopAndUnloadAsync();
+        const uri = recording?.getURI();
+        
+        if (!uri) {
+          throw new Error('No recording URI available');
+        }
+
+        const transcribedText = await convertSpeechToText(uri);
+        if (transcribedText) {
+          setMessage(transcribedText);
+        }
+      } catch (err) {
+        console.error('Failed to process recording:', err);
+      } finally {
+        setRecording(null);
+      }
     } else {
-      await startRecording();
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+          shouldDuckAndroid: true,
+        });
+
+        const recordingOptions: Audio.RecordingOptions = {
+          android: {
+            extension: '.wav',
+            outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+            audioEncoder: Audio.AndroidAudioEncoder.AAC,
+            sampleRate: 16000,
+            numberOfChannels: 1,
+            bitRate: 128000,
+          },
+          ios: {
+            extension: '.wav',
+            audioQuality: Audio.IOSAudioQuality.HIGH,
+            sampleRate: 16000,
+            numberOfChannels: 1,
+            bitRate: 128000,
+            linearPCMBitDepth: 16,
+            linearPCMIsBigEndian: false,
+            linearPCMIsFloat: false,
+          },
+          web: {
+            mimeType: 'audio/wav',
+            bitsPerSecond: 128000,
+          },
+        };
+
+        const { recording } = await Audio.Recording.createAsync(recordingOptions);
+        setRecording(recording);
+        setIsRecording(true);
+      } catch (err) {
+        console.error('Failed to start recording:', err);
+      }
     }
+  };
+
+  const handleVoiceInput = () => {
+    setIsDialogVisible(true);
   };
 
   useEffect(() => {
@@ -538,8 +641,8 @@ export default function Chatbot() {
     if (isRecording) {
       // Stop recording after 30 seconds
       recordingTimeout = setTimeout(() => {
-        stopRecording();
-        Alert.alert('Recording limit reached', 'Maximum recording duration is 30 seconds');
+        handleRecordPress();
+        console.log('Recording limit reached', 'Maximum recording duration is 30 seconds');
       }, 30000);
     }
 
@@ -563,10 +666,8 @@ export default function Chatbot() {
       {/* Header */}
       <View className="flex-row justify-between items-center p-4" style={{backgroundColor: colors.background}}>
         <View className="flex-row justify-start">
-          <TouchableOpacity onPress={() => router.back()} className="self-start">
-            <IconSymbol name="back" size={22} color={colors.textTertiary} className="p-2" />
-          </TouchableOpacity>
-          <ThemedText type="title" className="ml-3 pt-0.5">Assistant</ThemedText>
+
+          <ThemedText type="title" className="ml-12 pt-0.5">Assistant</ThemedText>
         </View>
       </View>
 
@@ -583,7 +684,7 @@ export default function Chatbot() {
           >
             {!msg.isUser && (
               <Image
-                source={{ uri: './assets/images/bot.png' }}
+                source={require('@/assets/images/bot.png')}
                 className="w-8 h-8 rounded-full mr-2"
               />
             )}
@@ -601,7 +702,7 @@ export default function Chatbot() {
             </View>
             {msg.isUser && (
               <Image
-                source={{ uri: './assets/images/Avatar.png' }}
+                source={require('@/assets/images/Avatar.png')}
                 className="w-8 h-8 rounded-full ml-2"
               />
             )}
@@ -662,24 +763,18 @@ export default function Chatbot() {
         </TouchableOpacity>
       </View>
 
-      {/* Listening indicator */}
-      {isRecording && (
-        <View 
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/70 rounded-2xl p-6 z-50"
-          style={{ transform: [{ translateX: -50 }, { translateY: -50 }] }}
-        >
-          <View className="items-center">
-            <IconSymbol 
-              name="voiceStop" 
-              size={40} 
-              color="white" 
-            />
-            <ThemedText className="mt-2 text-white">
-              Recording... Tap to stop
-            </ThemedText>
-          </View>
-        </View>
-      )}
+      {/* Recording Dialog */}
+      <RecordingDialog 
+        isVisible={isDialogVisible}
+        onClose={() => {
+          setIsDialogVisible(false);
+          if (isRecording) {
+            handleRecordPress(); // Stop recording if active
+          }
+        }}
+        isRecording={isRecording}
+        onRecordPress={handleRecordPress}
+      />
     </KeyboardAvoidingView>
   );
 }
