@@ -1,4 +1,7 @@
 import { create } from 'zustand';
+import { RelativePathString } from 'expo-router/build/types';
+
+type ValidRoute = RelativePathString;
 
 type PlatformState = {
   platform: string | null;
@@ -6,8 +9,8 @@ type PlatformState = {
   clearPlatform: () => void;
   totalAmount: number;
   setTotalAmount: (amount: number) => void;
-  lastPagetoNotification: string | null;
-  setLastPagetoNotification: (page: string) => void;
+  lastPagetoNotification: ValidRoute | null;
+  setLastPagetoNotification: (page: ValidRoute) => void;
 };
 
 export const usePlatformStore = create<PlatformState>((set) => ({
@@ -17,5 +20,5 @@ export const usePlatformStore = create<PlatformState>((set) => ({
   totalAmount: 0,
   setTotalAmount: (amount: number) => set({ totalAmount: amount }),
   lastPagetoNotification: null,
-  setLastPagetoNotification: (page: string) => set({ lastPagetoNotification: page }),
+  setLastPagetoNotification: (page: ValidRoute) => set({ lastPagetoNotification: page }),
 }));

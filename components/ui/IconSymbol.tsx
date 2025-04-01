@@ -17,6 +17,9 @@ interface IconSymbolProps {
 const FeatherPairs: { [key: string]: string } = {
   income: "arrow-down-right",
   expense: "arrow-up-left",
+  happy: "smile",
+  sad: "frown",
+  neutral: "meh",
 };
 
 const AntDesign5Pairs: { [key: string]: string } = {
@@ -69,9 +72,13 @@ const iconPairs: { [key: string]: string } = {
   briefcase: "briefcase",
   halfHeart: "heart-half",
   heart: "heart",
-  back: "chevron-back",
+  back: "arrow-back",
   funnel: "funnel",
   check: "checkmark-done",
+  checkSingle: "checkmark",
+  alert: "alert-circle",
+  plus: "add",
+  sharpStar: "star",
 }
 
 function createIconMap(pairs: Record<string, string>): Record<string, string> {

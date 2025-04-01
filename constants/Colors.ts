@@ -17,6 +17,7 @@ export const Colors = {
     menuItemText: "#565E6C",
     onPressText: "#007aff80",
     cardText: "#323842",
+    selectedText: "#117389",
 
     // background
     background: "#ffffff",
@@ -38,6 +39,7 @@ export const Colors = {
     badBanner: "#FF0000",
     bullish: "#1DD75B",
     burish: "#ef4444",
+    divider: "#DEE1E6",
   },
   dark: {
     brandColor: brandColorDark,
@@ -52,6 +54,7 @@ export const Colors = {
     menuItemText: "#565E6C",
     onPressText: "#007affcc",
     cardText: "#323842",
+    selectedText: "#117389",
 
     // background
     background: "#000000",
@@ -73,6 +76,7 @@ export const Colors = {
     badBanner: "#FF0000",
     bullish: "#1DD75B",
     burish: "#ef4444",
+    divider: "#DEE1E6",
   },
 } as const;
 

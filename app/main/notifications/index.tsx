@@ -256,7 +256,7 @@ export default function NotificationScreen() {
       <View className="flex-row justify-between items-center p-4" style={{backgroundColor: colors.background}}>
         <View className="flex-row justify-start">
           {/* <TouchableOpacity onPress={() => router.back()} className="self-start">
-            <IconSymbol name="back" size={22} color={colors.textTertiary} className="p-2" />
+            <IconSymbol name="left-arrow" size={22} color={colors.textTertiary} className="p-2" />
           </TouchableOpacity> */}
           <View className="w-14 h-10 p-2"/>
           <ThemedText type="title" className="ml-3 pt-0.5">Notifications</ThemedText>
