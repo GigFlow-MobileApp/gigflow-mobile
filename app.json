@@ -10,7 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "usesNonExemptEncryption": false
+      "usesNonExemptEncryption": false,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "This app uses the microphone to record audio."
+      },
+      "bundleIdentifier": "com.anonymous.elevenlabs-conversational-ai-expo-react-native"
     },
     "android": {
       "adaptiveIcon": {
