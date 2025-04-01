@@ -16,7 +16,6 @@ export const getMyInfo = async () => {
     });
     //   console.log(JSON.stringify(response.data, null, 2))
     const parsed = SignupResponseSchema.parse(response.data);
-    console.log("✅ Get My Info Success:", parsed);
     return parsed;
   } catch (error) {
     if (axios.isAxiosError(error)) {

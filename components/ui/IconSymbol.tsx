@@ -75,6 +75,8 @@ const iconPairs: { [key: string]: string } = {
   back: "arrow-back",
   funnel: "funnel",
   check: "checkmark-done",
+  voice: "mic",
+  voiceStop: "mic-off",
   checkSingle: "checkmark",
   alert: "alert-circle",
   plus: "add",
