@@ -227,46 +227,15 @@ const RecordingDialog = ({
         <ThemedText className="text-white text-center mb-6">
           {isRecording ? "Recording... Tap to stop" : "Tap to start recording"}
         </ThemedText>
-
-        <View className="w-full">
+        {/* <View className="w-full">
           <TouchableOpacity 
             onPress={onClose}
             className="bg-gray-600 rounded-full py-3 items-center"
           >
             <ThemedText className="text-white">Close</ThemedText>
           </TouchableOpacity>
-        </View>
+        </View> */}
       </View>
-
-      {/* Recording Button outside the dialog */}
-      <TouchableOpacity 
-        onPress={onRecordPress}
-        style={{
-          position: 'absolute',
-          bottom: 80,
-          alignSelf: 'center',
-          width: 60,
-          height: 60,
-          borderRadius: 30,
-          backgroundColor: isRecording ? '#ef4444' : '#22c55e',
-          justifyContent: 'center',
-          alignItems: 'center',
-          shadowColor: '#000',
-          shadowOffset: {
-            width: 0,
-            height: 2,
-          },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
-          elevation: 5,
-        }}
-      >
-        <IconSymbol 
-          name={isRecording ? "voiceStop" : "voice"}
-          size={30} 
-          color="white" 
-        />
-      </TouchableOpacity>
     </View>
   );
 };
@@ -335,7 +304,7 @@ export default function Chatbot() {
 
       return apiResponse.data.text;
     } catch (error) {
-      console.error('Full error:', error);
+      // console.error('Full error:', error);
     }
   };
 
@@ -386,6 +355,32 @@ export default function Chatbot() {
   const scrollViewRef = useRef<ScrollView>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
+  const longPressTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const handlePressIn = () => {
+    // Start a timeout to check for long press
+    longPressTimeout.current = setTimeout(() => {
+      // startRecording();
+      handleVoiceInput()
+      handleRecordPress()
+    }, 500); // 500ms delay for long press
+  };
+
+  const handlePressOut = () => {
+    // If we have a timeout running, clear it
+    if (longPressTimeout.current) {
+      clearTimeout(longPressTimeout.current);
+      longPressTimeout.current = null;
+    }
+
+    // Only stop recording if we actually started recording
+    if (isRecording) {
+      // stopRecording();
+      setIsDialogVisible(false);
+      handleRecordPress()
+    }
+  };
+
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
@@ -423,7 +418,7 @@ export default function Chatbot() {
       });
 
       const response = await axios.post(
-        'https://api.elevenlabs.io/v1/text-to-speech/9BWtsMINqrJLrRacOk9x',
+        `https://api.elevenlabs.io/v1/text-to-speech/${Config.voiceId}`,
         {
           text: text.trim(),
           model_id: "eleven_monolingual_v1",
@@ -497,7 +492,7 @@ export default function Chatbot() {
       });
 
     } catch (error) {
-      console.error('TTS Error:', error);
+      // console.error('TTS Error:', error);
       // if (error instanceof Error) {
       //   // Handle specific error cases
       //   if (error.message.includes('extractors')) {
@@ -633,6 +628,7 @@ export default function Chatbot() {
 
   const handleVoiceInput = () => {
     setIsDialogVisible(true);
+    setIsRecording(true)
   };
 
   useEffect(() => {
@@ -710,6 +706,38 @@ export default function Chatbot() {
         ))}
       </ScrollView>
 
+      <TouchableOpacity 
+        // onPress={handleRecordPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={{
+          position: 'relative',
+          bottom: 80, 
+          alignSelf: 'flex-end',
+          marginRight: 20,
+          width: 60,
+          height: 60,
+          borderRadius: 30,
+          backgroundColor: isRecording ? '#E21F1F' : '#F00B0B',
+          justifyContent: 'center',
+          alignItems: 'center',
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 2,
+          },
+          shadowOpacity: 0.25,
+          shadowRadius: 3.84,
+          elevation: 5,
+        }}
+      >
+        <IconSymbol 
+          name={isRecording ? "voiceStop" : "voice"}
+          size={30} 
+          color="white" 
+        />
+      </TouchableOpacity>
+
       {/* Typing Indicator */}
       {isTyping && <TypingIndicator />}
 
@@ -721,7 +749,7 @@ export default function Chatbot() {
           paddingBottom: Platform.OS === 'ios' ? keyboardHeight > 0 ? 5 : 34 : 16,
         }}
       >
-        <TouchableOpacity 
+        {/* <TouchableOpacity 
           className="mr-2"
           onPress={handleVoiceInput}
         >
@@ -730,7 +758,7 @@ export default function Chatbot() {
             size={24} 
             color={isRecording ? colors.brandColor : colors.textTertiary} 
           />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <View
           className="flex-1 flex-row items-center rounded-full px-4 py-2 mr-2"
           style={{ backgroundColor: colors.inputBackground }}

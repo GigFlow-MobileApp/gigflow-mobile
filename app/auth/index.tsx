@@ -163,14 +163,15 @@ export default function Auth() {
     // }
     
     if (!validate()) return;
+    router.replace("/main/chatbot");
     
-    const result = await loginApi(email, password);
-    if (result.success) {
-      console.log("routing to main");
-      router.replace("/main/home");
-    } else {
-      setErrorMessage(result.error || "Login failed");
-    }
+    // const result = await loginApi(email, password);
+    // if (result.success) {
+    //   console.log("routing to main");
+    //   router.replace("/main/home");
+    // } else {
+    //   setErrorMessage(result.error || "Login failed");
+    // }
   };
 
   const signup = async () => {

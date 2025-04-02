@@ -4,7 +4,8 @@ const Config = {
     version: "1.0.0",
     username: "mike116@gmail.com",
     password: "12345678",
-    elevenlabsApiKey: "sk_601c08fe3931d733f7ed8df03fcd9b92fc463cfb9d472912"
+    elevenlabsApiKey: "sk_d907a43c8c5bbf2358f2fcebeac32c3c4c5d2e6b319af576",
+    voiceId: "dCnu06FiOZma2KVNUoPZ"
   };
   
   export default Config;
