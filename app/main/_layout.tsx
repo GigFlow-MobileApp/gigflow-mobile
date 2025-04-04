@@ -44,7 +44,7 @@ const drawerItems: DrawerItemsType[] = [
 const tabItems: TabItemsType[] = [
   { icon: "house", label: "Home", route: "/main/home" },
   { icon: "grid", label: "Accounts", route: "/main/account" },
-  { icon: "file", label: "Fee/Tax", route: "/main/tax" },
+  { icon: "coins", label: "Transaction", route: "/main/tax" },
   { icon: "gear", label: "Setting", route: "/main/settings" },
 ];
 
