@@ -465,7 +465,7 @@ export default function TaxScreen() {
       </ScrollView>
 
       <FloatingActionButton 
-        iconName="wheel"
+        iconName="voice"
         backgroundColor={colors.onPressBg}
         onPress={() => router.push("/main/chatbot")}
       />
