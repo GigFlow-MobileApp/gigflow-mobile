@@ -3,7 +3,6 @@ import axios from 'axios';
 import Config from "@/constants/config";
 import { Audio } from 'expo-av';
 import { Alert } from 'react-native';
-// Remove ElevenLabs import and replace with direct API calls
 
 import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { useThemeColors } from "@/components/ColorSchemeProvider";
@@ -20,6 +19,7 @@ import {
     Platform,
     Image,
     Keyboard,
+    Dimensions,
 } from 'react-native';
 
 import Animated, {
@@ -30,12 +30,20 @@ import Animated, {
     withDelay,
     Easing,
     useSharedValue,
+    FadeIn,
+    FadeInDown,
+    ZoomIn,
+    SlideInRight,
+    SlideInLeft,
 } from 'react-native-reanimated';
 import * as FileSystem from 'expo-file-system';
 import { fromByteArray } from 'base64-js';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { ThemedText } from '@/components/ThemedText';
+
+const { width } = Dimensions.get('window');
 
 interface Message {
     id: string;
@@ -79,39 +87,51 @@ const getMessage = async (message: string, history: Message[]) => {
 const TypingIndicator = () => {
     const { colors } = useThemeColors();
     const bubbleRefs = [...Array(3)].map(() => useSharedValue(0));
+    const containerOpacity = useSharedValue(0);
+    const containerScale = useSharedValue(0.8);
   
     const bubbleStyle = (index: number) => useAnimatedStyle(() => {
       const opacity = bubbleRefs[index].value;
       return {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
+        width: 6,
+        height: 6,
+        borderRadius: 3,
         backgroundColor: colors.textTertiary,
-        marginHorizontal: 2,
+        marginHorizontal: 3,
         opacity: opacity,
         transform: [
           {
-            scale: opacity * 1.2,
+            scale: 1 + opacity * 0.5,
           },
         ],
       };
     });
 
+    const containerStyle = useAnimatedStyle(() => {
+      return {
+        opacity: containerOpacity.value,
+        transform: [{ scale: containerScale.value }],
+      };
+    });
+
     // Start the animations in useEffect
     useEffect(() => {
+      containerOpacity.value = withTiming(1, { duration: 300 });
+      containerScale.value = withTiming(1, { duration: 300 });
+      
       bubbleRefs.forEach((ref, index) => {
         ref.value = withRepeat(
           withSequence(
             withDelay(
-              index * 200,
+              index * 150,
               withTiming(1, {
-                duration: 300,
-                easing: Easing.ease,
+                duration: 400,
+                easing: Easing.bezier(0.25, 0.1, 0.25, 1),
               })
             ),
             withTiming(0.3, {
-              duration: 300,
-              easing: Easing.ease,
+              duration: 400,
+              easing: Easing.bezier(0.25, 0.1, 0.25, 1),
             })
           ),
           -1,
@@ -121,20 +141,24 @@ const TypingIndicator = () => {
     }, []);
   
     return (
-      <View className="absolute bottom-20 left-4 flex-row items-center bg-gray-100 rounded-2xl px-4 py-3">
-        <Image
-          source={require('@/assets/images/bot.png')}
-          className="w-8 h-8 rounded-full mr-2"
-        />
+      <Animated.View 
+        style={[containerStyle]}
+        className="absolute bottom-20 left-4 flex-row items-center bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-3 shadow-md"
+      >
+        <View className="bg-gray-200 dark:bg-gray-700 rounded-full p-1 mr-3">
+          <Image
+            source={require('@/assets/images/bot.png')}
+            className="w-7 h-7 rounded-full"
+          />
+        </View>
         <View className="flex-row items-center">
           {[0, 1, 2].map((i) => (
             <Animated.View key={i} style={bubbleStyle(i)} />
           ))}
         </View>
-      </View>
+      </Animated.View>
     );
-  };
-  
+};
 
 const RecordingDialog = ({ 
   isVisible, 
@@ -148,42 +172,86 @@ const RecordingDialog = ({
   onRecordPress: () => void;
 }) => {
   const { colors } = useThemeColors();
-  const waveformAnimations = [...Array(8)].map(() => useSharedValue(0));
+  const waveformAnimations = [...Array(12)].map(() => useSharedValue(0));
+  const pulseAnimation = useSharedValue(1);
+  const recordingTime = useSharedValue(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (isRecording) {
+      interval = setInterval(() => {
+        setElapsedTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRecording]);
   
   useEffect(() => {
     if (isRecording) {
+      // Pulse animation for recording indicator
+      pulseAnimation.value = withRepeat(
+        withSequence(
+          withTiming(1.2, { duration: 800, easing: Easing.out(Easing.sin) }),
+          withTiming(1, { duration: 800, easing: Easing.in(Easing.sin) })
+        ),
+        -1,
+        true
+      );
+      
+      // Randomized waveform animations
       waveformAnimations.forEach((animation, index) => {
+        const randomHeight = -15 - Math.random() * 25;
         animation.value = withRepeat(
           withSequence(
             withDelay(
-              index * 100,
-              withTiming(-15, { duration: 500 })
+              index * 80,
+              withTiming(randomHeight, { 
+                duration: 700 + Math.random() * 500,
+                easing: Easing.bezier(0.25, 0.1, 0.25, 1)
+              })
             ),
-            withTiming(0, { duration: 500 })
+            withTiming(0, { 
+              duration: 700 + Math.random() * 500,
+              easing: Easing.bezier(0.25, 0.1, 0.25, 1)
+            })
           ),
           -1,
           true
         );
       });
     } else {
+      pulseAnimation.value = withTiming(1);
       waveformAnimations.forEach(animation => {
         animation.value = withTiming(0);
       });
     }
   }, [isRecording]);
 
-  const waveformStyle = {
-    width: 3,
-    height: 20,
-    backgroundColor: 'white',
-    borderRadius: 1.5,
+  const pulseStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: pulseAnimation.value }],
+      opacity: isRecording ? 1 : 0.7,
+    };
+  });
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
   
   if (!isVisible) return null;
 
   return (
     <View 
-      className="absolute inset-0 flex items-center justify-center bg-black/40"
+      className="absolute inset-0 flex items-center justify-center bg-black/50"
       style={{ 
         position: 'absolute',
         top: 0,
@@ -192,50 +260,181 @@ const RecordingDialog = ({
         bottom: 0,
       }}
     >
-      <View className="bg-black/70 rounded-2xl p-6 items-center" style={{ width: 280 }}>
-        <View className="items-center justify-center" style={{ height: 120 }}>
+      <Animated.View 
+        entering={ZoomIn.duration(300).springify()}
+        className="bg-black/80 rounded-3xl p-8 items-center shadow-2xl" 
+        style={{ width: 300 }}
+      >
+        <View className="items-center justify-center mb-6" style={{ height: 140 }}>
           {isRecording ? (
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              height: 40,
-            }}>
-              {[...Array(8)].map((_, index) => (
-                <Animated.View
-                  key={index}
-                  style={[
-                    waveformStyle,
-                    {
-                      marginHorizontal: 2,
-                      transform: [{
-                        translateY: waveformAnimations[index],
-                      }],
-                    },
-                  ]}
-                />
-              ))}
+            <View className="items-center">
+              <Animated.View 
+                style={pulseStyle}
+                className="w-16 h-16 rounded-full bg-red-500 mb-6 items-center justify-center"
+              >
+                <View className="w-6 h-6 rounded-sm bg-white" />
+              </Animated.View>
+              
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                height: 60,
+                justifyContent: 'center',
+              }}>
+                {[...Array(12)].map((_, index) => (
+                  <Animated.View
+                    key={index}
+                    style={[
+                      {
+                        width: 3,
+                        height: 30,
+                        backgroundColor: index % 3 === 0 ? '#FF4B4B' : '#FFFFFF',
+                        borderRadius: 1.5,
+                        marginHorizontal: 2,
+                        transform: [{
+                          translateY: waveformAnimations[index],
+                        }],
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
+              
+              <ThemedText className="text-white text-center mt-4 font-medium">
+                {formatTime(elapsedTime)}
+              </ThemedText>
             </View>
           ) : (
-            <IconSymbol 
-              name="voice"
-              size={40} 
-              color="white" 
-            />
+            <View className="items-center">
+              <View className="w-20 h-20 rounded-full bg-red-500/20 items-center justify-center mb-4">
+                <IconSymbol 
+                  name="voice"
+                  size={40} 
+                  color="white" 
+                />
+              </View>
+              <ThemedText className="text-white text-lg font-medium">
+                Ready to record
+              </ThemedText>
+            </View>
           )}
         </View>
         
-        <ThemedText className="text-white text-center mb-6">
-          {isRecording ? "Recording... Tap to stop" : "Tap to start recording"}
+        <ThemedText className="text-white/80 text-center mb-8 text-sm">
+          {isRecording ? "Tap the button again to stop recording" : "Tap the button to start recording"}
         </ThemedText>
-        {/* <View className="w-full">
-          <TouchableOpacity 
-            onPress={onClose}
-            className="bg-gray-600 rounded-full py-3 items-center"
-          >
-            <ThemedText className="text-white">Close</ThemedText>
-          </TouchableOpacity>
-        </View> */}
+        
+        <TouchableOpacity 
+          onPress={onRecordPress}
+          className="bg-red-500 rounded-full py-4 px-8 items-center w-full"
+        >
+          <ThemedText className="text-white font-bold">
+            {isRecording ? "Stop Recording" : "Start Recording"}
+          </ThemedText>
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  );
+};
+
+const MessageBubble = ({ message, index }: { message: Message, index: number }) => {
+  const { colors } = useThemeColors();
+  const isUser = message.isUser;
+  
+  const enteringAnimation = isUser 
+    ? SlideInRight.delay(index * 100).duration(400) 
+    : SlideInLeft.delay(index * 100).duration(400);
+  
+  return (
+    <Animated.View
+      entering={enteringAnimation}
+      className={`flex-row ${isUser ? 'justify-end' : 'justify-start'} mb-4`}
+    >
+      {!isUser && (
+        <View className="bg-gray-200 dark:bg-gray-700 rounded-full p-1 mr-2">
+          <Image
+            source={require('@/assets/images/bot.png')}
+            className="w-8 h-8 rounded-full"
+          />
+        </View>
+      )}
+      
+      <View
+        className={`rounded-2xl px-4 py-3 max-w-[80%] shadow-sm ${
+          isUser ? 'rounded-tr-sm' : 'rounded-tl-sm'
+        }`}
+        style={{
+          backgroundColor: isUser 
+            ? colors.brandColor || '#3B82F6' 
+            : colors.background || '#F3F4F6',
+        }}
+      >
+        <Text
+          className={isUser ? 'text-white' : 'text-gray-800 dark:text-gray-100'}
+          style={{ fontSize: 16, lineHeight: 24, fontWeight: '400' }}
+        >
+          {message.text}
+        </Text>
+        
+        <Text 
+          className={`text-xs mt-1 ${isUser ? 'text-white/70 text-right' : 'text-gray-500 dark:text-gray-400'}`}
+        >
+          {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+        </Text>
       </View>
+      
+      {isUser && (
+        <View className="bg-gray-200 dark:bg-gray-700 rounded-full p-1 ml-2">
+          <Image
+            source={require('@/assets/images/Avatar.png')}
+            className="w-8 h-8 rounded-full"
+          />
+        </View>
+      )}
+    </Animated.View>
+  );
+};
+
+const LoadingIndicator = () => {
+  const rotation = useSharedValue(0);
+  const scale = useSharedValue(0.8);
+  
+  useEffect(() => {
+    rotation.value = withRepeat(
+      withTiming(360, { 
+        duration: 1500,
+        easing: Easing.linear
+      }),
+      -1
+    );
+    
+    scale.value = withRepeat(
+      withSequence(
+        withTiming(1.1, { duration: 800 }),
+        withTiming(0.9, { duration: 800 })
+      ),
+      -1,
+      true
+    );
+  }, []);
+  
+  const spinStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { rotate: `${rotation.value}deg` },
+        { scale: scale.value }
+      ]
+    };
+  });
+  
+  return (
+    <View className="absolute inset-0 flex items-center justify-center bg-black/10">
+      <Animated.View 
+        style={spinStyle}
+        className="w-16 h-16 items-center justify-center bg-white dark:bg-gray-800 rounded-full shadow-lg"
+      >
+        <IconSymbol name="voice" size={30} color="#3B82F6" />
+      </Animated.View>
     </View>
   );
 };
@@ -243,10 +442,35 @@ const RecordingDialog = ({
 export default function Chatbot() {
   const { colors } = useThemeColors();
   const router = useRouter();
-  const [userName, setUserName] = useState('there');
+  const [userName, setUserName] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isDialogVisible, setIsDialogVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const recordButtonScale = useSharedValue(1);
+  const recordButtonOpacity = useSharedValue(1);
+
+  // Add this useEffect to fetch user info when component mounts
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const raw = await getMyInfo();
+        if (!raw) console.log("User info not found");
+        const parsed = SignupResponseSchema.safeParse(raw);
+        if (!parsed.success) {
+          console.error(parsed.error);
+          console.log("Invalid user info format");
+        }
+        const firstName = parsed.data?.full_name;
+        setUserName(firstName || "");
+      } catch (error) {
+        console.error("Failed to fetch user info:", error);
+        setUserName('there'); // fallback to generic greeting
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
 
   const convertSpeechToText = async (audioUri: string) => {
     try {
@@ -319,34 +543,12 @@ export default function Chatbot() {
     getPermissions();
   }, []);
 
-  // Add this useEffect to fetch user info when component mounts
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const raw = await getMyInfo();
-        if (!raw) console.log("User info not found");
-        const parsed = SignupResponseSchema.safeParse(raw);
-        if (!parsed.success) {
-          console.error(parsed.error);
-          console.log("Invalid user info format");
-        }
-        const firstName = parsed.data?.full_name?.split(' ')[0];
-        setUserName(firstName || "");
-      } catch (error) {
-        console.error("Failed to fetch user info:", error);
-        setUserName('there'); // fallback to generic greeting
-      }
-    };
-
-    fetchUserInfo();
-  }, []);
-
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: `Hi ${userName}. I'm here to help you to know about Gig Platform. How can I help you?`,
+      text: `Hi ${userName || 'there'}! I'm your AI assistant. How can I help you learn about Gig Platform today?`,
       isUser: false,
       timestamp: new Date(),
     },
@@ -358,15 +560,20 @@ export default function Chatbot() {
   const longPressTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const handlePressIn = () => {
+    recordButtonScale.value = withTiming(1.1, { duration: 200 });
+    recordButtonOpacity.value = withTiming(0.9, { duration: 200 });
+    
     // Start a timeout to check for long press
     longPressTimeout.current = setTimeout(() => {
-      // startRecording();
-      handleVoiceInput()
-      handleRecordPress()
+      handleVoiceInput();
+      handleRecordPress();
     }, 500); // 500ms delay for long press
   };
 
   const handlePressOut = () => {
+    recordButtonScale.value = withTiming(1, { duration: 200 });
+    recordButtonOpacity.value = withTiming(1, { duration: 200 });
+    
     // If we have a timeout running, clear it
     if (longPressTimeout.current) {
       clearTimeout(longPressTimeout.current);
@@ -375,9 +582,8 @@ export default function Chatbot() {
 
     // Only stop recording if we actually started recording
     if (isRecording) {
-      // stopRecording();
       setIsDialogVisible(false);
-      handleRecordPress()
+      handleRecordPress();
     }
   };
 
@@ -493,14 +699,6 @@ export default function Chatbot() {
 
     } catch (error) {
       // console.error('TTS Error:', error);
-      // if (error instanceof Error) {
-      //   // Handle specific error cases
-      //   if (error.message.includes('extractors')) {
-      //     console.log('Error', 'Audio format not supported. Please try again.');
-      //   } else {
-      //     console.log('Error', 'Failed to play audio response');
-      //   }
-      // }
     } finally {
       // Cleanup
       try {
@@ -532,6 +730,7 @@ export default function Chatbot() {
     setMessages(prev => [...prev, userMessage]);
     setMessage('');
     setIsTyping(true);
+    setIsLoading(true);
 
     try {
       const response = await getMessage(userMessage.text, messages);
@@ -560,6 +759,7 @@ export default function Chatbot() {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsTyping(false);
+      setIsLoading(false);
     }
   };
 
@@ -574,12 +774,16 @@ export default function Chatbot() {
           throw new Error('No recording URI available');
         }
 
+        setIsLoading(true);
         const transcribedText = await convertSpeechToText(uri);
+        setIsLoading(false);
+        
         if (transcribedText) {
           setMessage(transcribedText);
         }
       } catch (err) {
         console.error('Failed to process recording:', err);
+        setIsLoading(false);
       } finally {
         setRecording(null);
       }
@@ -628,7 +832,7 @@ export default function Chatbot() {
 
   const handleVoiceInput = () => {
     setIsDialogVisible(true);
-    setIsRecording(true)
+    setIsRecording(true);
   };
 
   useEffect(() => {
@@ -654,6 +858,13 @@ export default function Chatbot() {
     scrollViewRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
 
+  const recordButtonAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: recordButtonScale.value }],
+      opacity: recordButtonOpacity.value,
+    };
+  });
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -670,73 +881,15 @@ export default function Chatbot() {
       {/* Messages */}
       <ScrollView
         ref={scrollViewRef}
-        className="flex-1 px-4"
+        className="flex-1 px-4 pt-2"
         onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+        showsVerticalScrollIndicator={false}
       >
-        {messages.map((msg) => (
-          <View
-            key={msg.id}
-            className={`flex-row ${msg.isUser ? 'justify-end' : 'justify-start'} mb-4`}
-          >
-            {!msg.isUser && (
-              <Image
-                source={require('@/assets/images/bot.png')}
-                className="w-8 h-8 rounded-full mr-2"
-              />
-            )}
-            <View
-              className={`rounded-2xl px-4 py-3 max-w-[80%] ${
-                msg.isUser ? 'bg-blue-500' : 'bg-gray-100'
-              }`}
-            >
-              <Text
-                className={msg.isUser ? 'text-white' : 'text-gray-800'}
-                style={{ fontSize: 16, lineHeight: 22 }}
-              >
-                {msg.text}
-              </Text>
-            </View>
-            {msg.isUser && (
-              <Image
-                source={require('@/assets/images/Avatar.png')}
-                className="w-8 h-8 rounded-full ml-2"
-              />
-            )}
-          </View>
+        {messages.map((msg, index) => (
+          <MessageBubble key={msg.id} message={msg} index={index} />
         ))}
+        <View style={{ height: 100 }} />
       </ScrollView>
-
-      <TouchableOpacity 
-        // onPress={handleRecordPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        style={{
-          position: 'relative',
-          bottom: 80, 
-          alignSelf: 'flex-end',
-          marginRight: 20,
-          width: 60,
-          height: 60,
-          borderRadius: 30,
-          backgroundColor: isRecording ? '#E21F1F' : '#F00B0B',
-          justifyContent: 'center',
-          alignItems: 'center',
-          shadowColor: '#000',
-          shadowOffset: {
-            width: 0,
-            height: 2,
-          },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
-          elevation: 5,
-        }}
-      >
-        <IconSymbol 
-          name={isRecording ? "voiceStop" : "voice"}
-          size={30} 
-          color="white" 
-        />
-      </TouchableOpacity>
 
       {/* Typing Indicator */}
       {isTyping && <TypingIndicator />}
@@ -747,26 +900,21 @@ export default function Chatbot() {
         style={{
           borderTopColor: colors.border,
           paddingBottom: Platform.OS === 'ios' ? keyboardHeight > 0 ? 5 : 34 : 16,
+          backgroundColor: colors.cardBackground || '#FFFFFF',
         }}
       >
-        {/* <TouchableOpacity 
-          className="mr-2"
-          onPress={handleVoiceInput}
-        >
-          <IconSymbol 
-            name={isRecording ? "voiceStop" : "voice"} 
-            size={24} 
-            color={isRecording ? colors.brandColor : colors.textTertiary} 
-          />
-        </TouchableOpacity> */}
         <View
-          className="flex-1 flex-row items-center rounded-full px-4 py-2 mr-2"
-          style={{ backgroundColor: colors.inputBackground }}
+          className="flex-1 flex-row items-center rounded-full px-4 py-2 mr-2 shadow-sm"
+          style={{ 
+            backgroundColor: colors.inputBackground || '#F3F4F6',
+            borderWidth: 1,
+            borderColor: colors.border || '#E5E7EB',
+          }}
         >
           <TextInput
             value={message}
             onChangeText={setMessage}
-            placeholder="Type a message"
+            placeholder="Type a message..."
             placeholderTextColor={colors.textTertiary}
             style={{
               flex: 1,
@@ -775,20 +923,44 @@ export default function Chatbot() {
               paddingVertical: 8,
             }}
             multiline
-            onSubmitEditing={handleSend}
+            maxLength={1000}
           />
         </View>
-        <TouchableOpacity
-          onPress={handleSend}
-          disabled={!message.trim() || isTyping}
-          style={{ opacity: message.trim() && !isTyping ? 1 : 0.5 }}
-        >
-          <IconSymbol
-            name="send"
-            size={24}
-            color={message.trim() && !isTyping ? colors.primaryText : colors.textTertiary}
-          />
-        </TouchableOpacity>
+        
+        {message.trim() ? (
+          <TouchableOpacity
+            onPress={handleSend}
+            disabled={!message.trim() || isTyping}
+            className="w-12 h-12 rounded-full items-center justify-center"
+            style={{ 
+              backgroundColor: colors.brandColor || '#3B82F6',
+              opacity: message.trim() && !isTyping ? 1 : 0.5,
+            }}
+          >
+            <IconSymbol
+              name="send"
+              size={20}
+              color="white"
+            />
+          </TouchableOpacity>
+        ) : (
+          <Animated.View style={recordButtonAnimatedStyle}>
+            <TouchableOpacity 
+              onPressIn={handlePressIn}
+              onPressOut={handlePressOut}
+              className="w-12 h-12 rounded-full items-center justify-center shadow-md"
+              style={{
+                backgroundColor: isRecording ? '#E21F1F' : '#F00B0B',
+              }}
+            >
+              <IconSymbol 
+                name={isRecording ? "voiceStop" : "voice"}
+                size={24} 
+                color="white" 
+              />
+            </TouchableOpacity>
+          </Animated.View>
+        )}
       </View>
 
       {/* Recording Dialog */}
@@ -803,6 +975,9 @@ export default function Chatbot() {
         isRecording={isRecording}
         onRecordPress={handleRecordPress}
       />
+      
+      {/* Loading Indicator */}
+      {isLoading && <LoadingIndicator />}
     </KeyboardAvoidingView>
   );
 }
