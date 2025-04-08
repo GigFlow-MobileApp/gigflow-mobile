@@ -48,7 +48,7 @@ const SimpleIconNames: Set<string> = new Set([
 
 const iconPairs: { [key: string]: string } = {
   house: "home",
-  creditcard: "card",
+  card: "card",
   clock: "time",
   "info.circle": "information-circle",
   person: "person",
