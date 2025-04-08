@@ -395,45 +395,196 @@ const MessageBubble = ({ message, index }: { message: Message, index: number }) 
   );
 };
 
+// New spreading effect loading indicator
 const LoadingIndicator = () => {
-  const rotation = useSharedValue(0);
-  const scale = useSharedValue(0.8);
+  const pulseAnim1 = useSharedValue(0);
+  const pulseAnim2 = useSharedValue(0);
+  const pulseAnim3 = useSharedValue(0);
+  const iconScale = useSharedValue(1);
   
   useEffect(() => {
-    rotation.value = withRepeat(
-      withTiming(360, { 
-        duration: 1500,
-        easing: Easing.linear
-      }),
+    // Pulse animations for the spreading circles
+    pulseAnim1.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1500, easing: Easing.out(Easing.ease) }),
+        withTiming(0, { duration: 0 })
+      ),
       -1
     );
     
-    scale.value = withRepeat(
+    // Delayed second pulse
+    pulseAnim2.value = withRepeat(
       withSequence(
-        withTiming(1.1, { duration: 800 }),
-        withTiming(0.9, { duration: 800 })
+        withDelay(
+          400,
+          withTiming(1, { duration: 1500, easing: Easing.out(Easing.ease) })
+        ),
+        withTiming(0, { duration: 0 })
+      ),
+      -1
+    );
+    
+    // Delayed third pulse
+    pulseAnim3.value = withRepeat(
+      withSequence(
+        withDelay(
+          800,
+          withTiming(1, { duration: 1500, easing: Easing.out(Easing.ease) })
+        ),
+        withTiming(0, { duration: 0 })
+      ),
+      -1
+    );
+    
+    // Subtle breathing animation for the icon
+    iconScale.value = withRepeat(
+      withSequence(
+        withTiming(1.1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.9, { duration: 1000, easing: Easing.inOut(Easing.ease) })
       ),
       -1,
       true
     );
   }, []);
   
-  const spinStyle = useAnimatedStyle(() => {
+  const pulse1Style = useAnimatedStyle(() => {
     return {
-      transform: [
-        { rotate: `${rotation.value}deg` },
-        { scale: scale.value }
-      ]
+      opacity: 1 - pulseAnim1.value,
+      transform: [{ scale: pulseAnim1.value * 4 }],
+    };
+  });
+  
+  const pulse2Style = useAnimatedStyle(() => {
+    return {
+      opacity: 1 - pulseAnim2.value,
+      transform: [{ scale: pulseAnim2.value * 3 }],
+    };
+  });
+  
+  const pulse3Style = useAnimatedStyle(() => {
+    return {
+      opacity: 1 - pulseAnim3.value,
+      transform: [{ scale: pulseAnim3.value * 2 }],
+    };
+  });
+  
+  const iconStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: iconScale.value }],
     };
   });
   
   return (
     <View className="absolute inset-0 flex items-center justify-center bg-black/10">
-      <Animated.View 
-        style={spinStyle}
-        className="w-16 h-16 items-center justify-center bg-white dark:bg-gray-800 rounded-full shadow-lg"
-      >
-        <IconSymbol name="voice" size={30} color="#3B82F6" />
+      <View className="items-center justify-center">
+        <Animated.View 
+          style={[pulse1Style, { 
+            position: 'absolute',
+            width: 16,
+            height: 16,
+            borderRadius: 8,
+            backgroundColor: '#3B82F6',
+          }]}
+        />
+        <Animated.View 
+          style={[pulse2Style, { 
+            position: 'absolute',
+            width: 16,
+            height: 16,
+            borderRadius: 8,
+            backgroundColor: '#3B82F6',
+          }]}
+        />
+        <Animated.View 
+          style={[pulse3Style, { 
+            position: 'absolute',
+            width: 16,
+            height: 16,
+            borderRadius: 8,
+            backgroundColor: '#3B82F6',
+          }]}
+        />
+        <Animated.View 
+          style={[iconStyle]}
+          className="w-16 h-16 items-center justify-center bg-white dark:bg-gray-800 rounded-full shadow-lg"
+        >
+          <IconSymbol name="voice" size={30} color="#3B82F6" />
+        </Animated.View>
+      </View>
+    </View>
+  );
+};
+
+// AI/Manual Toggle Button with spreading effect
+const FilterToggleButton = ({ isAIMode, onToggle }: { isAIMode: boolean, onToggle: () => void }) => {
+  const { colors } = useThemeColors();
+  const pulseAnim = useSharedValue(0);
+  const buttonScale = useSharedValue(1);
+  
+  useEffect(() => {
+    if (isAIMode) {
+      // Only show spreading effect in AI mode
+      pulseAnim.value = withRepeat(
+        withSequence(
+          withTiming(1, { duration: 2000, easing: Easing.out(Easing.ease) }),
+          withTiming(0, { duration: 0 })
+        ),
+        -1
+      );
+    } else {
+      // Stop animation in Manual mode
+      pulseAnim.value = withTiming(0, { duration: 300 });
+    }
+  }, [isAIMode]);
+  
+  const handlePressIn = () => {
+    buttonScale.value = withTiming(0.9, { duration: 200 });
+  };
+  
+  const handlePressOut = () => {
+    buttonScale.value = withTiming(1, { duration: 200 });
+  };
+  
+  const pulseStyle = useAnimatedStyle(() => {
+    return {
+      opacity: 0.3 - pulseAnim.value * 0.3,
+      transform: [{ scale: 1 + pulseAnim.value }],
+    };
+  });
+  
+  const buttonStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: buttonScale.value }],
+    };
+  });
+  
+  return (
+    <View className="absolute right-4 top-24 items-center justify-center z-10">
+      {isAIMode && (
+        <Animated.View 
+          style={[pulseStyle, { 
+            position: 'absolute',
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: colors.brandColor || '#3B82F6',
+          }]}
+        />
+      )}
+      <Animated.View style={buttonStyle}>
+        <TouchableOpacity
+          onPress={onToggle}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          className="rounded-full items-center justify-center shadow-md px-4 py-2"
+          style={{ 
+            backgroundColor: isAIMode ? colors.brandColor || '#3B82F6' : '#64748B',
+          }}
+        >
+          <ThemedText className="text-white font-medium text-sm">
+            {isAIMode ? "AI" : "Manual"}
+          </ThemedText>
+        </TouchableOpacity>
       </Animated.View>
     </View>
   );
@@ -447,6 +598,7 @@ export default function Chatbot() {
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isDialogVisible, setIsDialogVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAIMode, setIsAIMode] = useState(true);
   const recordButtonScale = useSharedValue(1);
   const recordButtonOpacity = useSharedValue(1);
 
@@ -733,19 +885,30 @@ export default function Chatbot() {
     setIsLoading(true);
 
     try {
-      const response = await getMessage(userMessage.text, messages);
+      // Use different response handling based on mode
+      let aiResponse;
+      
+      if (isAIMode) {
+        const response = await getMessage(userMessage.text, messages);
+        aiResponse = response.message;
+      } else {
+        // In manual mode, provide a simple response
+        aiResponse = "This is manual mode. AI responses are disabled. Switch to AI mode for intelligent responses.";
+      }
       
       const aiMessage: Message = {
         id: Date.now().toString(),
-        text: response.message,
+        text: aiResponse,
         isUser: false,
         timestamp: new Date(),
       };
 
       setMessages(prev => [...prev, aiMessage]);
       
-      // Play the AI response using TTS
-      await playTextToSpeech(response.message);
+      // Play the AI response using TTS only in AI mode
+      if (isAIMode) {
+        await playTextToSpeech(aiResponse);
+      }
     } catch (error) {
       console.error('Error getting AI response:', error);
       
@@ -879,17 +1042,28 @@ export default function Chatbot() {
       </View>
 
       {/* Messages */}
-      <ScrollView
-        ref={scrollViewRef}
-        className="flex-1 px-4 pt-2"
-        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-        showsVerticalScrollIndicator={false}
+      <LinearGradient
+        colors={[
+          colors.background, 
+          Platform.OS === 'ios' ? '#F0F4F8' : '#F0F4F8', 
+          colors.background
+        ]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        className="flex-1"
       >
-        {messages.map((msg, index) => (
-          <MessageBubble key={msg.id} message={msg} index={index} />
-        ))}
-        <View style={{ height: 100 }} />
-      </ScrollView>
+        <ScrollView
+          ref={scrollViewRef}
+          className="flex-1 px-4 pt-2"
+          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+          showsVerticalScrollIndicator={false}
+        >
+          {messages.map((msg, index) => (
+            <MessageBubble key={msg.id} message={msg} index={index} />
+          ))}
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      </LinearGradient>
 
       {/* Typing Indicator */}
       {isTyping && <TypingIndicator />}
@@ -900,7 +1074,7 @@ export default function Chatbot() {
         style={{
           borderTopColor: colors.border,
           paddingBottom: Platform.OS === 'ios' ? keyboardHeight > 0 ? 5 : 34 : 16,
-          backgroundColor: colors.cardBackground || '#FFFFFF',
+          backgroundColor: colors.background || '#FFFFFF',
         }}
       >
         <View

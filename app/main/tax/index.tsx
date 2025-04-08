@@ -12,8 +12,6 @@ import {
   Modal,
   Pressable
 } from "react-native";
-import { FloatingActionButton } from "@/components/FloatingActionButton";
-import { useThemeColors } from "@/components/ColorSchemeProvider";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";
@@ -23,6 +21,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import Config from "@/constants/config";
 import { platformColor } from "@/constants/Colors";
 import { memo } from "react";
+import { useThemeColors } from "@/components/ColorSchemeProvider";
 const { height: screenHeight, width: screenWidth } = Dimensions.get('window');
 
 interface PlaidTransaction {
@@ -853,7 +852,7 @@ const LoadingAnimation = () => {
   );
 };
 
-// Enhanced AI Filter Button Component
+// Enhanced AI Filter Button Component with Spreading Animation
 const AIFilterButton = memo(({ 
   isAIMode, 
   isFiltering, 
@@ -866,6 +865,7 @@ const AIFilterButton = memo(({
   const { colors } = useThemeColors();
   const animatedValue = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const spreadAnim = useRef(new Animated.Value(0)).current;
   
   useEffect(() => {
     Animated.timing(animatedValue, {
@@ -874,22 +874,30 @@ const AIFilterButton = memo(({
       useNativeDriver: false,
     }).start();
     
-    // Add pulsing animation when AI mode is active
+    // Add spreading animation when toggled
     if (isAIMode) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.05,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          })
-        ])
-      ).start();
+      spreadAnim.setValue(0);
+      Animated.sequence([
+        Animated.timing(spreadAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(pulseAnim, {
+              toValue: 1.05,
+              duration: 1000,
+              useNativeDriver: true,
+            }),
+            Animated.timing(pulseAnim, {
+              toValue: 1,
+              duration: 1000,
+              useNativeDriver: true,
+            })
+          ])
+        )
+      ]).start();
     } else {
       // Reset to normal scale when not in AI mode
       Animated.timing(pulseAnim, {
@@ -915,6 +923,16 @@ const AIFilterButton = memo(({
     outputRange: [colors.border, colors.brandColor]
   });
   
+  const spreadScale = spreadAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [1, 1.3, 1]
+  });
+  
+  const spreadOpacity = spreadAnim.interpolate({
+    inputRange: [0, 0.3, 1],
+    outputRange: [0, 0.5, 0]
+  });
+  
   return (
     <TouchableOpacity 
       onPress={onPress}
@@ -924,49 +942,167 @@ const AIFilterButton = memo(({
         opacity: isFiltering ? 0.7 : 1,
       }}
     >
-      <Animated.View
-        style={{
-          backgroundColor: backgroundColorInterpolate,
-          paddingHorizontal: 16,
-          paddingVertical: 10,
-          borderRadius: 24,
-          flexDirection: 'row',
-          alignItems: 'center',
-          borderWidth: 1,
-          borderColor: borderColorInterpolate,
-          shadowColor: colors.shadow,
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: isAIMode ? 0.3 : 0,
-          shadowRadius: 4,
-          elevation: isAIMode ? 3 : 0,
-          transform: [{ scale: pulseAnim }]
-        }}
-      >
-        <Animated.View style={{ 
-          marginRight: 8,
-          backgroundColor: isAIMode ? 'rgba(255,255,255,0.2)' : 'transparent',
-          padding: 4,
-          borderRadius: 12
-        }}>
-          <IconSymbol 
-            name={isAIMode ? "sparkles" : "funnel"} 
-            size={16} 
-            color={isAIMode ? '#FFFFFF' : colors.primaryText} 
+      <View style={{ position: 'relative' }}>
+        {/* Spreading effect overlay */}
+        {isAIMode && (
+          <Animated.View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: colors.brandColor,
+              borderRadius: 24,
+              transform: [{ scale: spreadScale }],
+              opacity: spreadOpacity,
+              zIndex: -1,
+            }}
           />
-        </Animated.View>
-        <Animated.Text
+        )}
+        
+        <Animated.View
           style={{
-            color: textColorInterpolate,
-            fontWeight: '600',
-            fontSize: 14,
+            backgroundColor: backgroundColorInterpolate,
+            paddingHorizontal: 16,
+            paddingVertical: 10,
+            borderRadius: 24,
+            flexDirection: 'row',
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: borderColorInterpolate,
+            shadowColor: colors.shadow,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: isAIMode ? 0.3 : 0,
+            shadowRadius: 4,
+            elevation: isAIMode ? 3 : 0,
+            transform: [{ scale: pulseAnim }]
           }}
         >
-          {isFiltering ? "Processing..." : isAIMode ? "AI Active" : "AI Filters"}
-        </Animated.Text>
-      </Animated.View>
+          <Animated.View style={{ 
+            marginRight: 8,
+            backgroundColor: isAIMode ? 'rgba(255,255,255,0.2)' : 'transparent',
+            padding: 4,
+            borderRadius: 12
+          }}>
+            <IconSymbol 
+              name={isAIMode ? "sparkles" : "funnel"} 
+              size={16} 
+              color={isAIMode ? '#FFFFFF' : colors.primaryText} 
+            />
+          </Animated.View>
+          <Animated.Text
+            style={{
+              color: textColorInterpolate,
+              fontWeight: '600',
+              fontSize: 14,
+            }}
+          >
+            {isFiltering ? "Processing..." : isAIMode ? "AI Active" : "AI Filters"}
+          </Animated.Text>
+        </Animated.View>
+      </View>
     </TouchableOpacity>
   );
 });
+
+// Modified FloatingActionButton with spreading effect
+export const FloatingActionButton = ({ 
+  iconName, 
+  backgroundColor, 
+  onPress, 
+  style 
+}: { 
+  iconName: string; 
+  backgroundColor: string; 
+  onPress: () => void; 
+  style?: any 
+}) => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const spreadAnim = useRef(new Animated.Value(0)).current;
+  
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.9,
+      friction: 5,
+      useNativeDriver: true,
+    }).start();
+  };
+  
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 3,
+      useNativeDriver: true,
+    }).start();
+  };
+  
+  const handlePress = () => {
+    // Trigger spreading animation
+    spreadAnim.setValue(0);
+    Animated.timing(spreadAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+    
+    // Call the original onPress
+    onPress();
+  };
+  
+  const spreadScale = spreadAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [1, 1.5, 1]
+  });
+  
+  const spreadOpacity = spreadAnim.interpolate({
+    inputRange: [0, 0.3, 1],
+    outputRange: [0, 0.5, 0]
+  });
+  
+  return (
+    <View style={{ 
+      position: 'absolute', 
+      bottom: 20, 
+      right: 20,
+      zIndex: 100
+    }}>
+      {/* Spreading effect overlay */}
+      <Animated.View
+        style={{
+          position: 'absolute',
+          width: 60,
+          height: 60,
+          borderRadius: 30,
+          backgroundColor,
+          transform: [{ scale: spreadScale }],
+          opacity: spreadOpacity,
+        }}
+      />
+      
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={handlePress}
+      >
+        <Animated.View
+          style={[{
+            width: 60,
+            height: 60,
+            borderRadius: 30,
+            backgroundColor,
+            justifyContent: 'center',
+            alignItems: 'center',
+            transform: [{ scale: scaleAnim }]
+          }, style]}
+        >
+          <IconSymbol name={iconName} size={24} color="#FFFFFF" />
+        </Animated.View>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 // Main Component
 export default function TaxScreen() {
@@ -1167,7 +1303,7 @@ export default function TaxScreen() {
         onClose={() => setDialogVisible(false)} 
       />
       
-      {/* Header */}
+      {/* Header - Modified to remove icon in the left of transaction letter */}
       <View style={{ 
         backgroundColor: colors.background,
         paddingTop: Platform.OS === 'ios' ? 50 : 20,
@@ -1182,22 +1318,9 @@ export default function TaxScreen() {
           alignItems: 'center',
           paddingHorizontal: 16,
         }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ 
-              width: 40, 
-              height: 40, 
-              borderRadius: 20, 
-              backgroundColor: colors.brandColor,
-              justifyContent: 'center',
-              alignItems: 'center',
-              marginRight: 12
-            }}>
-              <IconSymbol name="document" size={20} color="#FFFFFF" />
-            </View>
-            <ThemedText type="title" style={{ fontSize: 24, fontWeight: '700' }}>
-              Transactions
-            </ThemedText>
-          </View>
+          <ThemedText type="title" style={{ fontSize: 24, fontWeight: '700', marginLeft: 60 }}>
+            Transactions
+          </ThemedText>
           
           <AIFilterButton 
             isAIMode={isAIMode} 
@@ -1404,7 +1527,7 @@ export default function TaxScreen() {
 
       {/* Floating Action Button with Animation */}
       <FloatingActionButton 
-        iconName="voice"
+        iconName="chatbubble-ellipses"
         backgroundColor={colors.brandColor}
         onPress={() => router.push("/main/chatbot")}
         style={{
