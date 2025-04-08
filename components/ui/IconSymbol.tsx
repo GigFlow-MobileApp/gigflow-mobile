@@ -81,7 +81,8 @@ const iconPairs: { [key: string]: string } = {
   alert: "alert-circle",
   plus: "add",
   sharpStar: "star",
-  coins: "coins"
+  coins: "coins",
+  chatbot: "chatbubble-ellipses"
 }
 
 function createIconMap(pairs: Record<string, string>): Record<string, string> {
