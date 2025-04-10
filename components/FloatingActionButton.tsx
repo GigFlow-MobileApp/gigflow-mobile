@@ -11,6 +11,7 @@ interface FloatingActionButtonProps {
   iconColor?: string;
   initialTranslate?: number;
   customAnimation?: (animatedValue: Animated.Value) => void;
+  style?: ViewStyle;
 }
 
 export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
@@ -20,7 +21,8 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   position = "right",
   iconColor,
   initialTranslate = 100,
-  customAnimation
+  customAnimation,
+  style
 }) => {
   const { colors } = useThemeColors();
   const translateX = useRef(new Animated.Value(initialTranslate)).current;
@@ -56,7 +58,8 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
           transform: [{ translateX }],
           borderRadius: 28,
           padding: 10
-        }
+        },
+        style
       ]}
     >
       <TouchableOpacity onPress={onPress}>
