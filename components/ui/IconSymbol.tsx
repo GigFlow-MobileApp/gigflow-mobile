@@ -48,7 +48,7 @@ const SimpleIconNames: Set<string> = new Set([
 
 const iconPairs: { [key: string]: string } = {
   house: "home",
-  creditcard: "card",
+  card: "card",
   clock: "time",
   "info.circle": "information-circle",
   person: "person",
@@ -81,6 +81,8 @@ const iconPairs: { [key: string]: string } = {
   alert: "alert-circle",
   plus: "add",
   sharpStar: "star",
+  coins: "coins",
+  chatbot: "chatbubble-ellipses"
 }
 
 function createIconMap(pairs: Record<string, string>): Record<string, string> {
