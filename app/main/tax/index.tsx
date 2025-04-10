@@ -33,8 +33,14 @@ interface PlaidTransaction {
   category?: string[];
   payment_channel: string;
   payment_meta?: {
-    payment_method?: string;
-    payment_processor?: string;
+    by_order_of: string | null;
+    payee: string | null;
+    payer: string | null;
+    payment_method: string | null;
+    payment_processor: string | null;
+    ppd_id: string | null;
+    reason: string | null;
+    reference_number: string | null;
   };
   logo_url?: string;
   location?: {
@@ -42,8 +48,21 @@ interface PlaidTransaction {
     city?: string;
     region?: string;
     postal_code?: string;
+    country?: string;
   };
   original_description: string;
+  website?: string;
+  account_owner?: string;
+  transaction_id?: string;
+  category_id?: string;
+  pending: boolean;
+  iso_currency_code?: string;
+  merchant_entity_id?: string;
+  plaid_account_id?: string;
+  personal_finance_category_icon_url?: string;
+  account_id?: string;
+  transaction_code?: string;
+  transaction_type?: string;
 }
 
 interface CategoryButton {
@@ -1150,19 +1169,15 @@ export default function TaxScreen() {
         throw new Error("Authentication token not found");
       }
 
-      const startDate = new Date();
-      startDate.setMonth(startDate.getMonth() - 3);
-      const endDate = new Date();
-
       const endpoint = useAI ? 
         `${Config.apiBaseUrl}/api/v1/plaid/ai/classify-transactions` : 
         `${Config.apiBaseUrl}/api/v1/plaid/db/transactions`;
 
       const response = await fetch(
         `${endpoint}?` +
-        `skip=0&limit=100&` +
-        `start_date=${startDate.toISOString()}&` +
-        `end_date=${endDate.toISOString()}`,
+        `skip=0&limit=${useAI ? "50" : "100"}&` +
+        `start_date=2018-01-01T00:00:00.000Z&` +
+        `end_date=2025-04-10T23:59:59.999Z`,
         {
           headers: {
             Authorization: `Bearer ${userToken}`,
@@ -1171,19 +1186,42 @@ export default function TaxScreen() {
       );
 
       const responseData = await response.json();
-      const transactionsData = responseData.data || [];
+      
+      // Log the response structure
+      console.log('API Response:', JSON.stringify(responseData, null, 2));
+
+      // Handle different response formats
+      let transactionsData;
+      if (useAI) {
+        // Check for common response wrapper structures
+        transactionsData = responseData.transactions || 
+                          responseData.data || 
+                          responseData.results || 
+                          responseData;
+      } else {
+        transactionsData = responseData;
+      }
+
+      // Validate the transactions data
+      if (!Array.isArray(transactionsData)) {
+        console.error('Invalid transactions data:', transactionsData);
+        throw new Error("Invalid response format: transactions data is not an array");
+      }
+
       setTransactions(transactionsData);
       
-      // Extract and set unique categories
-      const uniqueCategories = extractUniqueCategories(transactionsData);
-      setCategories(uniqueCategories);
+      // Only extract categories if we have valid transaction data
+      if (transactionsData.length > 0) {
+        const uniqueCategories = extractUniqueCategories(transactionsData);
+        setCategories(uniqueCategories);
+      }
     } catch (error) {
       console.error('Error fetching transactions:', error);
       setError(error instanceof Error ? error.message : "Failed to fetch data");
       setTransactions([]);
+      setCategories([]); // Reset categories on error
     } finally {
       setIsLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -1494,14 +1532,14 @@ export default function TaxScreen() {
             { useNativeDriver: false }
           )}
           scrollEventThrottle={16}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[colors.brandColor]}
-              tintColor={colors.brandColor}
-            />
-          }
+          // refreshControl={
+          //   <RefreshControl
+          //     refreshing={refreshing}
+          //     onRefresh={onRefresh}
+          //     colors={[colors.brandColor]}
+          //     tintColor={colors.brandColor}
+          //   />
+          // }
           renderItem={({ item }) => (
             <View>
               <DateHeader date={item.date} />
