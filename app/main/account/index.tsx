@@ -1,6 +1,15 @@
-// app/(drawer)/setting.tsx
 import React, { useState, useEffect, useRef } from "react";
-import { View, Alert, ScrollView, TouchableOpacity, Image, Animated } from "react-native";
+import { 
+  View, 
+  Alert, 
+  ScrollView, 
+  TouchableOpacity, 
+  Image, 
+  Animated, 
+  StyleSheet, 
+  Dimensions,
+  ActivityIndicator
+} from "react-native";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { Colors } from "@/constants/Colors";
@@ -9,8 +18,10 @@ import { useRouter } from "expo-router";
 import Config from "@/constants/config";
 import { Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ProgressDialog } from '@/components/ProgressDialog';
 import { usePlatformStore } from "@/store/platformStore";
+import { BlurView } from 'expo-blur';
+import { MotiView } from 'moti';
+import { Easing } from 'react-native-reanimated';
 
 interface AccountItemProps {
   iconName: string;
@@ -19,7 +30,7 @@ interface AccountItemProps {
   onPress: () => void;
   accounts: Account[];
   setAccounts: React.Dispatch<React.SetStateAction<Account[]>>;
-  index?: number; // For staggered animation
+  index: number; // For staggered animation
 }
 
 type Account = {
@@ -50,23 +61,43 @@ const LYFT_CLIENT_ID = 'your_lyft_client_id';
 const LYFT_REDIRECT_URI = 'exp://192.168.104.149:8081/--/oauth/callback';
 const LYFT_SCOPE = 'profile';
 
+// Modern loading dialog component
+const LoadingDialog = ({ visible, message }: { visible: boolean; message: string }) => {
+  if (!visible) return null;
+  
+  return (
+    <View style={styles.loadingOverlay}>
+      <BlurView intensity={80} style={styles.blurContainer}>
+        <MotiView
+          from={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'timing', duration: 300 }}
+          style={styles.loadingContainer}
+        >
+          <ActivityIndicator size="large" color="#ffffff" />
+          <ThemedText type="defautlSmall" colorValue="btnText" style={styles.loadingText}>
+            {message}
+          </ThemedText>
+        </MotiView>
+      </BlurView>
+    </View>
+  );
+};
+
 const AccountItem: React.FC<AccountItemProps> = ({ 
   iconName, 
   balance, 
   linked, 
   onPress, 
-  accounts,  // Add these props to the component parameters
-  setAccounts 
+  accounts,
+  setAccounts,
+  index
 }) => {
   const { colorScheme } = useColorScheme();
   const [loading, setLoading] = useState(false);
   const [progressMessage, setProgressMessage] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   
-  // Animation values
-  const imageTranslateX = useRef(new Animated.Value(-200)).current;
-  const contentTranslateX = useRef(new Animated.Value(200)).current;
-
   const handlePlatformOAuth = async (platform: string) => {
     try {
       setLoading(true);
@@ -115,136 +146,171 @@ const AccountItem: React.FC<AccountItemProps> = ({
     }
   };
 
-  useEffect(() => {
-    // Entrance animation with staggered delay based on index
-    const animationDelay = 100; // 100ms delay between items
-    
-    Animated.parallel([
-      Animated.timing(imageTranslateX, {
-        toValue: 0,
-        duration: 300,
-        delay: animationDelay,
-        useNativeDriver: true,
-      }),
-      Animated.timing(contentTranslateX, {
-        toValue: 0,
-        duration: 300,
-        delay: animationDelay,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    
-    if (showConfirmDialog) {
-      Alert.alert(
-        "Connection",
-        `Do you want to ${linked ? "un" : ""}link this account?`,
-        [
-          {
-            text: "Cancel",
-            onPress: () => setShowConfirmDialog(false),
-            style: "cancel",
-          },
-          {
-            text: "Yes",
-            onPress: async () => {
-              if (linked) {
-                try {
-                  // Call API to unlink the account
-                  await fetch(`${Config.apiBaseUrl}/api/v1/accounts/${iconName}/disconnect`, {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Bearer ${await AsyncStorage.getItem('userToken')}`,
-                      'Accept': 'application/json',
-                      'Content-Type': 'application/json',
-                    },
-                  });
-                  
-                  // Update the accounts state in the parent component
-                  const updatedAccounts = accounts.map(account => 
-                    account.type === iconName 
-                      ? { ...account, connection_status: false }
-                      : account
-                  );
-                  setAccounts(updatedAccounts);
-                } catch (error) {
-                  console.error('Failed to unlink account:', error);
-                  Alert.alert('Error', 'Failed to unlink account');
-                }
-              } else {
-                handlePlatformOAuth(iconName);
+  const confirmLinkToggle = () => {
+    Alert.alert(
+      "Connection",
+      `Do you want to ${linked ? "un" : ""}link this account?`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Yes",
+          onPress: async () => {
+            if (linked) {
+              try {
+                setLoading(true);
+                setProgressMessage(`Disconnecting ${iconName}...`);
+                
+                // Call API to unlink the account
+                await fetch(`${Config.apiBaseUrl}/api/v1/accounts/${iconName}/disconnect`, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${await AsyncStorage.getItem('userToken')}`,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                  },
+                });
+                
+                // Update the accounts state in the parent component
+                const updatedAccounts = accounts.map(account => 
+                  account.type === iconName 
+                    ? { ...account, connection_status: false }
+                    : account
+                );
+                setAccounts(updatedAccounts);
+              } catch (error) {
+                console.error('Failed to unlink account:', error);
+                Alert.alert('Error', 'Failed to unlink account');
+              } finally {
+                setLoading(false);
               }
-              setShowConfirmDialog(false);
-            },
+            } else {
+              handlePlatformOAuth(iconName);
+            }
           },
-        ],
-        { cancelable: true }
-      );
-    }
-  }, [showConfirmDialog]);
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   return (
     <>
-      <ProgressDialog visible={loading} message={progressMessage} />
-      <View
-        className="flex flex-row justify-between align-center px-5 pt-4"
-        style={{
-          borderBottomWidth: 1,
-          borderColor: Colors[colorScheme].tabIconDefault,
+      <LoadingDialog visible={loading} message={progressMessage} />
+      <MotiView
+        from={{ 
+          opacity: 0,
+          translateY: 20
         }}
+        animate={{ 
+          opacity: 1,
+          translateY: 0
+        }}
+        transition={{
+          type: 'timing',
+          duration: 400,
+          delay: index * 100,
+          easing: Easing.out(Easing.ease)
+        }}
+        style={[
+          styles.accountCard,
+          { backgroundColor: Colors[colorScheme].background || '#ffffff10' }
+        ]}
       >
-        <View className="flex flex-row">
-          <View className="pt-2 pl-1">
-            <Image source={iconMap[iconName]} style={{ width: 52, height: 52, borderRadius: 25 }} resizeMode="cover" />
-          </View>
-          <View className="flex flex-col justify-between ml-6">
-            {linked ? (
-              <>
-                <ThemedText type="semiSmall" colorValue="menuItemText" className="py-3">
-                  Balance
-                </ThemedText>
-                <ThemedText type="title" colorValue="text" className="pt-2 pb-1">
-                  {"$"}
-                  {Number(balance).toFixed(2)}
-                </ThemedText>
-              </>
-            ) : (
-              <>
-                <View className="py-3">
-                  <ThemedText type="semiSmall" colorValue="menuItemText">
-                    Not Connected
+        <View style={styles.accountContent}>
+          <View style={styles.leftContent}>
+            <MotiView
+              from={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{
+                type: 'spring',
+                delay: (index * 100) + 200,
+                damping: 15
+              }}
+              style={styles.iconContainer}
+            >
+              <Image 
+                source={iconMap[iconName]} 
+                style={styles.platformIcon} 
+                resizeMode="cover" 
+              />
+            </MotiView>
+            
+            <View style={styles.accountInfo}>
+              <ThemedText 
+                type="semiSmall" 
+                colorValue={linked ? "menuItemText" : "tabIconDefault"}
+                style={styles.accountLabel}
+              >
+                {linked ? "Balance" : "Not Connected"}
+              </ThemedText>
+              
+              {linked && (
+                <MotiView
+                  from={{ translateX: -10, opacity: 0 }}
+                  animate={{ translateX: 0, opacity: 1 }}
+                  transition={{ delay: (index * 100) + 300 }}
+                >
+                  <ThemedText 
+                    type="title" 
+                    colorValue="text" 
+                    style={styles.balanceText}
+                  >
+                    {"$"}{Number(balance).toFixed(2)}
                   </ThemedText>
-                </View>
-                <View className="pt-3" />
-              </>
-            )}
+                </MotiView>
+              )}
+            </View>
+          </View>
+          
+          <View style={styles.rightContent}>
+            <TouchableOpacity
+              style={[
+                styles.linkButton,
+                { 
+                  backgroundColor: linked 
+                    ? Colors[colorScheme].btnBackground 
+                    : Colors[colorScheme].tabIconDefault 
+                }
+              ]}
+              onPress={confirmLinkToggle}
+            >
+              <IconSymbol 
+                name="link" 
+                size={16} 
+                color={Colors[colorScheme].btnText} 
+                style={styles.linkIcon} 
+              />
+              <ThemedText 
+                type="defautlSmall" 
+                colorValue="btnText"
+              >
+                {linked ? "linked" : "unlinked"}
+              </ThemedText>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              onPress={onPress} 
+              style={styles.settingsButton}
+            >
+              <MotiView
+                from={{ rotate: '0deg' }}
+                animate={{ rotate: '0deg' }}
+                transition={{ type: 'timing', duration: 300 }}
+                // whileHover={{ rotate: '30deg' }}
+              >
+                <IconSymbol 
+                  name="gear" 
+                  size={22} 
+                  color={linked ? "primaryText" : "tabIconDefault"} 
+                />
+              </MotiView>
+            </TouchableOpacity>
           </View>
         </View>
-        <View className="flex flex-col justify-between">
-          <TouchableOpacity
-            className="mt-2 px-3 py-1 rounded-lg flex-row items-center"
-            style={{ backgroundColor: linked ? Colors[colorScheme].btnBackground : Colors[colorScheme].tabIconDefault }}
-            onPress={() => {
-              setShowConfirmDialog(true);
-            }}
-          >
-            <IconSymbol name="link" size={16} color={Colors[colorScheme].btnText} className="pr-2" />
-            <ThemedText type="defautlSmall" colorValue="btnText">
-              {linked ? "linked" : "unlinked"}
-            </ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            onPress={onPress} 
-            // disabled={!linked} 
-            className="flex-row justify-end p-3">
-            <IconSymbol 
-              name="gear" 
-              size={22} 
-              color={linked ? "primaryText" : "tabIconDefault"} 
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
+      </MotiView>
     </>
   );
 };
@@ -252,27 +318,16 @@ const AccountItem: React.FC<AccountItemProps> = ({
 export default function AccountScreen() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
-  const [progressMessage, setProgressMessage] = useState(''); // Add this state
+  const [progressMessage, setProgressMessage] = useState('Loading your accounts...');
   const { colorScheme } = useColorScheme();
   const setPlatform = usePlatformStore((state) => state.setPlatform);
   const router = useRouter();
   
-  // Animation value for title fade-in
-  const titleOpacity = useRef(new Animated.Value(0)).current;
-
   // Define all supported platforms
   const supportedPlatforms = ['uber', 'lyft', 'doordash', 'upwork', 'fiverr'];
 
   useEffect(() => {
-    // Title fade-in animation
-    Animated.timing(titleOpacity, {
-      toValue: 1,
-      duration: 800,
-      useNativeDriver: true,
-    }).start();
-    
     const fetchAccounts = async () => {
-      setProgressMessage('Fetching your accounts...'); // Set message before fetching
       try {
         // First, create default accounts for all platforms
         const defaultAccounts = supportedPlatforms.map(platform => ({
@@ -336,13 +391,26 @@ export default function AccountScreen() {
   }, []);
 
   return (
-    <View style={{ backgroundColor: Colors[colorScheme].background }}>
-      <ProgressDialog visible={loading} message={progressMessage} />
-      <ThemedText type="title" className="self-center" style={{paddingTop: 20}}>
-        Your Accounts
-      </ThemedText>
-      <ScrollView showsVerticalScrollIndicator={false} className="pt-4 h-full">
-        {accounts.map((account) => (
+    <View style={[styles.container, { backgroundColor: Colors[colorScheme].background }]}>
+      <LoadingDialog visible={loading} message={progressMessage} />
+      
+      <MotiView
+        from={{ opacity: 0, translateY: -20 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: 'timing', duration: 600 }}
+        style={styles.headerContainer}
+      >
+        <ThemedText type="title" style={styles.headerTitle}>
+          Your Accounts
+        </ThemedText>
+      </MotiView>
+      
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={styles.scrollContent}
+        style={styles.scrollView}
+      >
+        {accounts.map((account, index) => (
           <AccountItem
             key={account.id}
             iconName={account.type}
@@ -350,13 +418,131 @@ export default function AccountScreen() {
             linked={account.connection_status}
             accounts={accounts}
             setAccounts={setAccounts}
-            onPress={() =>{
+            index={index}
+            onPress={() => {
               setPlatform(account.type as string);
-              router.push("/main/account/balance")
+              router.push("/main/account/balance");
             }}
           />
         ))}
+        
+        {/* Extra space at bottom for better scrolling */}
+        <View style={styles.scrollFooter} />
       </ScrollView>
     </View>
   );
 }
+
+const { width } = Dimensions.get('window');
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  headerContainer: {
+    paddingTop: 30,
+    paddingBottom: 10,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+  },
+  scrollFooter: {
+    height: 40,
+  },
+  accountCard: {
+    marginBottom: 16,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  accountContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  leftContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  rightContent: {
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    height: 80,
+  },
+  iconContainer: {
+    padding: 2,
+    borderRadius: 30,
+    overflow: 'hidden',
+  },
+  platformIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+  },
+  accountInfo: {
+    marginLeft: 16,
+    justifyContent: 'center',
+  },
+  accountLabel: {
+    marginBottom: 4,
+  },
+  balanceText: {
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  linkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  linkIcon: {
+    marginRight: 6,
+  },
+  settingsButton: {
+    padding: 10,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  blurContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContainer: {
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: width * 0.8,
+    maxWidth: 300,
+  },
+  loadingText: {
+    marginTop: 16,
+    textAlign: 'center',
+    color: '#ffffff',
+  },
+});
