@@ -54,7 +54,8 @@ const iconMap: Record<string, any> = {
 };
 
 const UBER_CLIENT_ID = 'vT7OiMCjk6_L_q7RW2R9Juo6NYVP1pz0';
-const UBER_REDIRECT_URI = 'exp://localhost:8081/--/oauth/callback'; 
+const UBER_CLIENT_SECRET = 'MFon_j8gT4QMz9z5AJDUPejfKiMFToOyeDmrgez8';
+const UBER_REDIRECT_URI = 'exp://192.168.104.149:8081/--/oauth/callback'; 
 const UBER_SCOPE = 'profile'; // Add required scopes  partner.payments partner.trips
 
 const LYFT_CLIENT_ID = 'your_lyft_client_id';
@@ -110,10 +111,10 @@ const AccountItem: React.FC<AccountItemProps> = ({
         case 'uber':
           authUrl = `https://sandbox-login.uber.com/oauth/v2/authorize?` +
             `client_id=${UBER_CLIENT_ID}` +
+            `&client_secret=${UBER_CLIENT_SECRET}` +
             `&response_type=code` +
-            `&redirect_uri=${encodeURIComponent(UBER_REDIRECT_URI)}` +
-            `&scope=${encodeURIComponent(UBER_SCOPE)}` +
-            `&state=${state}`;
+            `&state=${state}` +  // Add state parameter to URL query string
+            `&redirect_uri=${encodeURIComponent(UBER_REDIRECT_URI)}`;
           break;
         case 'lyft':
           authUrl = `https://api.lyft.com/oauth/authorize?` +
@@ -123,17 +124,71 @@ const AccountItem: React.FC<AccountItemProps> = ({
             `&state=${state}` +
             `&redirect_uri=${encodeURIComponent(LYFT_REDIRECT_URI)}`;
           break;
-        // Add other platforms here
         default:
           throw new Error(`Unsupported platform: ${platform}`);
       }
 
-      await AsyncStorage.setItem('oauth_state', state);
+      await AsyncStorage.setItem('oauth_state', state);  // Store state
       await AsyncStorage.setItem('linking_platform', platform.toLowerCase());
       
       const supported = await Linking.canOpenURL(authUrl);
       
       if (supported) {
+        const subscription = Linking.addEventListener('url', async ({ url }) => {
+          if (url.includes('/oauth/callback')) {
+            try {
+              // Extract both code and state from callback URL
+              const code = url.match(/code=([^&|#]+)/)?.[1];
+              const returnedState = url.match(/state=([^&|#]+)/)?.[1];
+              
+              // Verify state parameter
+              const savedState = await AsyncStorage.getItem('oauth_state');
+              if (!returnedState || returnedState !== savedState) {
+                throw new Error('Invalid state parameter');
+              }
+
+              console.log("Code: ",code)
+
+              if (code) {
+                setProgressMessage('Getting access token...');
+                
+                const tokenResponse = await fetch('https://sandbox-login.uber.com/oauth/v2/token', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                  },
+                  body: new URLSearchParams({
+                    client_id: UBER_CLIENT_ID,
+                    client_secret: UBER_CLIENT_SECRET,
+                    grant_type: 'authorization_code',
+                    redirect_uri: UBER_REDIRECT_URI,
+                    code: code,
+                  }).toString(),
+                });
+
+                if (tokenResponse.ok) {
+                  const tokenData = await tokenResponse.json();
+                  console.log("TokenData: ",tokenData)
+                  await AsyncStorage.setItem('uber_access_token', tokenData.access_token);
+                  await AsyncStorage.setItem('uber_refresh_token', tokenData.refresh_token);
+                  Alert.alert('Success', 'Successfully connected to Uber');
+                } else {
+                  throw new Error('Failed to get access token');
+                  const errorData = await tokenResponse.json();
+                  console.error('Token exchange error:', errorData);
+                }
+              }
+            } catch (error) {
+              console.error('Token exchange error:', error);
+              Alert.alert('Error', 'Failed to complete Uber connection');
+            } finally {
+              // Clean up stored state
+              await AsyncStorage.removeItem('oauth_state');
+              subscription.remove();
+            }
+          }
+        });
+
         await Linking.openURL(authUrl);
       } else {
         throw new Error("Can't open OAuth URL");
