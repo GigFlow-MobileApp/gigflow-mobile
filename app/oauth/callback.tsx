@@ -37,10 +37,10 @@ export default function OAuthCallback() {
           switch (platform) {
             case 'uber':
               setProgressMessage('Connecting your Uber account...');
-              await axios.post(
-                `${Config.apiBaseUrl}/api/v1/oauth/uber/connect`,
-                { code, state }
-              );
+              // await axios.post(
+              //   `${Config.apiBaseUrl}/api/v1/oauth/uber/connect`,
+              //   { code, state }
+              // );
               break;
               
             case 'lyft':
@@ -60,7 +60,7 @@ export default function OAuthCallback() {
         router.replace('/main/account');
       } catch (error) {
         console.error('Callback Error:', error);
-        Alert.alert('Error', 'Failed to connect account');
+        // Alert.alert('Error', 'Failed to connect account');
         router.replace('/main/account');
       } finally {
         setLoading(false);

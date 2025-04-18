@@ -12,12 +12,16 @@ import {
   Modal,
   Pressable
 } from "react-native";
+import { StyleSheet } from 'react-native';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { SlideInView } from "@/components/FadeInView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { BlurView, BlurTint } from 'expo-blur';
+import { MotiView } from 'moti';
+import { LinearGradient } from 'expo-linear-gradient';
 import Config from "@/constants/config";
 import { platformColor } from "@/constants/Colors";
 import { memo } from "react";
@@ -25,6 +29,8 @@ import { useThemeColors } from "@/components/ColorSchemeProvider";
 const { height: screenHeight, width: screenWidth } = Dimensions.get('window');
 
 interface PlaidTransaction {
+  date: string | number | Date;
+  metadata: any;
   id: string;
   amount: number;
   name: string;
@@ -80,8 +86,8 @@ function formatDateToLabel(date: Date): string {
   return `${month} ${day}, ${year}`;
 }
 
-// Transaction Description Dialog
-const DescriptionDialog = ({ 
+// Enhanced Transaction Dialog
+const TransactionDialog = ({ 
   visible, 
   transaction, 
   onClose 
@@ -91,42 +97,100 @@ const DescriptionDialog = ({
   onClose: () => void 
 }) => {
   const { colors } = useThemeColors();
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
-  
+  const translateY = useRef(new Animated.Value(100)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(0.95)).current;
+
   useEffect(() => {
     if (visible) {
       Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true
+        Animated.spring(translateY, {
+          toValue: 0,
+          damping: 15,
+          mass: 1,
+          stiffness: 120,
+          useNativeDriver: true,
         }),
-        Animated.timing(opacityAnim, {
+        Animated.timing(opacity, {
           toValue: 1,
           duration: 200,
-          useNativeDriver: true
-        })
+          useNativeDriver: true,
+        }),
+        Animated.spring(scale, {
+          toValue: 1,
+          damping: 15,
+          mass: 1,
+          stiffness: 120,
+          useNativeDriver: true,
+        }),
       ]).start();
     } else {
       Animated.parallel([
-        Animated.timing(scaleAnim, {
-          toValue: 0.9,
-          duration: 150,
-          useNativeDriver: true
+        Animated.spring(translateY, {
+          toValue: 100,
+          useNativeDriver: true,
         }),
-        Animated.timing(opacityAnim, {
+        Animated.timing(opacity, {
           toValue: 0,
-          duration: 150,
-          useNativeDriver: true
-        })
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scale, {
+          toValue: 0.95,
+          useNativeDriver: true,
+        }),
       ]).start();
     }
   }, [visible]);
-  
-  if (!transaction) return null;
-  
+
+  const renderDetailItem = (label: string, value: string) => (
+    <MotiView
+      from={{ opacity: 0, translateX: -20 }}
+      animate={{ opacity: 1, translateX: 0 }}
+      transition={{ type: 'timing', duration: 400 }}
+      style={{
+        marginBottom: 16,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 12,
+        padding: 16,
+      }}
+    >
+      <ThemedText style={{ fontSize: 12, color: colors.secondaryText, marginBottom: 4 }}>
+        {label}
+      </ThemedText>
+      <ThemedText style={{ fontSize: 16, color: colors.primaryText, fontWeight: '600' }}>
+        {value}
+      </ThemedText>
+    </MotiView>
+  );
+
+  if (!visible || !transaction) return null;
+
+  function getCategoryIcon(category: string[] | undefined): string {
+    if (!category || category.length === 0) return "document";
+    
+    const mainCategory = category[0].toLowerCase();
+    
+    switch (true) {
+      case mainCategory.includes('food') || mainCategory.includes('restaurant'):
+        return "restaurant";
+      case mainCategory.includes('travel') || mainCategory.includes('transport'):
+        return "car";
+      case mainCategory.includes('shopping') || mainCategory.includes('merchandise'):
+        return "cart";
+      case mainCategory.includes('payment') || mainCategory.includes('transfer'):
+        return "creditcard";
+      case mainCategory.includes('recreation') || mainCategory.includes('entertainment'):
+        return "ticket";
+      case mainCategory.includes('health') || mainCategory.includes('medical'):
+        return "medical";
+      case mainCategory.includes('service') || mainCategory.includes('utilities'):
+        return "tools";
+      default:
+        return "document";
+    }
+  }
+
   return (
     <Modal
       transparent
@@ -134,231 +198,145 @@ const DescriptionDialog = ({
       animationType="none"
       onRequestClose={onClose}
     >
-      <Pressable 
-        style={{
-          flex: 1,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: 20
-        }}
-        onPress={onClose}
-      >
+      <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          activeOpacity={1}
+        >
+          <Animated.View
+            style={{
+              opacity,
+              flex: 1,
+              backgroundColor: 'rgba(0,0,0,0.3)',
+            }}
+          />
+        </TouchableOpacity>
+
         <Animated.View
           style={{
+            transform: [{ translateY }, { scale }],
             backgroundColor: colors.backgroundCard,
-            borderRadius: 16,
-            padding: 20,
-            width: '100%',
-            maxWidth: 400,
-            shadowColor: colors.shadow,
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 12,
-            elevation: 8,
-            transform: [{ scale: scaleAnim }],
-            opacity: opacityAnim
+            margin: 16,
+            borderRadius: 24,
+            overflow: 'hidden',
           }}
         >
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            <View style={{ 
-              flexDirection: 'row', 
-              justifyContent: 'space-between', 
+          {/* Header */}
+          <LinearGradient
+            colors={[colors.brandColor || '#29c3e5', colors.brandColor || '#29c3e5']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              padding: 20,
+              flexDirection: 'row',
               alignItems: 'center',
-              marginBottom: 16
-            }}>
-              <ThemedText 
-                type="defautlSmall" 
-                colorValue="primaryText" 
-                style={{ fontSize: 18, fontWeight: '700' }}
-              >
-                Transaction Details
-              </ThemedText>
-              <TouchableOpacity onPress={onClose}>
-                <IconSymbol name="close" size={20} color={colors.primaryText} />
-              </TouchableOpacity>
-            </View>
-            
-            <View style={{ 
-              flexDirection: 'row', 
-              alignItems: 'center', 
-              marginBottom: 16,
-              paddingBottom: 16,
-              borderBottomWidth: 1,
-              borderBottomColor: 'rgba(0,0,0,0.1)'
-            }}>
-              <View style={{ 
-                width: 48, 
-                height: 48, 
-                borderRadius: 24, 
-                backgroundColor: 'rgba(0,0,0,0.05)',
+              gap: 16,
+            }}
+          >
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor: 'rgba(255,255,255,0.2)',
                 justifyContent: 'center',
                 alignItems: 'center',
-                marginRight: 16
-              }}>
-                {transaction.logo_url ? (
-                  <Image 
-                    source={{ uri: transaction.logo_url }} 
-                    style={{ width: 48, height: 48, borderRadius: 24 }}
-                  />
-                ) : (
-                  <ThemedText type="btnText" colorValue="btnText" style={{ fontSize: 20 }}>
-                    {transaction.merchant_name?.[0] || transaction.name[0]}
-                  </ThemedText>
-                )}
-              </View>
-              <View>
-                <ThemedText 
-                  type="defautlSmall" 
-                  colorValue="primaryText" 
-                  style={{ fontWeight: '700', fontSize: 16 }}
-                >
-                  {transaction.merchant_name || transaction.name}
-                </ThemedText>
-                <ThemedText 
-                  type="defautlSmall" 
-                  colorValue="textTertiary" 
-                  style={{ fontSize: 14 }}
-                >
-                  {new Date(transaction.authorized_date).toLocaleDateString()}
-                </ThemedText>
-              </View>
+              }}
+            >
+              <IconSymbol
+                name={getCategoryIcon(transaction.category)}
+                size={24}
+                color="#FFFFFF"
+              />
             </View>
-            
-            <View style={{ marginBottom: 16 }}>
-              <ThemedText 
-                type="defautlSmall" 
-                colorValue="textTertiary" 
-                style={{ fontSize: 14, marginBottom: 4 }}
-              >
-                Description
+            <View style={{ flex: 1 }}>
+              <ThemedText style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '700' }}>
+                {transaction.merchant_name || transaction.name}
               </ThemedText>
-              <View style={{ 
-                backgroundColor: 'rgba(0,0,0,0.03)', 
-                padding: 12, 
-                borderRadius: 8,
-                marginBottom: 12
-              }}>
-                <ThemedText 
-                  type="defautlSmall" 
-                  colorValue="primaryText" 
-                  style={{ fontSize: 14 }}
-                >
-                  {transaction.original_description || "No description available"}
-                </ThemedText>
-              </View>
-              
-              <ThemedText 
-                type="defautlSmall" 
-                colorValue="textTertiary" 
-                style={{ fontSize: 14, marginBottom: 4 }}
-              >
-                Amount
+              <ThemedText style={{ color: 'rgba(255,255,255,0.8)', fontSize: 16, marginTop: 4 }}>
+                ${Math.abs(transaction.amount).toFixed(2)}
               </ThemedText>
-              <View style={{ 
-                backgroundColor: 'rgba(0,0,0,0.03)', 
-                padding: 12, 
-                borderRadius: 8,
-                marginBottom: 12
-              }}>
-                <ThemedText 
-                  type="defautlSmall" 
-                  colorValue="primaryText" 
-                  style={{ 
-                    fontSize: 18, 
-                    fontWeight: '700',
-                    color: transaction.amount < 0 ? '#E53935' : '#43A047'
-                  }}
-                >
-                  ${Math.abs(transaction.amount).toFixed(2)}
-                </ThemedText>
-              </View>
-              
-              {transaction.location && (
-                <>
-                  <ThemedText 
-                    type="defautlSmall" 
-                    colorValue="textTertiary" 
-                    style={{ fontSize: 14, marginBottom: 4 }}
-                  >
-                    Location
-                  </ThemedText>
-                  <View style={{ 
-                    backgroundColor: 'rgba(0,0,0,0.03)', 
-                    padding: 12, 
-                    borderRadius: 8,
-                    marginBottom: 12
-                  }}>
-                    <ThemedText 
-                      type="defautlSmall" 
-                      colorValue="primaryText" 
-                      style={{ fontSize: 14 }}
-                    >
-                      {transaction.location.address ? `${transaction.location.address}, ` : ''}
-                      {transaction.location.city ? `${transaction.location.city}, ` : ''}
-                      {transaction.location.region || ''}
-                      {transaction.location.postal_code ? ` ${transaction.location.postal_code}` : ''}
-                    </ThemedText>
-                  </View>
-                </>
-              )}
-              
-              {transaction.payment_meta && (
-                <>
-                  <ThemedText 
-                    type="defautlSmall" 
-                    colorValue="textTertiary" 
-                    style={{ fontSize: 14, marginBottom: 4 }}
-                  >
-                    Payment Details
-                  </ThemedText>
-                  <View style={{ 
-                    backgroundColor: 'rgba(0,0,0,0.03)', 
-                    padding: 12, 
-                    borderRadius: 8
-                  }}>
-                    {transaction.payment_meta.payment_method && (
-                      <ThemedText 
-                        type="defautlSmall" 
-                        colorValue="primaryText" 
-                        style={{ fontSize: 14, marginBottom: 4 }}
-                      >
-                        Method: {transaction.payment_meta.payment_method}
-                      </ThemedText>
-                    )}
-                    {transaction.payment_meta.payment_processor && (
-                      <ThemedText 
-                        type="defautlSmall" 
-                        colorValue="primaryText" 
-                        style={{ fontSize: 14 }}
-                      >
-                        Processor: {transaction.payment_meta.payment_processor}
-                      </ThemedText>
-                    )}
-                  </View>
-                </>
-              )}
             </View>
-            
             <TouchableOpacity
               onPress={onClose}
               style={{
-                backgroundColor: colors.brandColor,
-                paddingVertical: 12,
-                borderRadius: 24,
-                alignItems: 'center'
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                backgroundColor: 'rgba(255,255,255,0.2)',
+                justifyContent: 'center',
+                alignItems: 'center',
               }}
             >
-              <ThemedText 
-                type="defautlSmall" 
-                style={{ color: '#FFFFFF', fontWeight: '600' }}
-              >
-                Close
-              </ThemedText>
+              <IconSymbol name="close" size={20} color="#FFFFFF" />
             </TouchableOpacity>
-          </Pressable>
+          </LinearGradient>
+
+          {/* Content */}
+          <ScrollView
+            style={{ maxHeight: '80%' }}
+            contentContainerStyle={{ padding: 20 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Transaction Details */}
+            <View style={{ marginBottom: 24 }}>
+              <ThemedText style={{ fontSize: 18, fontWeight: '600', marginBottom: 16 }}>
+                Transaction Details
+              </ThemedText>
+              {renderDetailItem("Date", (() => {
+                const date = new Date(transaction.authorized_date);
+                let hours = date.getHours();
+                const minutes = date.getMinutes();
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours === 0 ? 12 : hours;
+                const formattedTime = `${hours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+                
+                return `${date.toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })} ${formattedTime}`;
+              })())}
+              {renderDetailItem("Status", transaction.pending ? 'Pending' : 'Completed')}
+              {transaction.category ? renderDetailItem("Category", transaction.category.join(' › ')) : renderDetailItem("Category", "Uncategorized")}
+              {transaction.payment_channel && renderDetailItem("Payment Method", transaction.payment_channel)}
+            </View>
+
+            {/* Location Info */}
+            {transaction.location && (
+              <View style={{ marginBottom: 24 }}>
+                <ThemedText style={{ fontSize: 18, fontWeight: '600', marginBottom: 16 }}>
+                  Location
+                </ThemedText>
+                <MotiView
+                  from={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: 'timing', duration: 400 }}
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    borderRadius: 12,
+                    padding: 16,
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <IconSymbol name="location" size={20} color={colors.brandColor} />
+                    <ThemedText style={{ marginLeft: 8, fontSize: 16, fontWeight: '600' }}>
+                      {`${transaction.location.city}, ${transaction.location.region}`}
+                    </ThemedText>
+                  </View>
+                  {transaction.location.address && (
+                    <ThemedText style={{ color: colors.secondaryText }}>
+                      {transaction.location.address}
+                    </ThemedText>
+                  )}
+                </MotiView>
+              </View>
+            )}
+          </ScrollView>
         </Animated.View>
-      </Pressable>
+      </View>
     </Modal>
   );
 };
@@ -371,7 +349,7 @@ const PaymentItem = memo(({
 }: { 
   transaction: PlaidTransaction; 
   index: number;
-  onPress: () => void;
+  onPress: (transaction: PlaidTransaction) => void;
 }) => {
   const { colors } = useThemeColors();
   const date = new Date(transaction?.authorized_date || new Date());
@@ -440,8 +418,7 @@ const PaymentItem = memo(({
 
   return (
     <TouchableOpacity
-      activeOpacity={0.9}
-      onPress={onPress}
+      activeOpacity={0.7}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
     >
@@ -457,53 +434,84 @@ const PaymentItem = memo(({
             },
             { scale: scaleAnim }
           ],
-          marginBottom: 12,
+          marginBottom: 12, // Reduced margin
           marginHorizontal: 16,
-          borderRadius: 16,
+          borderRadius: 16, // Reduced radius
           backgroundColor: colors.backgroundCard,
-          shadowColor: colors.shadow,
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 3,
-          overflow: 'hidden'
+          // Simplified shadow
+          ...Platform.select({
+            ios: {
+              shadowColor: colors.shadow,
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 8,
+            },
+            android: {
+              elevation: 3,
+            }
+          }),
+          borderWidth: 1,
+          borderColor: 'rgba(0,0,0,0.03)'
         }}
       >
         <View style={{ 
           flexDirection: 'row', 
-          padding: 16,
-          borderBottomWidth: 1,
-          borderBottomColor: 'rgba(0,0,0,0.05)'
+          padding: 16, // Reduced padding
+          alignItems: 'center'
         }}>
+          {/* Simplified Logo/Icon Container */}
           <View style={{ 
-            width: 48, 
-            height: 48, 
-            borderRadius: 24, 
-            backgroundColor: 'rgba(0,0,0,0.05)',
+            width: 48, // Reduced size
+            height: 48,
+            borderRadius: 24,
+            backgroundColor: 'rgba(255,255,255,0.9)',
             justifyContent: 'center',
             alignItems: 'center',
-            marginRight: 16
+            marginRight: 12,
+            borderWidth: 1,
+            borderColor: 'rgba(0,0,0,0.05)',
           }}>
             {transaction.logo_url ? (
               <Image 
                 source={{ uri: transaction.logo_url }} 
-                style={{ width: 48, height: 48, borderRadius: 24 }}
+                style={{ 
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                }}
+                resizeMode="contain"
               />
             ) : (
-              <IconSymbol
-                name={getCategoryIcon(transaction.category)}
-                size={24}
-                color={colors.primaryText}
-              />
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: colors.brandColor,
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
+              >
+                <IconSymbol
+                  name={getCategoryIcon(transaction.category)}
+                  size={24}
+                  color="#FFFFFF"
+                />
+              </View>
             )}
           </View>
           
+          {/* Transaction Main Info */}
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <ThemedText 
                 type="defautlSmall" 
                 colorValue="primaryText" 
-                style={{ fontWeight: '700', fontSize: 16, maxWidth: '70%' }}
+                style={{ 
+                  fontWeight: '700', 
+                  fontSize: 16,
+                  maxWidth: '70%',
+                }}
                 numberOfLines={1}
               >
                 {transaction.merchant_name || transaction.name}
@@ -512,7 +520,7 @@ const PaymentItem = memo(({
                 type="defautlSmall" 
                 style={{ 
                   fontWeight: '700', 
-                  fontSize: 16, 
+                  fontSize: 16,
                   color: getTransactionColor(transaction.amount)
                 }}
               >
@@ -520,178 +528,131 @@ const PaymentItem = memo(({
               </ThemedText>
             </View>
             
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', maxWidth: '70%' }}>
-                {displayCategories.map((category, idx) => (
-                  <View 
-                    key={idx} 
+            {/* Simplified Categories */}
+            <View style={{ flexDirection: 'row', marginTop: 4 }}>
+              {displayCategories.map((category, idx) => (
+                <View
+                  key={idx}
+                  style={{ 
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)', 
+                    paddingHorizontal: 8,
+                    paddingVertical: 2,
+                    borderRadius: 12,
+                    marginRight: 8,
+                  }}
+                >
+                  <ThemedText 
+                    type="semiSmall" 
                     style={{ 
-                      backgroundColor: 'rgba(0,0,0,0.05)', 
-                      paddingHorizontal: 8, 
-                      paddingVertical: 2, 
-                      borderRadius: 12,
-                      marginRight: 6,
-                      marginBottom: 4
+                      color: '#4F46E5',
+                      fontSize: 12,
                     }}
                   >
-                    <ThemedText 
-                      type="semiSmall" 
-                      colorValue="cardText"
-                      style={{ fontSize: 12 }}
-                    >
-                      {category}
-                    </ThemedText>
-                  </View>
-                ))}
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <IconSymbol name="clock" size={12} color={colors.textTertiary} style={{ marginRight: 4 }} />
-                <ThemedText type="defautlSmall" colorValue="textTertiary" style={{ fontSize: 12 }}>
-                  {formattedTime}
-                </ThemedText>
-              </View>
+                    {category}
+                  </ThemedText>
+                </View>
+              ))}
             </View>
           </View>
         </View>
         
+        {/* Simplified Details Section */}
         <View style={{ 
-          flexDirection: 'row', 
-          justifyContent: 'space-between', 
-          paddingHorizontal: 16, 
+          backgroundColor: 'rgba(249, 250, 251, 0.8)',
+          paddingHorizontal: 16,
           paddingVertical: 12,
-          backgroundColor: 'rgba(0,0,0,0.02)'
+          borderTopWidth: 1,
+          borderTopColor: 'rgba(0,0,0,0.03)',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center'
         }}>
-          {/* First row of additional info */}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-            {/* Payment Method Tag */}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
             {transaction.payment_meta?.payment_method && (
-              <View style={{ 
-                flexDirection: 'row', 
-                alignItems: 'center',
-                backgroundColor: "#FEF6F1", 
-                paddingHorizontal: 10, 
-                paddingVertical: 4, 
-                borderRadius: 12,
-                marginRight: 8,
-                marginBottom: 8
-              }}>
+              <View
+                style={{ 
+                  flexDirection: 'row', 
+                  alignItems: 'center',
+                  backgroundColor: "rgba(236, 119, 53, 0.1)", 
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  borderRadius: 12,
+                }}
+              >
                 <IconSymbol name="card" size={14} color="#EC7735" style={{ marginRight: 4 }} />
                 <ThemedText 
                   type="defautlSmall" 
-                  style={{ color: "#EC7735", fontWeight: '600', fontSize: 12 }}
+                  style={{ color: "#EC7735", fontSize: 12 }}
                 >
                   {transaction.payment_meta.payment_method}
                 </ThemedText>
               </View>
             )}
-            
-            {/* Payment Channel Tag */}
-            <View style={{ 
-              flexDirection: 'row', 
-              alignItems: 'center',
-              backgroundColor: "#E8F4FD", 
-              paddingHorizontal: 10, 
-              paddingVertical: 4, 
-              borderRadius: 12,
-              marginRight: 8,
-              marginBottom: 8
-            }}>
-              <IconSymbol name="send" size={14} color="#379AE6" style={{ marginRight: 4 }} />
-              <ThemedText 
-                type="defautlSmall" 
-                style={{ color: "#379AE6", fontWeight: '600', fontSize: 12 }}
+            {transaction.payment_channel && (
+              <View
+                style={{ 
+                  flexDirection: 'row', 
+                  alignItems: 'center',
+                  backgroundColor: "rgba(79, 70, 229, 0.1)", 
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  borderRadius: 12,
+                }}
               >
-                {transaction.payment_channel}
-              </ThemedText>
-            </View>
-            
-            {/* Date Tag */}
-            <View style={{ 
-              flexDirection: 'row', 
-              alignItems: 'center',
-              backgroundColor: "#F0F1F3", 
-              paddingHorizontal: 10, 
-              paddingVertical: 4, 
-              borderRadius: 12,
-              marginBottom: 8
-            }}>
-              <IconSymbol name="calendar" size={14} color="#6B7280" style={{ marginRight: 4 }} />
-              <ThemedText 
-                type="defautlSmall" 
-                style={{ color: "#6B7280", fontWeight: '600', fontSize: 12 }}
+                <IconSymbol name="wallet" size={14} color="#4F46E5" style={{ marginRight: 4 }} />
+                <ThemedText 
+                  type="defautlSmall" 
+                  style={{ color: "#4F46E5", fontSize: 12 }}
+                >
+                  {transaction.payment_channel}
+                </ThemedText>
+              </View>
+            )}
+            {transaction.transaction_type && (
+              <View
+                style={{ 
+                  flexDirection: 'row', 
+                  alignItems: 'center',
+                  backgroundColor: "rgba(16, 185, 129, 0.1)", 
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  borderRadius: 12,
+                }}
               >
-                {formattedDate}
-              </ThemedText>
-            </View>
+                <IconSymbol name="gift" size={14} color="#10B981" style={{ marginRight: 4 }} />
+                <ThemedText 
+                  type="defautlSmall" 
+                  style={{ color: "#10B981", fontSize: 12 }}
+                >
+                  {transaction.transaction_type}
+                </ThemedText>
+              </View>
+            )}
           </View>
-        </View>
-        
-        {/* Second row with location and processor info */}
-        <View style={{ 
-          flexDirection: 'row', 
-          justifyContent: 'space-between', 
-          paddingHorizontal: 16, 
-          paddingVertical: 12,
-          backgroundColor: 'rgba(0,0,0,0.01)'
-        }}>
-          {/* Location Tag */}
-          {transaction.location?.city && (
-            <View style={{ 
-              flexDirection: 'row', 
-              alignItems: 'center',
-              backgroundColor: "#DEE1E6", 
-              paddingHorizontal: 10, 
-              paddingVertical: 4, 
-              borderRadius: 12
-            }}>
-              <IconSymbol name="location" size={14} color="#379AE6" style={{ marginRight: 4 }} />
-              <ThemedText 
-                type="defautlSmall" 
-                style={{ color: "#379AE6", fontWeight: '600', fontSize: 12 }}
-              >
-                {`${transaction.location.city}, ${transaction.location.region}`}
-              </ThemedText>
-            </View>
-          )}
-          
-          {/* Payment Processor Tag */}
-          {transaction.payment_meta?.payment_processor && (
-            <View style={{ 
-              flexDirection: 'row', 
-              alignItems: 'center',
-              backgroundColor: "#F3F4F6", 
-              paddingHorizontal: 10, 
-              paddingVertical: 4, 
-              borderRadius: 12
-            }}>
-              <IconSymbol name="construct" size={14} color="#4B5563" style={{ marginRight: 4 }} />
-              <ThemedText 
-                type="defautlSmall" 
-                style={{ color: "#4B5563", fontWeight: '600', fontSize: 12 }}
-              >
-                {transaction.payment_meta.payment_processor}
-              </ThemedText>
-            </View>
-          )}
-          
-          {/* View Details Button */}
-          <View style={{ 
-            flexDirection: 'row', 
-            alignItems: 'center',
-            paddingHorizontal: 10, 
-            paddingVertical: 4, 
-          }}>
+
+          <TouchableOpacity
+            onPress={() => onPress(transaction)}
+          >
             <ThemedText 
               type="defautlSmall" 
-              style={{ color: colors.brandColor, fontWeight: '600', fontSize: 12 }}
+              style={{ 
+                color: "#4F46E5", 
+                fontSize: 14,
+                fontWeight: '500'
+              }}
             >
-              View Details
+              Details
             </ThemedText>
-            <IconSymbol name="right-arrow" size={14} color={colors.brandColor} style={{ marginLeft: 2 }} />
-          </View>
+          </TouchableOpacity>
         </View>
       </Animated.View>
     </TouchableOpacity>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison function for memo
+  return (
+    prevProps.transaction.id === nextProps.transaction.id &&
+    prevProps.index === nextProps.index
   );
 });
 
@@ -894,7 +855,7 @@ const AIFilterButton = memo(({
     }).start();
     
     // Add spreading animation when toggled
-    if (isAIMode) {
+    if (!isAIMode) {
       spreadAnim.setValue(0);
       Animated.sequence([
         Animated.timing(spreadAnim, {
@@ -1181,19 +1142,25 @@ export default function TaxScreen() {
         {
           headers: {
             Authorization: `Bearer ${userToken}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
           },
         }
       );
 
+      // Check if response is ok
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Server returned ${response.status}: ${errorText}`
+        );
+      }
+
       const responseData = await response.json();
-      
-      // Log the response structure
-      console.log('API Response:', JSON.stringify(responseData, null, 2));
 
       // Handle different response formats
       let transactionsData;
       if (useAI) {
-        // Check for common response wrapper structures
         transactionsData = responseData.transactions || 
                           responseData.data || 
                           responseData.results || 
@@ -1204,24 +1171,27 @@ export default function TaxScreen() {
 
       // Validate the transactions data
       if (!Array.isArray(transactionsData)) {
-        console.error('Invalid transactions data:', transactionsData);
         throw new Error("Invalid response format: transactions data is not an array");
       }
 
       setTransactions(transactionsData);
       
-      // Only extract categories if we have valid transaction data
       if (transactionsData.length > 0) {
         const uniqueCategories = extractUniqueCategories(transactionsData);
         setCategories(uniqueCategories);
       }
     } catch (error) {
       console.error('Error fetching transactions:', error);
-      setError(error instanceof Error ? error.message : "Failed to fetch data");
+      setError(
+        error instanceof Error 
+          ? `Failed to fetch transactions: ${error.message}` 
+          : "An unexpected error occurred"
+      );
       setTransactions([]);
-      setCategories([]); // Reset categories on error
+      setCategories([]);
     } finally {
       setIsLoading(false);
+      setIsFiltering(false); // Ensure filtering state is reset
     }
   };
 
@@ -1274,10 +1244,10 @@ export default function TaxScreen() {
     fetchTransactions(isAIMode);
   }, [isAIMode]);
   
-  const handleTransactionPress = (transaction: PlaidTransaction) => {
+  const handleTransactionPress = useCallback((transaction: PlaidTransaction) => {
     setSelectedTransaction(transaction);
     setDialogVisible(true);
-  };
+  }, []);
 
   if (isLoading && !refreshing) {
     return <LoadingAnimation />;
@@ -1335,7 +1305,7 @@ export default function TaxScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Transaction Description Dialog */}
-      <DescriptionDialog 
+      <TransactionDialog 
         visible={dialogVisible} 
         transaction={selectedTransaction} 
         onClose={() => setDialogVisible(false)} 
