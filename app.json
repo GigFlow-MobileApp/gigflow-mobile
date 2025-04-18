@@ -5,22 +5,41 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "gigflowapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "usesNonExemptEncryption": false,
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "This app uses the microphone to record audio."
+        "NSMicrophoneUsageDescription": "This app uses the microphone to record audio.",
+        "LSApplicationQueriesSchemes": [
+          "plaid-sdk",
+          "plaidlink"
+        ]
       },
       "bundleIdentifier": "com.anonymous.elevenlabs-conversational-ai-expo-react-native"
     },
     "android": {
+      "package": "com.orcava.gigflowapp",
+      "minSdkVersion": 21,
+      "targetSdkVersion": 33,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "gigflowapp",
+              "host": "plaid-callback"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -44,3 +63,5 @@
     }
   }
 }
+
+
