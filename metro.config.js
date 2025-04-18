@@ -8,4 +8,14 @@ config.transformer.babelTransformerPath = require.resolve('react-native-svg-tran
 config.resolver.assetExts = config.resolver.assetExts.filter(ext => ext !== 'svg');
 config.resolver.sourceExts = [...config.resolver.sourceExts, 'svg'];
 
+// Add configuration to suppress warnings
+config.transformer.minifierConfig = {
+  keep_classnames: true,
+  keep_fnames: true,
+  mangle: {
+    keep_classnames: true,
+    keep_fnames: true
+  }
+};
+
 module.exports = withNativeWind(config, { input: './global.css' });
