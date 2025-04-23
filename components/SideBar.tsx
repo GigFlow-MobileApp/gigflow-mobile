@@ -1,4 +1,4 @@
-import { View, Animated, Pressable, ScrollView, Dimensions } from "react-native";
+import { View, Animated, Pressable, ScrollView, Dimensions, Image } from "react-native";
 import { SidebarProps, DrawerItemsType } from "@/constants/customTypes";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { usePathname, useRouter } from "expo-router";
@@ -7,7 +7,6 @@ import { AnimatedSyncIcon } from "@/components/AnimatedSyncIcon";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { ThemedText } from "@/components/ThemedText";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Logo from "@/assets/images/logo.svg";
 import { usePlatformStore } from "@/store/platformStore";
 
 const screenWdith = Dimensions.get("window").width;
@@ -103,7 +102,11 @@ export const Sidebar = ({ items }: SidebarProps) => {
       <ScrollView style={{ padding: 0 }} showsVerticalScrollIndicator={false}>
         <View className="py-10 h-full" style={{ backgroundColor: Colors[colorScheme].background }}>
           <View className={"items-center justify-start pb-5"} style={{ marginTop: 0 }}>
-            <Logo className={"w-25 h-25"} />
+            <Image 
+              source={require("@/assets/images/logo_transparent.png")}
+              style={{height: 100, width: 100}}
+              resizeMode="contain"
+            />
             <ThemedText colorValue="text" type="subtitle">
               Gig-Flow
             </ThemedText>

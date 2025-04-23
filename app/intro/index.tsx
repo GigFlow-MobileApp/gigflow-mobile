@@ -1,5 +1,5 @@
-import { View, Dimensions, Pressable } from "react-native";
-import Logo from "@/assets/images/logo.svg";
+import { View, Dimensions, Pressable, Image } from "react-native";
+
 import { router } from "expo-router";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { ThemedText } from "@/components/ThemedText";
@@ -21,10 +21,13 @@ export default function IntroScreen() {
     >
       <View className="items-center justify-center px-6">
         <View className={"items-center justify-start rounded-b-3xl"}>
-          <Logo style={{height: 100, width: 100}}/>
+          <Image 
+            source={require("@/assets/images/logo_transparent.png")}
+            style={{height: 100, width: 100}}
+            resizeMode="contain"
+          />
           <ThemedText
             className="py-2"
-            style={{marginTop: image_title__margin}}
             type="logo"
             colorValue="primaryText"
           >

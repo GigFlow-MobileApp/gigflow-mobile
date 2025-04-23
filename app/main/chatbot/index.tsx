@@ -370,7 +370,7 @@ const MessageBubble = ({ message, index }: { message: Message, index: number }) 
         }}
       >
         <Text
-          className={isUser ? 'text-white' : 'text-gray-800 dark:text-gray-100'}
+          className={isUser ? 'text-white' : 'text-black dark:text-gray-100'}
           style={{ fontSize: 16, lineHeight: 24, fontWeight: '400' }}
         >
           {message.text}
