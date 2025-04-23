@@ -30,8 +30,7 @@ function classNameHasTextColor(className?: string): boolean {
 function styleHasColor(style: any): boolean {
   if (!style) return false;
   if (Array.isArray(style)) return style.some(styleHasColor);
-  return !!style?.color;
-}
+  return !!style?.color;}
 
 export function ThemedText({
   type = "default",

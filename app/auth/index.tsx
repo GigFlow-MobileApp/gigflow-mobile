@@ -10,10 +10,10 @@ import {
   StatusBar,
   Pressable,
   Animated,
+  Image
 } from "react-native";
 import { useState, useRef, useMemo, useEffect } from "react";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
-import Logo2 from "@/assets/images/logo2.svg";
 import { useRouter } from "expo-router";
 import Checkbox from "expo-checkbox";
 import { ThemedText } from "@/components/ThemedText";
@@ -24,6 +24,7 @@ import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { loginApi, signupApi } from "@/apis/authAPI";
 import { Colors } from "@/constants/Colors";
 import Config from '@/constants/config';
+import { IconSymbol } from "@/components/ui/IconSymbol";
 
 const screenHeight = Dimensions.get("window").height;
 const topMargin = screenHeight * (108 - 40)/ (844 - 40);
@@ -247,8 +248,12 @@ export default function Auth() {
               className={"items-center justify-start rounded-b-3xl"}
               style={{ marginTop: topMargin }}
             >
-              <Logo2 className={"w-25 h-25"} />
-              <ThemedText style={{fontSize: 32}} colorValue="logoText" type="logo">
+              <Image 
+                source={require("@/assets/images/logo_transparent.png")}
+                style={{height: 100, width: 100}}
+                resizeMode="contain"
+              />
+              <ThemedText style={{fontSize: 30}} colorValue="logoText" type="logo">
                 GIG-Flow
               </ThemedText>
             </View>
@@ -337,7 +342,7 @@ export default function Auth() {
                         <TouchableOpacity
                           onPress={() => setSecureText(!secureText)}
                         >
-                          <Feather
+                          <IconSymbol
                             name={secureText ? "eye-off" : "eye"}
                             size={24}
                             color={Colors[colorScheme].primaryText}

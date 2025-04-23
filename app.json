@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "gigflowapp",
+    "name": "GigFlow Beta",
     "slug": "gigflowapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "gigflowapp",
+    "scheme": "GigFlow Beta",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -15,8 +15,11 @@
         "NSMicrophoneUsageDescription": "This app uses the microphone to record audio.",
         "LSApplicationQueriesSchemes": [
           "plaid-sdk",
+          "plaidlink",
+          "plaid-sdk",
           "plaidlink"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.anonymous.elevenlabs-conversational-ai-expo-react-native"
     },
@@ -33,11 +36,14 @@
           "action": "VIEW",
           "data": [
             {
-              "scheme": "gigflowapp",
+              "scheme": "GigFlow Beta",
               "host": "plaid-callback"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -51,7 +57,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/icon_transparent.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -60,8 +66,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "5e0edac9-6c61-4a1a-86a9-46834ee1b4cf"
+      }
     }
   }
 }
-
-
