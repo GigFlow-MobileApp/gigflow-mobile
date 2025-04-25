@@ -337,6 +337,114 @@ const RecordingDialog = ({
   );
 };
 
+const playTextToSpeech = async (text: string) => {
+  let tempFilePath = '';
+  let sound: Audio.Sound | null = null;
+
+  try {
+    // Configure audio mode first
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: true,
+      shouldDuckAndroid: true,
+    });
+
+    const response = await axios.post(
+      `https://api.elevenlabs.io/v1/text-to-speech/${Config.voiceId}`,
+      {
+        text: text.trim(),
+        model_id: "eleven_multilingual_v2",
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.5,
+        }
+      },
+      {
+        headers: {
+          'Accept': 'audio/mpeg',
+          'xi-api-key': Config.elevenlabsApiKey,
+          'Content-Type': 'application/json',
+        },
+        responseType: 'arraybuffer',
+      }
+    );
+
+    if (!response.data) {
+      console.log('Empty response from TTS API');
+    }
+
+    // Ensure cache directory exists
+    const cacheDir = FileSystem.cacheDirectory;
+    if (!cacheDir) {
+      console.log('Cache directory not available');
+    }
+
+    // Create temp file with .mp3 extension
+    tempFilePath = `${cacheDir}tts_${Date.now()}.mp3`;
+
+    // Convert array buffer to base64
+    const uint8Array = new Uint8Array(response.data);
+    const base64String = fromByteArray(uint8Array);
+
+    // Write audio file
+    await FileSystem.writeAsStringAsync(
+      tempFilePath,
+      base64String,
+      { encoding: FileSystem.EncodingType.Base64 }
+    );
+
+    // Verify file exists and has content
+    const fileInfo = await FileSystem.getInfoAsync(tempFilePath);
+    if (!fileInfo.exists || fileInfo.size === 0) {
+      console.log('Failed to write audio file');
+    }
+
+    // Load and play audio
+    const soundObject = await Audio.Sound.createAsync(
+      { uri: tempFilePath },
+      { shouldPlay: false, progressUpdateIntervalMillis: 100 }
+    );
+    
+    sound = soundObject.sound;
+
+    // Play the sound
+    await sound.playAsync();
+
+    // Wait for playback to complete
+    await new Promise((resolve, reject) => {
+      sound?.setOnPlaybackStatusUpdate((status) => {
+        if ('isLoaded' in status && status.isLoaded) {
+          if (status.didJustFinish) {
+            resolve(true);
+          }
+        } else if ('error' in status) {
+          reject(new Error('Playback error'));
+        }
+      });
+    });
+
+  } catch (error) {
+    // console.error('TTS Error:', error);
+  } finally {
+    // Cleanup
+    try {
+      if (sound) {
+        await sound.unloadAsync();
+      }
+      if (tempFilePath) {
+        const fileInfo = await FileSystem.getInfoAsync(tempFilePath);
+        if (fileInfo.exists) {
+          await FileSystem.deleteAsync(tempFilePath, { idempotent: true });
+        }
+      }
+    } catch (cleanupError) {
+      console.warn('Cleanup error:', cleanupError);
+    }
+  }
+};
+
+
 const MessageBubble = ({ message, index }: { message: Message, index: number }) => {
   const { colors } = useThemeColors();
   const isUser = message.isUser;
@@ -375,11 +483,25 @@ const MessageBubble = ({ message, index }: { message: Message, index: number }) 
           {message.text}
         </Text>
         
-        <Text 
-          className={`text-xs mt-1 ${isUser ? 'text-white/70 text-right' : 'text-gray-500 dark:text-gray-400'}`}
-        >
-          {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-        </Text>
+        <View className="flex-row items-center justify-end">
+          <Text 
+            className={`text-xs ${isUser ? 'text-white/70' : 'text-gray-300'}`}
+          >
+            {new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+          </Text>
+          {!isUser && (
+            <TouchableOpacity 
+              onPress={() => playTextToSpeech(message.text)}
+            >
+              <IconSymbol 
+                name="voice" 
+                size={20} 
+                color={'#3B82F6'} 
+                style={{ marginLeft: 4 }}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
       
       {isUser && (
@@ -761,113 +883,6 @@ export default function Chatbot() {
       .trim();                      // Remove leading/trailing whitespace
   };
 
-  const playTextToSpeech = async (text: string) => {
-    let tempFilePath = '';
-    let sound: Audio.Sound | null = null;
-
-    try {
-      // Configure audio mode first
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-        shouldDuckAndroid: true,
-      });
-
-      const response = await axios.post(
-        `https://api.elevenlabs.io/v1/text-to-speech/${Config.voiceId}`,
-        {
-          text: text.trim(),
-          model_id: "eleven_monolingual_v1",
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.5,
-          }
-        },
-        {
-          headers: {
-            'Accept': 'audio/mpeg',
-            'xi-api-key': Config.elevenlabsApiKey,
-            'Content-Type': 'application/json',
-          },
-          responseType: 'arraybuffer',
-        }
-      );
-
-      if (!response.data) {
-        console.log('Empty response from TTS API');
-      }
-
-      // Ensure cache directory exists
-      const cacheDir = FileSystem.cacheDirectory;
-      if (!cacheDir) {
-        console.log('Cache directory not available');
-      }
-
-      // Create temp file with .mp3 extension
-      tempFilePath = `${cacheDir}tts_${Date.now()}.mp3`;
-
-      // Convert array buffer to base64
-      const uint8Array = new Uint8Array(response.data);
-      const base64String = fromByteArray(uint8Array);
-
-      // Write audio file
-      await FileSystem.writeAsStringAsync(
-        tempFilePath,
-        base64String,
-        { encoding: FileSystem.EncodingType.Base64 }
-      );
-
-      // Verify file exists and has content
-      const fileInfo = await FileSystem.getInfoAsync(tempFilePath);
-      if (!fileInfo.exists || fileInfo.size === 0) {
-        console.log('Failed to write audio file');
-      }
-
-      // Load and play audio
-      const soundObject = await Audio.Sound.createAsync(
-        { uri: tempFilePath },
-        { shouldPlay: false, progressUpdateIntervalMillis: 100 }
-      );
-      
-      sound = soundObject.sound;
-
-      // Play the sound
-      await sound.playAsync();
-
-      // Wait for playback to complete
-      await new Promise((resolve, reject) => {
-        sound?.setOnPlaybackStatusUpdate((status) => {
-          if ('isLoaded' in status && status.isLoaded) {
-            if (status.didJustFinish) {
-              resolve(true);
-            }
-          } else if ('error' in status) {
-            reject(new Error('Playback error'));
-          }
-        });
-      });
-
-    } catch (error) {
-      // console.error('TTS Error:', error);
-    } finally {
-      // Cleanup
-      try {
-        if (sound) {
-          await sound.unloadAsync();
-        }
-        if (tempFilePath) {
-          const fileInfo = await FileSystem.getInfoAsync(tempFilePath);
-          if (fileInfo.exists) {
-            await FileSystem.deleteAsync(tempFilePath, { idempotent: true });
-          }
-        }
-      } catch (cleanupError) {
-        console.warn('Cleanup error:', cleanupError);
-      }
-    }
-  };
-
   const handleSend = async () => {
     if (!message.trim()) return;
 
@@ -905,9 +920,9 @@ export default function Chatbot() {
       setMessages(prev => [...prev, aiMessage]);
       
       // Play the AI response using TTS only in AI mode
-      if (isAIMode) {
-        await playTextToSpeech(aiResponse);
-      }
+      // if (isAIMode) {
+      //   await playTextToSpeech(aiResponse);
+      // }
     } catch (error) {
       console.error('Error getting AI response:', error);
       
