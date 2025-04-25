@@ -25,6 +25,7 @@
     },
     "android": {
       "package": "com.orcava.gigflowapp",
+      "versionCode": 2,
       "minSdkVersion": 21,
       "targetSdkVersion": 33,
       "adaptiveIcon": {
@@ -57,7 +58,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icon_transparent.png",
+          "image": "./assets/images/logo_transparent.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -72,8 +73,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "5e0edac9-6c61-4a1a-86a9-46834ee1b4cf"
+        "projectId": "9b4a4bc6-b65d-44d0-b3c3-2a1ffb6343ec"
       }
-    }
+    },
+    "owner": "gigflow"
   }
 }
