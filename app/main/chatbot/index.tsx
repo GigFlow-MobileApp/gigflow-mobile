@@ -365,12 +365,11 @@ const MessageBubble = ({ message, index }: { message: Message, index: number }) 
         }`}
         style={{
           backgroundColor: isUser 
-            ? colors.brandColor || '#3B82F6' 
-            : colors.background || '#F3F4F6',
+            ? '#3B82F6' :'#F3F4F6',
         }}
       >
         <Text
-          className={isUser ? 'text-white' : 'text-black dark:text-gray-100'}
+          className={isUser ? 'text-white' : '#000000'}
           style={{ fontSize: 16, lineHeight: 24, fontWeight: '400' }}
         >
           {message.text}
