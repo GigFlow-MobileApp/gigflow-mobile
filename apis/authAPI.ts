@@ -4,6 +4,24 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SignupResponseSchema } from "@/constants/customTypes";
 import { z } from 'zod';
 
+export const validateToken = async (token: string) => {
+  try {
+    const response = await axios.get(
+      `${Config.apiBaseUrl}/api/v1/users/me`,
+      {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Accept": "application/json",
+        },
+      }
+    );
+    return response.status === 200;
+  } catch (error) {
+    console.error('Token validation error:', error);
+    return false;
+  }
+};
+
 export const loginApi = async (username: string, password: string) => {
   try {
     const response = await axios.post(
@@ -17,23 +35,27 @@ export const loginApi = async (username: string, password: string) => {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
           "Accept": "application/json",
-          // Add origin header for development
-          "Origin": "exp://192.168.104.149:8081" // Replace with your Expo development server URL
         },
       }
-    );
-    // console.log(JSON.stringify(response));
+    );    
     const result = response.data;
     if (!result.access_token || !result.token_type) {
       return { success: false, error: "Incorrect response format from server" };
     }
     if (result.token_type === "bearer") {
+      // Validate token before storing
+      const isValid = await validateToken(result.access_token);
+      if (!isValid) {
+        return { success: false, error: "Invalid token received" };
+      }
+      
       await AsyncStorage.setItem("userToken", result.access_token);
-      console.log("token_set");
+      console.log("Token stored:", result.access_token);
       return { success: true };
     }
     return { success: false, error: "Invalid token type" };
   } catch (error) {
+    console.error('Login error:', error);
     let message = "Unknown error occurred";
     if (axios.isAxiosError(error)) {
       // Handle specific error cases

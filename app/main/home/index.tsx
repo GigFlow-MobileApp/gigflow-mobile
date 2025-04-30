@@ -156,14 +156,26 @@ export default function Home() {
   useEffect(() => {
     const fetchPlatformEarnings = async () => {
       try {
-        const response = await fetch(`${Config.apiBaseUrl}/api/v1/accounts`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${await AsyncStorage.getItem('userToken')}`,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        });
+        const token = await AsyncStorage.getItem('userToken');
+        const response = await fetch(
+          `${Config.apiBaseUrl}/api/v1/accounts/?` +
+          `skip=0&limit=100&` +
+          `start_date=2018-01-01T00:00:00.000Z&` +
+          `end_date=2025-04-10T23:59:59.999Z`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'accept': 'application/json',
+              'content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (response.status === 401) {
+          const errorText = await response.text();
+          console.log('Full error response:', errorText);
+          throw new Error(`Authentication failed: ${errorText}`);
+        }
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -969,7 +981,6 @@ export default function Home() {
               balance={item.balance}
               lastEarning={item.lastEarning}
               index={index}
-              isActive={item.isActive}
             />
           ))}
         </Animated.View>

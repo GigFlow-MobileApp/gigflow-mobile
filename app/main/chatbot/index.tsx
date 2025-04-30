@@ -3,6 +3,7 @@ import axios from 'axios';
 import Config from "@/constants/config";
 import { Audio } from 'expo-av';
 import { Alert } from 'react-native';
+import { SafeAreaView } from 'react-native';
 
 import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { useThemeColors } from "@/components/ColorSchemeProvider";
@@ -1046,126 +1047,105 @@ export default function Chatbot() {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{ flex: 1, backgroundColor: colors.background }}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       {/* Header */}
-      <View className="flex-row justify-between items-center p-4" style={{backgroundColor: colors.background}}>
-        <View className="flex-row justify-start">
-
-          <ThemedText type="title" className="ml-12 pt-0.5">Assistant</ThemedText>
+      <SafeAreaView style={{ backgroundColor: colors.background }}>
+        <View className="flex-row justify-between items-center p-4">
+          <View className="flex-row justify-start">
+            <ThemedText type="title" className="ml-12 pt-0.5">Assistant</ThemedText>
+          </View>
         </View>
-      </View>
+      </SafeAreaView>
 
       {/* Messages */}
-      <LinearGradient
-        colors={[
-          colors.background, 
-          Platform.OS === 'ios' ? '#F0F4F8' : '#F0F4F8', 
-          colors.background
-        ]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        className="flex-1"
-      >
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <ScrollView
           ref={scrollViewRef}
           className="flex-1 px-4 pt-2"
+          contentContainerStyle={{ flexGrow: 1 }}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
           showsVerticalScrollIndicator={false}
         >
           {messages.map((msg, index) => (
             <MessageBubble key={msg.id} message={msg} index={index} />
           ))}
-          <View style={{ height: 100 }} />
+          <View style={{ height: 20 }} />
         </ScrollView>
-      </LinearGradient>
+      </View>
 
       {/* Typing Indicator */}
       {isTyping && <TypingIndicator />}
 
       {/* Input Area */}
-      <View
-        className="p-4 border-t flex-row items-center"
-        style={{
-          borderTopColor: colors.border,
-          paddingBottom: Platform.OS === 'ios' ? keyboardHeight > 0 ? 5 : 34 : 16,
-          backgroundColor: colors.background || '#FFFFFF',
-        }}
-      >
+      <SafeAreaView style={{ backgroundColor: colors.background }}>
         <View
-          className="flex-1 flex-row items-center rounded-full px-4 py-2 mr-2 shadow-sm"
-          style={{ 
-            backgroundColor: colors.inputBackground || '#F3F4F6',
-            borderWidth: 1,
-            borderColor: colors.border || '#E5E7EB',
+          className="px-4 py-2 border-t flex-row items-center"
+          style={{
+            borderTopColor: colors.border,
+            backgroundColor: colors.background || '#FFFFFF',
           }}
         >
-          <TextInput
-            value={message}
-            onChangeText={setMessage}
-            placeholder="Type a message..."
-            placeholderTextColor={colors.textTertiary}
-            style={{
-              flex: 1,
-              color: colors.primaryText,
-              fontSize: 16,
-              paddingVertical: 8,
-            }}
-            multiline
-            maxLength={1000}
-          />
-        </View>
-        
-        {message.trim() ? (
-          <TouchableOpacity
-            onPress={handleSend}
-            disabled={!message.trim() || isTyping}
-            className="w-12 h-12 rounded-full items-center justify-center"
+          <View
+            className="flex-1 flex-row items-center rounded-full px-4 py-2 mr-2"
             style={{ 
-              backgroundColor: colors.brandColor || '#3B82F6',
-              opacity: message.trim() && !isTyping ? 1 : 0.5,
+              backgroundColor: colors.inputBackground || '#F3F4F6',
+              borderWidth: 1,
+              borderColor: colors.border || '#E5E7EB',
             }}
           >
-            <IconSymbol
-              name="send"
-              size={20}
-              color="white"
-            />
-          </TouchableOpacity>
-        ) : (
-          <Animated.View style={recordButtonAnimatedStyle}>
-            <TouchableOpacity 
-              onPressIn={handlePressIn}
-              onPressOut={handlePressOut}
-              className="w-12 h-12 rounded-full items-center justify-center shadow-md"
+            <TextInput
+              value={message}
+              onChangeText={setMessage}
+              placeholder="Type a message..."
+              placeholderTextColor={colors.textTertiary}
               style={{
-                backgroundColor: isRecording ? '#E21F1F' : '#F00B0B',
+                flex: 1,
+                color: colors.primaryText,
+                fontSize: 16,
+                paddingVertical: Platform.OS === 'ios' ? 8 : 4,
+              }}
+              multiline
+              maxLength={1000}
+            />
+          </View>
+          
+          {message.trim() ? (
+            <TouchableOpacity
+              onPress={handleSend}
+              disabled={!message.trim() || isTyping}
+              className="w-12 h-12 rounded-full items-center justify-center"
+              style={{ 
+                backgroundColor: colors.brandColor || '#3B82F6',
+                opacity: message.trim() && !isTyping ? 1 : 0.5,
               }}
             >
-              <IconSymbol 
-                name={isRecording ? "voiceStop" : "voice"}
-                size={24} 
-                color="white" 
+              <IconSymbol
+                name="send"
+                size={20}
+                color="white"
               />
             </TouchableOpacity>
-          </Animated.View>
-        )}
-      </View>
-
-      {/* Recording Dialog */}
-      <RecordingDialog 
-        isVisible={isDialogVisible}
-        onClose={() => {
-          setIsDialogVisible(false);
-          if (isRecording) {
-            handleRecordPress(); // Stop recording if active
-          }
-        }}
-        isRecording={isRecording}
-        onRecordPress={handleRecordPress}
-      />
-      
-      {/* Loading Indicator */}
-      {isLoading && <LoadingIndicator />}
+          ) : (
+            <Animated.View style={recordButtonAnimatedStyle}>
+              <TouchableOpacity 
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                className="w-12 h-12 rounded-full items-center justify-center shadow-md"
+                style={{
+                  backgroundColor: isRecording ? '#E21F1F' : '#F00B0B',
+                }}
+              >
+                <IconSymbol 
+                  name={isRecording ? "voiceStop" : "voice"}
+                  size={24} 
+                  color="white" 
+                />
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+        </View>
+      </SafeAreaView>
     </KeyboardAvoidingView>
   );
 }
