@@ -10,7 +10,7 @@ import {
   VictoryArea
 } from "victory-native";
 import React, { useState, useEffect } from "react";
-import { View, StyleProp, ViewStyle, Dimensions  } from "react-native";
+import { View, StyleProp, ViewStyle, Dimensions, Platform } from "react-native";
 import { platformColor } from "@/constants/Colors";
 import { MotiView } from 'moti';
 import { GradientButton } from "@/components/ui/GradientButton";
@@ -73,19 +73,22 @@ export default function LineChart({
   colorScheme,
   transformDataForVictory,
 }: Props) {
-  // State to control when scatter points should be rendered
   const [showScatter, setShowScatter] = useState(false);
   const allYValues = lineData.datasets.flatMap(ds => ds.data);
   const maxY = Math.max(...allYValues) * 1.1;
   const [readyToRenderChart, setReadyToRenderChart] = useState(false);
   
+  // Calculate proper dimensions with platform-specific adjustments
+  const chartWidth = Platform.OS === 'ios' ? screenWidth - 48 : screenWidth - 32;
+  const chartHeight = Platform.OS === 'ios' ? chartWidth * 0.6 : chartWidth * 0.618;
+  
   useEffect(() => {
     setShowScatter(false);
     const timer = setTimeout(() => {
       setShowScatter(true);
-    }, 1800); // Slightly longer than line animation to ensure lines complete first
+    }, 1800);
     
-    return () => clearTimeout(timer); // Cleanup on unmount or data change
+    return () => clearTimeout(timer);
   }, [selectedDuration, selectedPlatform, chartInitTimeRef.current]);
 
   const generateTicks = (maxY: number, numberOfTicks = 5) => {
@@ -119,26 +122,30 @@ export default function LineChart({
         {
           backgroundColor: Colors[colorScheme].backgroundCard,
           borderRadius: 24,
-          height: screenWidth * 1.3,
-          flex: 1,
+          margin: Platform.OS === 'ios' ? 16 : 16,
+          overflow: 'hidden',
           borderWidth: 1,
-          borderColor: Colors[colorScheme].border + '20', // 20% opacity
+          borderColor: Colors[colorScheme].border + '20',
           shadowColor: Colors[colorScheme].shadow,
           shadowOffset: { width: 0, height: 10 },
           shadowOpacity: 0.15,
           shadowRadius: 20,
           elevation: 5,
+          alignSelf: 'center', // Add this to center the card
+          width: Platform.OS === 'ios' ? screenWidth - 32 : screenWidth - 32, // Consistent width
         },
       ]}
     >
-      <View>
+      <View style={{ 
+        padding: Platform.OS === 'ios' ? 16 : 16,
+        width: '100%', // Ensure full width
+      }}>
         <View
           style={{
             flexDirection: "row",
             justifyContent: "space-between",
             marginBottom: 16,
-            paddingHorizontal: 15,
-            paddingVertical: 10,
+            paddingHorizontal: 8,
           }}
         >
           {["1Y", "6M", "1M", "1W", "1D"].map((duration) => (
@@ -153,7 +160,7 @@ export default function LineChart({
         <View
           style={{
             alignItems: "center",
-            paddingHorizontal: 20,
+            marginBottom: 16,
           }}
         >
           <ModernDropdown
@@ -168,28 +175,34 @@ export default function LineChart({
 
         <View 
           style={{ 
-            height: 300, 
-            marginTop: -15,
+            height: chartHeight,
+            width: '100%', // Ensure full width
             backgroundColor: Colors[colorScheme].backgroundCard,
             borderRadius: 12,
             overflow: 'hidden',
+            alignItems: 'center', // Center the chart
           }}
         >
           <VictoryChart
             key={`chart-${selectedDuration}-${selectedPlatform}-${chartInitTimeRef.current}`}
-            width={screenWidth - 40}
-            height={(screenWidth - 40) * 0.618 + (30 + 40)}
-            domainPadding={{ x: 10, y: 10 }}
-            domain={{ y: [-20, maxY * 1.05] }}
-            padding={{ top: 40, bottom: 30, left: 40, right: 10 }}
+            width={chartWidth}
+            height={chartHeight}
+            domainPadding={{ x: Platform.OS === 'ios' ? 25 : 20, y: 20 }}
+            domain={{ y: [0, maxY * 1.05] }}
+            padding={{
+              top: 40,
+              bottom: 40,
+              left: Platform.OS === 'ios' ? 60 : 50,
+              right: Platform.OS === 'ios' ? 30 : 20
+            }}
             animate={{
               duration: 800,
               onLoad: { duration: 800 },
               easing: "cubic",
-              animationWhitelist: ["style", "data", "size"],
             }}
             containerComponent={
               <VictoryVoronoiContainer
+                responsive={true} // Add this
                 labels={({ datum }) => `$${datum.y.toLocaleString()}`}
                 labelComponent={
                   <VictoryTooltip
@@ -212,35 +225,35 @@ export default function LineChart({
           >
             <VictoryLabel
               text="Earnings Overview"
-              x={screenWidth / 2 - 20}
-              y={10}
+              x={chartWidth / 2}
+              y={20}
               textAnchor="middle"
               style={{
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: "bold",
                 fill: Colors[colorScheme].primaryText,
-                fontFamily: 'System'
               }}
             />
             <VictoryAxis
-                tickFormat={(t) => t}
-                style={{
-                  axis: { stroke: Colors[colorScheme].background },
-                  ticks: { stroke: Colors[colorScheme].border },
-                  tickLabels: {
-                    fill: Colors[colorScheme].textTertiary,
-                    fontSize: 12,
-                    angle: selectedDuration === "1Y" ? -45 : 0,
-                    textAnchor: selectedDuration === "1Y" ? "end" : "middle",
-                    fontWeight: '500'
-                  },
-                  grid: {
-                    stroke: Colors[colorScheme].border,
-                    strokeDasharray: "4",
-                    opacity: 0.25,
-                  },
-                }}
-              />
+              tickFormat={(t) => t}
+              style={{
+                axis: { stroke: Colors[colorScheme].border },
+                ticks: { stroke: Colors[colorScheme].border, size: 5 },
+                tickLabels: {
+                  fill: Colors[colorScheme].textTertiary,
+                  fontSize: Platform.OS === 'ios' ? 10 : 12,
+                  angle: selectedDuration === "1Y" ? -45 : 0,
+                  textAnchor: selectedDuration === "1Y" ? "end" : "middle",
+                  fontWeight: '500',
+                  padding: Platform.OS === 'ios' ? 10 : 8,
+                },
+                grid: {
+                  stroke: Colors[colorScheme].border,
+                  strokeDasharray: "4",
+                  opacity: 0.25,
+                },
+              }}
+            />
             <VictoryAxis 
               dependentAxis 
               tickValues={[0, ...generateTicks(maxY * 1.05)]}
@@ -258,8 +271,8 @@ export default function LineChart({
                 ticks: { stroke: Colors[colorScheme].border },
                 tickLabels: {
                   fill: Colors[colorScheme].textTertiary,
-                  fontSize: 12,
-                  padding: 4,
+                  fontSize: Platform.OS === 'ios' ? 10 : 12,
+                  padding: Platform.OS === 'ios' ? 8 : 4,
                   fontWeight: '500'
                 },
                 grid: {
@@ -332,20 +345,15 @@ export default function LineChart({
           </VictoryChart>
           {selectedPlatform === "all" && (
             <VictoryLegend
-              x={35}
+              x={20}
               y={0}
-              gutter={20}
               orientation="horizontal"
+              gutter={20}
               style={{ 
                 labels: { 
                   fill: Colors[colorScheme].secondaryText,
                   fontSize: 12,
                   fontWeight: '500'
-                },
-                border: {
-                  stroke: Colors[colorScheme].border,
-                  strokeWidth: 0,
-                  strokeOpacity: 0.5
                 }
               }}
               data={[
