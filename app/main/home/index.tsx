@@ -969,7 +969,6 @@ export default function Home() {
               balance={item.balance}
               lastEarning={item.lastEarning}
               index={index}
-              isActive={item.isActive}
             />
           ))}
         </Animated.View>
