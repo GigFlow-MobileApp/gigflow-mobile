@@ -22,6 +22,7 @@ import { usePlatformStore } from "@/store/platformStore";
 import { BlurView } from 'expo-blur';
 import { MotiView } from 'moti';
 import { Easing } from 'react-native-reanimated';
+import axios from 'axios';
 
 interface AccountItemProps {
   iconName: string;
@@ -398,25 +399,38 @@ export default function AccountScreen() {
         }));
 
         // Fetch connected accounts from API
-        const response = await fetch(`${Config.apiBaseUrl}/api/v1/accounts`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${await AsyncStorage.getItem('userToken')}`,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        });
+        const token = await AsyncStorage.getItem('userToken');
+        
+        const response = await fetch(
+          `${Config.apiBaseUrl}/api/v1/accounts/?` +
+          `skip=0&limit=100&` +
+          `start_date=2018-01-01T00:00:00.000Z&` +
+          `end_date=2025-04-10T23:59:59.999Z`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'accept': 'application/json',
+              'content-Type': 'application/json',
+            },
+          }
+        );
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+        if (response.status === 401) {
+          const errorText = await response.text();
+          throw new Error(`Authentication failed: ${errorText}`);
         }
 
-        const connectedAccounts: Account[] = await response.json();
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
+        const connectedAccounts = await response.json();
         
         // Update default accounts with connected account data
         const finalAccounts = defaultAccounts.map(defaultAccount => {
           const connectedAccount = connectedAccounts.find(
-            account => account.type === defaultAccount.type
+            (account: { type: string; }) => account.type === defaultAccount.type
           );
           return connectedAccount || defaultAccount;
         });
