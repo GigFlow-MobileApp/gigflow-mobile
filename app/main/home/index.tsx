@@ -1,7 +1,7 @@
 import { View, ScrollView, Dimensions, Pressable, RefreshControl, Text, TouchableOpacity } from "react-native";
 import { useColorScheme } from "@/components/ColorSchemeProvider";
 import { Colors } from "@/constants/Colors";
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { PieChart } from "react-native-chart-kit";
 import LineChart from "@/components/LineChart";
 import { ThemedText } from "@/components/ThemedText";
@@ -19,6 +19,23 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image, StyleSheet } from "react-native";
 import PlatformCard from "@/components/PlatformCard";
 import { VictoryPie } from "victory-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Config from "@/constants/config";
+
+
+type Account = {
+  last_earning: any;
+  id: string;
+  type: string;
+  balance: number;
+  token: string;
+  is_active: boolean;
+  connection_status: boolean;
+  description: string;
+  user_id: string;
+  last_updated: string;
+};
+
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -126,13 +143,57 @@ export default function Home() {
     { label: "Fiverr", value: "fiverr" },
   ]);
 
-  const platformEarnings = [
-    { platform: "uber", balance: "$3,450.00", lastEarning: "+$245.00" },
-    { platform: "lyft", balance: "$2,180.00", lastEarning: "+$180.00" },
-    { platform: "doordash", balance: "$1,920.00", lastEarning: "+$156.00" },
-    { platform: "upwork", balance: "$4,750.00", lastEarning: "+$520.00" },
-    { platform: "fiverr", balance: "$2,890.00", lastEarning: "+$340.00" },
-  ];
+  const [platformEarnings, setPlatformEarnings] = useState([
+    { platform: "uber", balance: "$0.00", lastEarning: "+$0.00", isActive: false },
+    { platform: "lyft", balance: "$0.00", lastEarning: "+$0.00", isActive: false },
+    { platform: "doordash", balance: "$0.00", lastEarning: "+$0.00", isActive: false },
+    { platform: "upwork", balance: "$0.00", lastEarning: "+$0.00", isActive: false },
+    { platform: "fiverr", balance: "$0.00", lastEarning: "+$0.00", isActive: false },
+  ]);
+
+  const [totalBalance, setTotalBalance] = useState(0);
+
+  useEffect(() => {
+    const fetchPlatformEarnings = async () => {
+      try {
+        const response = await fetch(`${Config.apiBaseUrl}/api/v1/accounts`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${await AsyncStorage.getItem('userToken')}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const connectedAccounts: Account[] = await response.json();
+        let total = 0;
+        
+        const updatedEarnings = platformEarnings.map(platform => {
+          const account = connectedAccounts.find(acc => acc.type === platform.platform);
+          const balance = account ? account.balance : 0;
+          total += balance;
+          
+          return {
+            ...platform,
+            balance: `$${balance.toFixed(2)}`,
+            isActive: account ? account.is_active : false,
+            lastEarning: account?.last_earning ? `+$${account.last_earning.toFixed(2)}` : "+$0.00",
+          };
+        });
+
+        setPlatformEarnings(updatedEarnings);
+        setTotalBalance(total);
+      } catch (error) {
+        console.log("Error fetching platform earnings:", error);
+      }
+    };
+
+    fetchPlatformEarnings();
+  }, []);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -662,6 +723,15 @@ export default function Home() {
     },
   });
 
+  // Update the FlatList data to use the actual total and platform balances
+  const balanceCardData = [
+    { platform: "All Platforms", amount: totalBalance },
+    ...platformEarnings.map(item => ({
+      platform: item.platform.charAt(0).toUpperCase() + item.platform.slice(1),
+      amount: parseFloat(item.balance.replace('$', '')),
+    }))
+  ];
+
   return (
     <ScrollView
       style={{
@@ -687,14 +757,7 @@ export default function Home() {
           horizontal
           scrollEnabled={true}
           showsHorizontalScrollIndicator={false}
-          data={[
-            { platform: "All Platforms", amount: 12500 },
-            { platform: "Uber", amount: 3500 },
-            { platform: "Lyft", amount: 2800 },
-            { platform: "DoorDash", amount: 1900 },
-            { platform: "Upwork", amount: 2500 },
-            { platform: "Fiverr", amount: 1800 },
-          ]}
+          data={balanceCardData}
           renderItem={({ item, index }) => renderBalanceCard(item.platform, item.amount, index)}
           keyExtractor={(item) => item.platform}
         />

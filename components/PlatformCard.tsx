@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { FadeInRight } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { usePlatformStore } from '@/store/platformStore';
 
 const platformConfig = {
   uber: {
@@ -46,17 +48,32 @@ type PlatformCardProps = {
 
 export default function PlatformCard({ platform, balance, lastEarning, index }: PlatformCardProps) {
   const config = platformConfig[platform];
+  const router = useRouter();
+  const setPlatform = usePlatformStore(state => state.setPlatform);
   
-  // Add transparency to the colors
   const transparentColors = [
     `${config.colors[0]}30`,
     `${config.colors[1]}30`
   ] as const;
 
+  const handlePress = () => {
+    setPlatform(platform);
+    router.push({
+      pathname: '/main/account/balance',
+      params: { 
+        platform,
+        name: config.name,
+        balance: balance,
+        lastEarning: lastEarning
+      }
+    });
+  };
+
   return (
     <Animated.View 
       entering={FadeInRight.delay(index * 200)}
-      style={styles.container}>
+      style={styles.container}
+      >
       <TouchableOpacity
         style={[styles.button, { top: -15, left: 15, zIndex: 2 }]}>
         <LinearGradient
@@ -73,38 +90,40 @@ export default function PlatformCard({ platform, balance, lastEarning, index }: 
         </LinearGradient>
       </TouchableOpacity>
 
-      <View style={styles.card}>
-        <LinearGradient
-          colors={transparentColors as [string, string]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.cardGradient}
-        >
-          <View style={styles.cardContent}>
-            <View style={styles.leftContent}>
-              <Text style={styles.balanceLabel}>Current Balance</Text>
-              <Text style={styles.balanceAmount}>{balance}</Text>
-              <View style={styles.lastEarningContainer}>
-                <MaterialCommunityIcons name="trending-up" size={20} color="#10B981" />
-                <Text style={styles.lastEarningText}>Last: {lastEarning}</Text>
+      <TouchableOpacity onPress={handlePress}>
+        <View style={styles.card}>
+          <LinearGradient
+            colors={transparentColors as [string, string]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.cardGradient}
+          >
+            <View style={styles.cardContent}>
+              <View style={styles.leftContent}>
+                <Text style={styles.balanceLabel}>Current Balance</Text>
+                <Text style={styles.balanceAmount}>{balance}</Text>
+                <View style={styles.lastEarningContainer}>
+                  <MaterialCommunityIcons name="trending-up" size={20} color="#10B981" />
+                  <Text style={styles.lastEarningText}>Last: {lastEarning}</Text>
+                </View>
+              </View>
+
+              <View style={styles.rightContent}>
+                <Image
+                  source={config.image}
+                  style={styles.platformImage}
+                />
+                <MaterialCommunityIcons 
+                  name="chevron-right" 
+                  size={24} 
+                  color="#6B7280"
+                  style={styles.chevron}
+                />
               </View>
             </View>
-
-            <View style={styles.rightContent}>
-              <Image
-                source={config.image}
-                style={styles.platformImage}
-              />
-              <MaterialCommunityIcons 
-                name="chevron-right" 
-                size={24} 
-                color="#6B7280"
-                style={styles.chevron}
-              />
-            </View>
-          </View>
-        </LinearGradient>
-      </View>
+          </LinearGradient>
+        </View>
+      </TouchableOpacity>
     </Animated.View>
   );
 }

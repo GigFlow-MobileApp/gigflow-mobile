@@ -1,6 +1,6 @@
-import { useLocalSearchParams } from "expo-router";
+import { RelativePathString, useLocalSearchParams } from "expo-router";
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Dimensions, Animated, Easing, Platform } from "react-native";
+import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Dimensions, Animated, Easing, Platform, Alert } from "react-native";
 import { Ionicons, Feather, MaterialIcons } from "@expo/vector-icons";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useThemeColors } from "@/components/ColorSchemeProvider";
@@ -380,7 +380,19 @@ export default function AccountBalancePage() {
 
           setActivities(transformedActivities);
         } else {
-          throw new Error(`${name} API not implemented yet`);
+          Alert.alert(
+            "Not Connected",
+            `${name?.charAt(0).toUpperCase() ?? ''}${name?.slice(1) ?? ''} not connected yet`,
+            [
+              {
+                text: "OK",
+                onPress: () => router.back()
+              }
+            ],
+            {
+              onDismiss: () => router.back()
+            }
+          );
         }
       } catch (error) {
         console.error("Error fetching account data:", error);
@@ -427,7 +439,7 @@ export default function AccountBalancePage() {
           <ThemedText type="title" className="ml-3 pt-0.5">Your Balance</ThemedText>
         </View>
         <TouchableOpacity onPress={() => {
-          setLastPagetoNotification("/main/account/balance");
+          setLastPagetoNotification("/main/account/balance" as RelativePathString);
           router.replace("/main/notifications")
         }} className="self-end">
           <IconSymbol name="notifications" size={24} color={colors.primaryText} />
