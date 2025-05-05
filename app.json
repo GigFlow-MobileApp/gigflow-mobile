@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "GigFlow Beta",
-    "slug": "gigflowapp",
+    "slug": "gigflowapp-beta",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -24,8 +24,8 @@
       "bundleIdentifier": "com.anonymous.elevenlabs-conversational-ai-expo-react-native"
     },
     "android": {
-      "package": "com.orcava.gigflowapp",
-      "versionCode": 2,
+      "package": "com.orcavainc.gigflowapp",
+      "versionCode": 1,
       "minSdkVersion": 21,
       "targetSdkVersion": 33,
       "adaptiveIcon": {
@@ -37,7 +37,7 @@
           "action": "VIEW",
           "data": [
             {
-              "scheme": "GigFlow Beta",
+              "scheme": "GigFlowApp Beta",
               "host": "plaid-callback"
             }
           ],
@@ -63,7 +63,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
@@ -73,7 +74,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "9b4a4bc6-b65d-44d0-b3c3-2a1ffb6343ec"
+        "projectId": "205923a0-86e7-4876-b65d-f0adc2f2e336"
       }
     },
     "owner": "gigflow"
